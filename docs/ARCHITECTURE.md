@@ -44,6 +44,30 @@ directly.
 - `contact_settings` (email share, phone, note) is readable only by its owner. `auction_results()` and `my_lots()` reveal contact details only when that person has `share_contact = true`, and only to the other side of a completed sale.
 - `deal_messages`: a private chat between host and winner of a sold lot, readable only by those two (`is_deal_party()`).
 
+## Visibility
+
+`auctions.visibility` can be:
+- `public`: listed on the home page.
+- `unlisted`: only people with the link.
+- `private`: only the host, moderators and `auction_members`.
+
+People join a private auction through `join_private_auction(id, code)`. The invite code is stored in `auction_secrets`, which only the host can read through `get_invite_code()`.
+
+`auction_visible()` is the single rule behind every read policy. Bids, chat and league teams also run a trigger guard for private auctions. `auction_preview()` returns just the title, cover and host, so the invite page can show something before joining.
+
+## Deletion and retention (free-tier size)
+
+- `delete_auction()` (host only) works on draft, ended or cancelled auctions. The client removes storage files first, and the database cascades everything else.
+- `cleanup_stale_data()` runs daily from pg_cron at 03:17 UTC and removes:
+  - pg_cron run logs older than 1 day (about 5,800 rows a day otherwise)
+  - moderated chat older than 1 day
+  - chat of auctions that ended over 30 days ago
+  - proxy bids 7 days after a lot closes
+  - for auctions that ended over 90 days ago, every bid except each lot's final bid
+  - deal chats 180 days after the sale
+  - cancelled auctions after 30 days, and empty drafts after 30 days
+- Worker cron at 03:30 UTC: `storage_orphans()` (service role only) lists files that no row references. The Worker deletes them. This needs the `SUPABASE_SERVICE_ROLE_KEY` Worker secret; without it, this step is skipped.
+
 ## Team league mode (`auctions.mode = 'league'`)
 
 An IPL-style auction game with virtual purses (no real money).

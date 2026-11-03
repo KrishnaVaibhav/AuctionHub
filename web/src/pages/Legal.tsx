@@ -66,8 +66,19 @@ export function Privacy() {
       </ul>
 
       <h2>Retention and deletion</h2>
+      <p>We automatically delete data we no longer need:</p>
+      <ul>
+        <li>Chat messages removed by a moderator: after 1 day.</li>
+        <li>Auction chat: 30 days after the auction ends.</li>
+        <li>Auto-bid maximums: 7 days after a lot closes.</li>
+        <li>Full bid history: 90 days after the auction ends (only each lot's final bid is kept).</li>
+        <li>Deal-chat messages: 180 days after the sale.</li>
+        <li>Cancelled auctions: 30 days after cancellation. Empty drafts: after 30 days without changes.</li>
+        <li>Uploaded files that are no longer used (deleted auctions, replaced photos): within a few days.</li>
+      </ul>
+      <p>Hosts can delete their draft, ended or cancelled auctions at any time, which removes the auction's lots, bids, chat and files.</p>
       <p>
-        We keep your data while your account exists. To delete your account and personal data, open a request at{" "}
+        We keep the rest of your data while your account exists. To delete your account and personal data, open a request at{" "}
         <a className="underline" href={CONTACT}>
           {CONTACT}
         </a>

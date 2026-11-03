@@ -10,7 +10,8 @@
     "run_worker_first": ["/api/*"]
   },
   // Every 2 days: ping Supabase so the free project never pauses for inactivity.
-  "triggers": { "crons": ["0 6 */2 * *"] },
+  // Keepalive every 2 days; storage orphan sweep nightly (needs SUPABASE_SERVICE_ROLE_KEY secret).
+  "triggers": { "crons": ["0 6 */2 * *", "30 3 * * *"] },
   "observability": { "enabled": true },
   // Public values only (the publishable/anon key already ships in the frontend bundle).
   // Never put the service_role key here; use `wrangler secret put` instead.

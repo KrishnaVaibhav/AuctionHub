@@ -29,7 +29,7 @@ export function Home() {
   useEffect(() => {
     void Promise.all(
       (Object.keys(tabStatuses) as Tab[]).map(async (t) => {
-        const { count } = await supabase.from("auctions").select("id", { count: "exact", head: true }).in("status", tabStatuses[t]);
+        const { count } = await supabase.from("auctions").select("id", { count: "exact", head: true }).eq("visibility", "public").in("status", tabStatuses[t]);
         return [t, count ?? 0] as const;
       }),
     ).then((pairs) => {
@@ -45,6 +45,7 @@ export function Home() {
     let q = supabase
       .from("auctions")
       .select("*, lots(count)")
+      .eq("visibility", "public")
       .in("status", tabStatuses[tab])
       .order(tab === "ended" ? "ends_at" : "starts_at", { ascending: tab !== "ended", nullsFirst: false })
       .range(from, from + PAGE - 1);

@@ -10,6 +10,8 @@ import { LEAGUE_DEFAULTS, LEAGUE_INCREMENTS } from "../../lib/useLeagueTeams";
 import type { Auction, AuctionSettings } from "../../lib/types";
 import { AuctionBadge } from "../../components/StatusBadge";
 import { LotEditor, NewLotForm } from "./LotEditor";
+import { VisibilityPanel } from "./VisibilityPanel";
+import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
@@ -40,10 +42,13 @@ export function AuctionEditor() {
   }
 
   async function remove() {
-    if (!window.confirm("Delete this draft auction and all its lots? This cannot be undone.")) return;
-    const { error } = await supabase.from("auctions").delete().eq("id", auction!.id);
-    if (error) setError(errorMessage(error));
-    else navigate("/host");
+    if (!window.confirm("Permanently delete this auction with all lots, bids, chat, teams and uploaded files? This cannot be undone.")) return;
+    try {
+      await deleteAuctionCompletely(auction!);
+      navigate("/host");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
   }
 
   return (
@@ -72,7 +77,7 @@ export function AuctionEditor() {
               Go live now
             </button>
           )}
-          {auction.status === "draft" && (
+          {canDelete(auction.status) && (
             <button className="btn-danger" onClick={() => void remove()}>
               Delete
             </button>
@@ -86,6 +91,8 @@ export function AuctionEditor() {
       </div>
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
+
+      <VisibilityPanel auction={auction} onChanged={reload} />
 
       <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />
 

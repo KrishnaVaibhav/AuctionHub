@@ -6,6 +6,7 @@ import { dateTime } from "../../lib/format";
 import type { Auction } from "../../lib/types";
 import { AuctionBadge } from "../../components/StatusBadge";
 import { LEAGUE_DEFAULTS, LEAGUE_INCREMENTS } from "../../lib/useLeagueTeams";
+import { canDelete, deleteAuctionCompletely, visibilityLabel } from "../../lib/auctions";
 
 type Row = Auction & { lots: { count: number }[] };
 
@@ -30,6 +31,17 @@ export function HostDashboard() {
         setRows((data as Row[] | null) ?? []);
       });
   }, [userId]);
+
+  async function remove(a: Row) {
+    if (!window.confirm(`Permanently delete "${a.title}" with all its lots, bids, chat and files? This cannot be undone.`)) return;
+    setError(null);
+    try {
+      await deleteAuctionCompletely(a);
+      setRows((prev) => prev.filter((r) => r.id !== a.id));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
 
   async function create(e: FormEvent) {
     e.preventDefault();
@@ -94,6 +106,7 @@ export function HostDashboard() {
               <div className="flex items-center gap-2">
                 <AuctionBadge status={a.status} />
                 {a.mode === "league" && <span className="chip bg-violet-100 text-violet-800">League</span>}
+                {a.visibility !== "public" && <span className="chip bg-stone-100 text-stone-700">{visibilityLabel[a.visibility]}</span>}
                 <span className="text-xs text-stone-500">{a.lots[0]?.count ?? 0} lots</span>
               </div>
               <p className="mt-1 font-semibold">{a.title}</p>
@@ -110,6 +123,11 @@ export function HostDashboard() {
             <Link to={`/a/${a.id}`} className="btn-primary">
               Open room
             </Link>
+            {canDelete(a.status) && (
+              <button className="btn-ghost text-red-600" onClick={() => void remove(a)} aria-label={`Delete ${a.title}`}>
+                Delete
+              </button>
+            )}
           </div>
         ))}
       </div>

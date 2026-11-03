@@ -30,8 +30,6 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
     ]);
     if (a.error || l.error) {
       setError(errorMessage(a.error ?? l.error));
-    } else if (!a.data) {
-      setError("Auction not found");
     } else {
       setError(null);
     }

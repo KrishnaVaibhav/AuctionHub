@@ -16,6 +16,8 @@ import { Countdown } from "../components/Countdown";
 import { BidLog } from "../components/BidLog";
 import { Results } from "../components/Results";
 import { LeagueRoom } from "../components/league/LeagueRoom";
+import { PrivateGate } from "../components/PrivateGate";
+import { visibilityLabel } from "../lib/auctions";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
 
@@ -23,14 +25,15 @@ export function AuctionRoom() {
   const { id } = useParams();
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
-  const { auction, lots, media, moderatorIds, loading, error } = useAuctionRoom(id);
+  const { auction, lots, media, moderatorIds, loading, error, reload } = useAuctionRoom(id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [params] = useSearchParams();
   const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
   const [hostError, setHostError] = useState<string | null>(null);
 
   if (loading) return <RoomSkeleton />;
-  if (error || !auction) return <p className="text-sm text-red-600">{error ?? "Auction not found"}</p>;
+  if (!auction) return id ? <PrivateGate auctionId={id} onJoined={reload} /> : null;
+  if (error) return <p className="text-sm text-red-600">{error}</p>;
 
   const isHost = userId === auction.host_id;
   const isStaff = isHost || (userId != null && moderatorIds.includes(userId));
@@ -67,6 +70,7 @@ export function AuctionRoom() {
           <div className="flex flex-wrap items-center gap-2">
             <AuctionBadge status={auction.status} />
             {auction.mode === "league" && <span className="chip bg-violet-100 text-violet-800">Team league</span>}
+            {auction.visibility !== "public" && <span className="chip bg-stone-900 text-white">{visibilityLabel[auction.visibility]}</span>}
             {auction.status === "scheduled" && <span className="text-sm text-stone-500">Starts {dateTime(auction.starts_at)}</span>}
             {auction.status === "live" && auction.mode !== "league" && auction.ends_at && (
               <span className="text-sm text-stone-500">

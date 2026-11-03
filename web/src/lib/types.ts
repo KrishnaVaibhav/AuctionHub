@@ -40,6 +40,7 @@ export interface Auction {
   description: string;
   status: AuctionStatus;
   mode: "standard" | "league";
+  visibility: "public" | "unlisted" | "private";
   starts_at: string | null;
   ends_at: string | null;
   paused_at: string | null;
