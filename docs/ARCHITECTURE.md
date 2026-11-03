@@ -55,6 +55,24 @@ People join a private auction through `join_private_auction(id, code)`. The invi
 
 `auction_visible()` is the single rule behind every read policy. Bids, chat and league teams also run a trigger guard for private auctions. `auction_preview()` returns just the title, cover and host, so the invite page can show something before joining.
 
+## Engagement, discovery and host tools
+
+- **Notifications** (`notifications`) are created only by database triggers and cron:
+  - outbid, won, sold or unsold (lot update trigger)
+  - auction live: sent to followers, watchers, private members and league teams
+  - deal-chat messages
+  - watched lot closing within 5 minutes (cron every minute)
+
+  Each notification is created once, read ones are removed after 30 days and all after 90. The bell receives them live, and shows system pop-ups while the app is open and permission is granted.
+- **PWA:** `public/manifest.webmanifest` and `public/sw.js`. Pages are fetched from the network first with an offline fallback. Hashed assets are cached first. Supabase traffic is never cached.
+- **Discovery:** `auctions.category` and `tags`, `follows`, and the `/u/:username` page backed by `public_profile()`. `ratings` are written only through `rate_trade()`: the buyer rates the seller and the host rates the buyer, once per sale and editable.
+- **Host tools:**
+  - CSV import is parsed in the browser (`lib/csv.ts`), then rows are inserted in batches.
+  - `duplicate_auction()` copies settings, lots and reserves, but not photos.
+  - `auction_analytics()` is available to the host or an admin.
+- **Safety:** the `chat_zfilter` trigger blocks links for non-staff (unless `settings.chat.allow_links`) and masks words from `blocked_words`. `admin_fraud_signals()` reports shared IPs between bidder and host, single-host bidders who never win, frequent bidding pairs, bid bursts and brand-new accounts winning.
+- **Search engines:** the Worker serves `robots.txt` and a `sitemap.xml` covering public auctions and hosts.
+
 ## Platform admin
 
 - Rows in `platform_admins` can only be added with direct SQL. There is no UI or RPC for it, and clients have no grants on the table:
