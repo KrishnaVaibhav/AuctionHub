@@ -40,8 +40,9 @@ export function Privacy() {
 
       <h2>What other users can see</h2>
       <p>
-        Your display name, avatar, bids, chat messages and uploaded media are visible to other users of the auction. Your email
-        address and your auto-bid maximums are not.
+        Your display name, avatar, bids, chat messages and uploaded media are visible to other users of the auction. Your auto-bid
+        maximums are never shown. Your email address is hidden from other users, except that the host of an auction can see the
+        email of the winner of each lot they sold, so they can arrange payment and delivery.
       </p>
 
       <h2>Google sign-in</h2>

@@ -1,7 +1,7 @@
 -- pgTAP tests for the bid engine, lifecycle and RLS. Run: npx supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(37);
 
 -- Fixtures: host (…01), Alice (…0a), Bob (…0b)
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -9,7 +9,9 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'alice@test.dev', '{"display_name":"Alice"}'),
   ('00000000-0000-0000-0000-00000000000b', 'bob@test.dev', '{"display_name":"Bob"}');
 
-select is((select count(*)::int from public.profiles), 3, 'signup trigger creates profiles');
+select is((select count(*)::int from public.profiles where id in (
+  '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b')),
+  3, 'signup trigger creates profiles');
 
 -- ---------------------------------------------------------------------------
 -- Host creates an auction with two lots (RLS + column grants as authenticated)
@@ -112,6 +114,24 @@ update public.lots set ends_at = now() - interval '1 second' where id = '2000000
 select public.run_auction_jobs();
 select is((select status::text from public.lots where id = '20000000-0000-0000-0000-000000000002'), 'unsold', 'lamp unsold: reserve not met');
 select is((select status::text from public.auctions where id = '10000000-0000-0000-0000-000000000001'), 'ended', 'auction ends when all lots close');
+
+-- ---------------------------------------------------------------------------
+-- Results (host) and activity (bidder)
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-000000000001","role":"authenticated"}';
+select is((select count(*)::int from public.auction_results('10000000-0000-0000-0000-000000000001')), 2,
+  'host sees all lot results');
+select is((select winner_email from public.auction_results('10000000-0000-0000-0000-000000000001') where title = 'Watch'),
+  'alice@test.dev', 'host sees winner email for sold lot');
+select is((select winner_email from public.auction_results('10000000-0000-0000-0000-000000000001') where title = 'Lamp'),
+  null, 'no email for unsold lot');
+
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}';
+select throws_ok($$select * from public.auction_results('10000000-0000-0000-0000-000000000001')$$,
+  'P0001', 'Only the host can see results', 'bidder cannot see results');
+select is((select count(*)::int from public.my_lots()), 2, 'bidder sees lots they bid on');
+reset role;
 
 select * from finish();
 rollback;

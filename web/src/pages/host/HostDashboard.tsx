@@ -88,6 +88,11 @@ export function HostDashboard() {
               <p className="mt-1 font-semibold">{a.title}</p>
               <p className="text-xs text-stone-500">Starts {dateTime(a.starts_at)}</p>
             </div>
+            {["live", "paused", "ended"].includes(a.status) && (
+              <Link to={`/a/${a.id}?tab=results`} className="btn-ghost">
+                Results
+              </Link>
+            )}
             <Link to={`/host/a/${a.id}`} className="btn-ghost">
               Edit
             </Link>

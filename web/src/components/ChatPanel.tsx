@@ -104,7 +104,7 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
   const pinned = visible.filter((m) => m.pinned);
 
   return (
-    <div className="card flex h-[32rem] flex-col">
+    <div className="card flex h-[70dvh] flex-col lg:h-[calc(100dvh-8rem)] lg:max-h-[44rem]">
       <div className="border-b border-stone-200 px-4 py-3">
         <h2 className="font-semibold">Live chat</h2>
       </div>
