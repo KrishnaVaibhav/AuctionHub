@@ -16,3 +16,8 @@ export function errorMessage(err: unknown): string {
   if (typeof err === "object" && "message" in err && typeof err.message === "string") return err.message;
   return "Something went wrong";
 }
+
+/** Unique realtime channel name per subscription (same component may mount twice, e.g. desktop + mobile). */
+export function channelName(base: string): string {
+  return `${base}:${Math.random().toString(36).slice(2, 10)}`;
+}

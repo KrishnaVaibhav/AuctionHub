@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "./supabase";
+import { supabase, channelName } from "./supabase";
 import type { LeagueTeam } from "./types";
 
 /** League teams for an auction, kept live via Realtime (purse changes, joins, leaves). */
@@ -15,7 +15,7 @@ export function useLeagueTeams(auctionId: string | undefined, enabled: boolean) 
   useEffect(() => {
     if (!auctionId || !enabled) return;
     const channel = supabase
-      .channel(`teams:${auctionId}`)
+      .channel(channelName(`teams:${auctionId}`))
       .on("postgres_changes", { event: "*", schema: "public", table: "league_teams", filter: `auction_id=eq.${auctionId}` }, () => void reload())
       .subscribe((s) => s === "SUBSCRIBED" && void reload());
     return () => {

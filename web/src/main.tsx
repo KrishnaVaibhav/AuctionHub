@@ -7,9 +7,12 @@ import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
+import { RouteError } from "./components/RouteError";
 import { initMonitoring } from "./lib/monitoring";
+import { registerServiceWorker } from "./lib/notifications";
 
 initMonitoring();
+registerServiceWorker();
 
 // Route-level code splitting: each page downloads only when visited.
 const Login = lazy(() => import("./pages/Login").then((m) => ({ default: m.Login })));
@@ -30,6 +33,7 @@ const page = (el: ReactNode) => (
 const router = createBrowserRouter([
   {
     element: <Layout />,
+    errorElement: <RouteError />,
     children: [
       { path: "/", element: <Home /> },
       { path: "/login", element: page(<Login />) },

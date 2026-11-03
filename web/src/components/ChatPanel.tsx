@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { supabase, errorMessage } from "../lib/supabase";
+import { supabase, errorMessage, channelName } from "../lib/supabase";
 import { useProfileNames } from "../lib/profiles";
 import type { Auction, ChatMessage } from "../lib/types";
 
@@ -36,7 +36,7 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
     };
 
     const channel = supabase
-      .channel(`chat:${auction.id}`)
+      .channel(channelName(`chat:${auction.id}`))
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", filter: `auction_id=eq.${auction.id}` },

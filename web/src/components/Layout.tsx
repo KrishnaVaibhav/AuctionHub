@@ -5,6 +5,7 @@ import { supabaseConfigured } from "../lib/supabase";
 import { Avatar } from "./Avatar";
 import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
 import { useIsAdmin } from "../lib/admin";
+import { NotificationBell } from "./NotificationBell";
 
 export function Layout() {
   const { session, profile, signOut } = useAuth();
@@ -48,6 +49,7 @@ export function Layout() {
           </nav>
 
           <div className="ml-auto hidden items-center gap-2 md:flex">
+            <NotificationBell />
             <ThemeToggle />
             {session ? (
               <>
@@ -66,7 +68,8 @@ export function Layout() {
             )}
           </div>
 
-          <div className="ml-auto md:hidden">
+          <div className="ml-auto flex items-center md:hidden">
+            <NotificationBell />
             <ThemeToggle />
           </div>
           <button

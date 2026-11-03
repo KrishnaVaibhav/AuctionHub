@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { supabase, errorMessage } from "../lib/supabase";
+import { supabase, errorMessage, channelName } from "../lib/supabase";
 
 interface DealMessage {
   id: number;
@@ -39,7 +39,7 @@ export function DealChat({
       setMessages((data as DealMessage[] | null) ?? []);
     };
     const channel = supabase
-      .channel(`deal:${lotId}`)
+      .channel(channelName(`deal:${lotId}`))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "deal_messages", filter: `lot_id=eq.${lotId}` }, (p) =>
         setMessages((prev) => (prev.some((m) => m.id === (p.new as DealMessage).id) ? prev : [...prev, p.new as DealMessage])),
       )

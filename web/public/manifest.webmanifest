@@ -1,0 +1,22 @@
+{
+  "name": "AuctionHub",
+  "short_name": "AuctionHub",
+  "description": "Live auctions with real-time bidding, chat and team leagues.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f0e0d",
+  "theme_color": "#0f0e0d",
+  "orientation": "any",
+  "categories": ["shopping", "entertainment", "sports"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Live auctions", "url": "/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My bids", "url": "/me", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Host", "url": "/host", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

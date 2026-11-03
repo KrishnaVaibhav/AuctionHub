@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase, errorMessage } from "./supabase";
+import { supabase, errorMessage, channelName } from "./supabase";
 import type { Auction, Lot, LotMedia } from "./types";
 
 export interface AuctionRoomData {
@@ -65,7 +65,7 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
   useEffect(() => {
     if (!auctionId) return;
     const channel = supabase
-      .channel(`room:${auctionId}`)
+      .channel(channelName(`room:${auctionId}`))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "auctions", filter: `id=eq.${auctionId}` }, (p) =>
         setAuction((prev) => (prev ? { ...prev, ...(p.new as Auction) } : (p.new as Auction))),
       )

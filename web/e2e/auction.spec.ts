@@ -73,3 +73,21 @@ test("watchlist: star a lot and see it under My bids > Watching", async ({ page 
   await page.getByRole("button", { name: "Watching" }).click();
   await expect(page.getByText("Test lot")).toBeVisible();
 });
+
+test("notifications: outbid alert appears in the bell in real time", async ({ page }) => {
+  const host = await createUser("nhost");
+  const me = await createUser("nme");
+  const rival = await createUser("nrival");
+  const { auctionId, lotId } = await liveAuction(host, { title: `Notify ${Date.now()}`, startPrice: 100 });
+  await rpc(me, "place_bid", { p_lot_id: lotId, p_amount: 100 });
+
+  await uiLogin(page, me, "/");
+  await expect(page.getByRole("button", { name: /^Notifications/ }).first()).toBeVisible();
+  await rpc(rival, "place_bid", { p_lot_id: lotId, p_amount: 110 });
+
+  const bell = page.getByRole("button", { name: /Notifications, 1 unread/ }).first();
+  await expect(bell).toBeVisible();
+  await bell.click();
+  await page.getByText(/Outbid on "Test lot"/).click();
+  await expect(page).toHaveURL(new RegExp(`/a/${auctionId}`));
+});

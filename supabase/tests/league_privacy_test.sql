@@ -45,7 +45,7 @@ select throws_ok($$select public.start_auction('30000000-0000-0000-0000-00000000
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a3","role":"authenticated"}';
 select lives_ok($$select public.join_league('30000000-0000-0000-0000-000000000001', 'Team Two', 'TWO')$$, 'team two joins');
-select is((select purse_left from public.league_teams where short_name = 'TWO'), 1000.00::numeric(14,2), 'team starts with full purse');
+select is((select purse_left from public.league_teams where short_name = 'TWO' and auction_id = '30000000-0000-0000-0000-000000000001'), 1000.00::numeric(14,2), 'team starts with full purse');
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
 select lives_ok($$select public.start_auction('30000000-0000-0000-0000-000000000001')$$, 'league starts');
@@ -80,7 +80,7 @@ set local role anon;
 select lives_ok($$select public.league_tick('30000000-0000-0000-0000-000000000001')$$, 'anyone can tick');
 reset role;
 select is((select status::text from public.lots where id = '40000000-0000-0000-0000-000000000001'), 'sold', 'player sold on timer');
-select is((select purse_left from public.league_teams where short_name = 'TWO'), 700.00::numeric(14,2), 'price deducted from purse');
+select is((select purse_left from public.league_teams where short_name = 'TWO' and auction_id = '30000000-0000-0000-0000-000000000001'), 700.00::numeric(14,2), 'price deducted from purse');
 select is((select status::text from public.lots where id = '40000000-0000-0000-0000-000000000002'), 'open', 'next player on the block');
 
 -- Player B unsold, then requeued
