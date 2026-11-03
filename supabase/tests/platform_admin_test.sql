@@ -1,12 +1,12 @@
 -- pgTAP tests: platform super admin sees everything; nobody else can.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(18);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000c1', 'owner@test.dev', '{}'),
   ('00000000-0000-0000-0000-0000000000c2', 'host3@test.dev', '{}'),
-  ('00000000-0000-0000-0000-0000000000c3', 'user3@test.dev', '{}');
+  ('00000000-0000-0000-0000-0000000000c3', 'user3@test.dev', '{"full_name":"Real Name","avatar_url":"https://example.com/p.jpg"}');
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-0000000000c1');
 
 -- Host makes a private draft with a secret reserve; user stores private contact info
@@ -38,6 +38,7 @@ select is((select phone from public.contact_settings where user_id = '00000000-0
 select ok((public.admin_overview() ->> 'users')::int >= 3, 'overview counts users');
 select is((select email from public.admin_users('host3') limit 1), 'host3@test.dev', 'admin searches users by email');
 select is((public.admin_user_detail('00000000-0000-0000-0000-0000000000c3') -> 'contact' ->> 'phone'), '+91 1', 'user detail includes contact');
+select is((select provider_avatar from public.admin_users('Real Name') limit 1), 'https://example.com/p.jpg', 'admin sees sign-in provider photo');
 
 -- Moderation is audited
 select lives_ok($$select public.admin_set_ban('00000000-0000-0000-0000-0000000000c3', now() + interval '1 day', 'spam')$$, 'admin bans user');

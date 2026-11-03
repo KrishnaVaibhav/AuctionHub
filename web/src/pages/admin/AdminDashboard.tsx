@@ -236,6 +236,9 @@ interface AdminUser {
   display_name: string | null;
   avatar_url: string | null;
   provider: string;
+  provider_name: string | null;
+  provider_avatar: string | null;
+  phone: string | null;
   created_at: string;
   last_sign_in_at: string | null;
   email_confirmed: boolean;
@@ -249,6 +252,29 @@ interface AdminUser {
 }
 
 const PAGE = 50;
+
+function ProviderPhoto({ url, name, size }: { url: string | null; name: string | null; size: number }) {
+  const [broken, setBroken] = useState(false);
+  if (!url || broken) {
+    return (
+      <span style={{ width: size, height: size }} className="inline-flex shrink-0 items-center justify-center rounded-full bg-stone-100 text-[10px] text-stone-400">
+        {url ? "error" : "none"}
+      </span>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer" title={name ?? "Sign-in photo"}>
+      <img
+        src={url}
+        alt=""
+        referrerPolicy="no-referrer"
+        onError={() => setBroken(true)}
+        style={{ width: size, height: size }}
+        className="shrink-0 rounded-full object-cover ring-1 ring-stone-200"
+      />
+    </a>
+  );
+}
 
 function Users() {
   const [search, setSearch] = useState("");
@@ -271,9 +297,10 @@ function Users() {
       <input className="input max-w-md" type="search" placeholder="Search email, username, name or user id..." value={search} onChange={(e) => setSearch(e.target.value)} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[56rem] text-sm">
+        <table className="w-full min-w-[62rem] text-sm">
           <thead className="text-left text-[11px] tracking-wider text-stone-500 uppercase">
             <tr>
+              <th className="px-4 py-2.5">Sign-in photo</th>
               <th className="px-4 py-2.5">User</th>
               <th className="px-4 py-2.5">Email</th>
               <th className="px-4 py-2.5">Joined</th>
@@ -289,12 +316,16 @@ function Users() {
               const banned = u.banned_until && new Date(u.banned_until) > new Date();
               return (
                 <tr key={u.id} className="cursor-pointer hover:bg-stone-50" onClick={() => setSelected(u.id)}>
+                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
+                    <ProviderPhoto url={u.provider_avatar} name={u.provider_name} size={36} />
+                  </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <Avatar name={u.display_name} url={u.avatar_url} size={28} />
                       <div className="min-w-0">
                         <p className="truncate font-medium">{u.display_name ?? "(no profile)"}</p>
                         <p className="truncate text-xs text-stone-500">@{u.username}</p>
+                        {u.provider_name && <p className="truncate text-xs text-stone-600">Real name: {u.provider_name}</p>}
                       </div>
                     </div>
                   </td>
@@ -303,6 +334,7 @@ function Users() {
                     <p className="text-xs text-stone-500">
                       {u.provider}
                       {!u.email_confirmed && " · unconfirmed"}
+                      {u.phone && ` · ${u.phone}`}
                     </p>
                   </td>
                   <td className="px-4 py-2.5 text-xs text-stone-500">{ago(u.created_at)}</td>
@@ -379,9 +411,11 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
       <div className="h-full w-full max-w-2xl animate-rise overflow-y-auto bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Avatar name={String(profile.display_name ?? "?")} url={(profile.avatar_url as string) ?? null} size={48} />
+            <ProviderPhoto url={(data?.provider_avatar as string) ?? null} name={(data?.provider_name as string) ?? null} size={64} />
+            <Avatar name={String(profile.display_name ?? "?")} url={(profile.avatar_url as string) ?? null} size={40} />
             <div>
               <p className="font-display text-xl font-bold">{String(profile.display_name ?? "(no profile)")}</p>
+              {typeof data?.provider_name === "string" && <p className="text-sm">Real name: {data.provider_name}</p>}
               <p className="text-sm text-stone-500">
                 {String(account.email ?? "")} · @{String(profile.username ?? "")}
               </p>
@@ -416,6 +450,38 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
 
         <Section title="Account">
           <pre className="overflow-x-auto rounded-xl bg-stone-100 p-3 text-xs">{JSON.stringify(account, null, 2)}</pre>
+        </Section>
+        <Section title={`Sign-in methods (${list("identities").length})`}>
+          {list("identities").map((i, n) => (
+            <div key={n} className="py-2">
+              <p className="text-sm font-medium">
+                {String(i.provider)} · {String(i.email ?? "")} · last used {ago(String(i.last_sign_in_at ?? ""))}
+              </p>
+              <pre className="mt-1 overflow-x-auto rounded-xl bg-stone-100 p-3 text-xs">{JSON.stringify(i.data, null, 2)}</pre>
+            </div>
+          ))}
+        </Section>
+        <Section title={`Sessions (${list("sessions").length})`}>
+          {list("sessions").map((x, n) => (
+            <p key={n} className="py-1.5 text-xs">
+              <span className="font-mono">{String(x.ip ?? "no ip")}</span> · {String(x.user_agent ?? "unknown device")}
+              <span className="block text-stone-500">
+                started {dateTime(String(x.created_at))} · last active {ago(String(x.refreshed_at ?? x.updated_at ?? x.created_at))}
+              </span>
+            </p>
+          ))}
+        </Section>
+        <Section title={`Sign-in history (${list("auth_events").length})`}>
+          {list("auth_events").map((e, n) => (
+            <p key={n} className="flex justify-between gap-2 py-1 text-xs">
+              <span>
+                {String(e.action)} {e.provider ? `(${String(e.provider)})` : ""}
+              </span>
+              <span className="text-stone-500">
+                {String(e.ip ?? "")} · {dateTime(String(e.at))}
+              </span>
+            </p>
+          ))}
         </Section>
         <Section title="Private contact settings">
           <pre className="overflow-x-auto rounded-xl bg-stone-100 p-3 text-xs">{JSON.stringify(data?.contact ?? null, null, 2)}</pre>
@@ -461,6 +527,16 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
           {list("chat").map((c) => (
             <p key={String(c.id)} className={`py-1 text-sm ${c.deleted ? "text-stone-400 line-through" : ""}`}>
               {String(c.body)} <span className="text-xs text-stone-500">· {ago(String(c.created_at))}</span>
+            </p>
+          ))}
+        </Section>
+        <Section title={`Support requests (${list("support").length})`}>
+          {list("support").map((r) => (
+            <p key={String(r.id)} className="py-1 text-sm">
+              <span className="text-stone-500">
+                [{String(r.category)} · {String(r.status)}]
+              </span>{" "}
+              {String(r.message)}
             </p>
           ))}
         </Section>
