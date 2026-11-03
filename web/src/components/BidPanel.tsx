@@ -1,0 +1,218 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router";
+import { supabase, errorMessage } from "../lib/supabase";
+import { bidIncrement, minNextBid, round2 } from "../lib/bidding";
+import { money } from "../lib/format";
+import { useProfileNames } from "../lib/profiles";
+import type { Auction, Bid, BidResult, Lot } from "../lib/types";
+import { Countdown } from "./Countdown";
+import { LotBadge } from "./StatusBadge";
+
+interface Props {
+  auction: Auction;
+  lot: Lot;
+  userId: string | null;
+  isHost: boolean;
+}
+
+export function BidPanel({ auction, lot, userId, isHost }: Props) {
+  const settings = auction.settings;
+  const minBid = minNextBid(lot, settings);
+  const [amount, setAmount] = useState(String(minBid));
+  const [maxAmount, setMaxAmount] = useState("");
+  const [myMax, setMyMax] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [bids, setBids] = useState<Bid[]>([]);
+  const names = useProfileNames([lot.current_winner_id, ...bids.map((b) => b.bidder_id)]);
+
+  const canBid = auction.status === "live" && lot.status === "open" && !isHost;
+  const leading = userId != null && lot.current_winner_id === userId;
+
+  // Keep the suggested amount at least the minimum as the price moves.
+  useEffect(() => {
+    setAmount((prev) => (Number(prev) < minBid ? String(minBid) : prev));
+  }, [minBid]);
+
+  // Reset the form when switching lots.
+  const [shownLot, setShownLot] = useState(lot.id);
+  if (shownLot !== lot.id) {
+    setShownLot(lot.id);
+    setAmount(String(minBid));
+    setMaxAmount("");
+    setFeedback(null);
+  }
+
+  // Refresh bid history + my proxy ceiling whenever the lot's bid count changes.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase.from("bids").select("*").eq("lot_id", lot.id).order("id", { ascending: false }).limit(15);
+      if (!cancelled) setBids((data as Bid[] | null) ?? []);
+      if (userId) {
+        const { data: pb } = await supabase
+          .from("proxy_bids")
+          .select("max_amount")
+          .eq("lot_id", lot.id)
+          .eq("bidder_id", userId)
+          .maybeSingle();
+        if (!cancelled) setMyMax(pb ? Number(pb.max_amount) : null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [lot.id, lot.bid_count, userId]);
+
+  async function placeBid(e?: FormEvent, override?: number) {
+    e?.preventDefault();
+    const value = round2(override ?? Number(amount));
+    const max = maxAmount ? round2(Number(maxAmount)) : null;
+    if (!leading && (!Number.isFinite(value) || value < minBid)) {
+      setFeedback({ ok: false, text: `Minimum bid is ${money(minBid, settings)}` });
+      return;
+    }
+    if (max != null && max < value) {
+      setFeedback({ ok: false, text: "Auto-bid maximum must be at least your bid" });
+      return;
+    }
+    setBusy(true);
+    setFeedback(null);
+    const { data, error } = await supabase.rpc("place_bid", {
+      p_lot_id: lot.id,
+      p_amount: leading ? Number(lot.current_bid) : value,
+      p_max_amount: max,
+    });
+    setBusy(false);
+    if (error) {
+      setFeedback({ ok: false, text: errorMessage(error) });
+      return;
+    }
+    const res = data as BidResult;
+    setMaxAmount("");
+    if (res.status === "leading") setFeedback({ ok: true, text: `You're the highest bidder at ${money(res.current_bid, settings)}` });
+    else if (res.status === "max_raised") setFeedback({ ok: true, text: `Auto-bid maximum raised to ${money(res.max_amount, settings)}` });
+    else setFeedback({ ok: false, text: `Outbid by an auto-bid. Current price ${money(res.current_bid, settings)}` });
+  }
+
+  async function buyNow() {
+    if (!lot.buy_now_price) return;
+    if (!window.confirm(`Buy "${lot.title}" now for ${money(lot.buy_now_price, settings)}?`)) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("buy_now", { p_lot_id: lot.id });
+    setBusy(false);
+    setFeedback(error ? { ok: false, text: errorMessage(error) } : { ok: true, text: "You bought this lot!" });
+  }
+
+  const step = bidIncrement(Number(lot.current_bid ?? lot.start_price), settings);
+  const quick = [minBid, round2(minBid + step), round2(minBid + step * 4)];
+
+  return (
+    <div className="card space-y-4 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
+            {lot.current_bid == null ? "Starting price" : "Current bid"}
+          </p>
+          <p className="text-3xl font-bold tabular-nums">{money(lot.current_bid ?? lot.start_price, settings)}</p>
+          <p className="mt-1 text-sm text-stone-500">
+            {lot.bid_count} bid{lot.bid_count === 1 ? "" : "s"}
+            {lot.current_winner_id && <> · leader {leading ? "you" : (names.get(lot.current_winner_id) ?? "...")}</>}
+            {!lot.reserve_met && <span className="ml-2 font-medium text-amber-700">Reserve not met</span>}
+          </p>
+        </div>
+        <div className="text-right">
+          <LotBadge status={lot.status} />
+          {lot.status === "open" && (
+            <p className="mt-2 text-2xl font-semibold">
+              <Countdown endsAt={auction.status === "paused" ? null : lot.ends_at} />
+              {auction.status === "paused" && <span className="text-base text-amber-700">Paused</span>}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {leading && lot.status === "open" && (
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+          You're winning{myMax ? ` · auto-bid up to ${money(myMax, settings)}` : ""}
+        </p>
+      )}
+
+      {!userId && lot.status === "open" && (
+        <Link to={`/login?next=/a/${auction.id}`} className="btn-primary w-full">
+          Sign in to bid
+        </Link>
+      )}
+
+      {userId && canBid && (
+        <form onSubmit={placeBid} className="space-y-3">
+          {!leading && (
+            <div className="grid grid-cols-3 gap-2">
+              {quick.map((q) => (
+                <button key={q} type="button" className="btn-ghost px-2" disabled={busy} onClick={() => void placeBid(undefined, q)}>
+                  {money(q, settings)}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            {!leading && (
+              <div>
+                <label className="label" htmlFor="amt">
+                  Your bid
+                </label>
+                <input id="amt" className="input" type="number" min={minBid} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              </div>
+            )}
+            <div className={leading ? "col-span-2" : ""}>
+              <label className="label" htmlFor="max">
+                {leading ? "Raise auto-bid max" : "Auto-bid max (optional)"}
+              </label>
+              <input
+                id="max"
+                className="input"
+                type="number"
+                step="0.01"
+                placeholder="e.g. 5000"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                required={leading}
+              />
+            </div>
+          </div>
+          <button className="btn-accent w-full py-3 text-base" disabled={busy}>
+            {busy ? "Placing..." : leading ? "Update auto-bid" : `Bid ${money(Number(amount) || minBid, settings)}`}
+          </button>
+          {lot.buy_now_price && lot.bid_count === 0 && (
+            <button type="button" className="btn-primary w-full" disabled={busy} onClick={() => void buyNow()}>
+              Buy now for {money(lot.buy_now_price, settings)}
+            </button>
+          )}
+        </form>
+      )}
+
+      {isHost && lot.status === "open" && <p className="text-sm text-stone-500">You're the host. Hosts can't bid.</p>}
+
+      {feedback && <p className={`text-sm font-medium ${feedback.ok ? "text-emerald-700" : "text-red-600"}`}>{feedback.text}</p>}
+
+      <div>
+        <h3 className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">Bid history</h3>
+        {bids.length === 0 ? (
+          <p className="text-sm text-stone-400">No bids yet.</p>
+        ) : (
+          <ul className="max-h-56 divide-y divide-stone-100 overflow-y-auto text-sm">
+            {bids.map((b) => (
+              <li key={b.id} className="flex items-center justify-between py-1.5">
+                <span>
+                  {b.bidder_id === userId ? "You" : (names.get(b.bidder_id) ?? "Bidder")}
+                  {b.is_auto && <span className="ml-1.5 rounded bg-stone-100 px-1 text-[10px] text-stone-500">AUTO</span>}
+                </span>
+                <span className="font-medium tabular-nums">{money(b.amount, settings)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
