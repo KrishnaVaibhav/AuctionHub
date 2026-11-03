@@ -3,6 +3,7 @@ import { useAuth } from "../lib/auth";
 import { supabase, errorMessage } from "../lib/supabase";
 import { uploadMedia } from "../lib/media";
 import { Avatar } from "../components/Avatar";
+import { ThemeSegmented } from "../components/ThemeToggle";
 
 export function Account() {
   const { session, profile, refreshProfile } = useAuth();
@@ -101,6 +102,14 @@ export function Account() {
             Save profile
           </button>
         </form>
+      </section>
+
+      <section className="card space-y-3 p-5">
+        <div>
+          <h2 className="font-semibold">Appearance</h2>
+          <p className="text-sm text-stone-500">System follows your device's light or dark setting.</p>
+        </div>
+        <ThemeSegmented />
       </section>
 
       <ContactPrivacy userId={profile.id} email={session.user.email ?? ""} />

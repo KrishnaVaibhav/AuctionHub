@@ -298,7 +298,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
               <img src={publicUrl("lot-media", m.path)} alt="" className="h-full w-full object-cover" />
             )}
             <button
-              className="absolute top-1 right-1 hidden rounded bg-black/70 px-1.5 text-xs text-white group-hover:block"
+              className="absolute top-1 right-1 hidden rounded bg-black/70 px-1.5 text-xs text-snow group-hover:block"
               onClick={() => void removeMedia(m)}
               disabled={busy}
             >

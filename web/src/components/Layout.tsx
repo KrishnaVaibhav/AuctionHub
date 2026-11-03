@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { useAuth } from "../lib/auth";
 import { supabaseConfigured } from "../lib/supabase";
 import { Avatar } from "./Avatar";
+import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
 
 export function Layout() {
   const { session, profile, signOut } = useAuth();
@@ -44,6 +45,7 @@ export function Layout() {
           </nav>
 
           <div className="ml-auto hidden items-center gap-2 md:flex">
+            <ThemeToggle />
             {session ? (
               <>
                 <Link to="/account" className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 hover:bg-stone-100">
@@ -61,8 +63,11 @@ export function Layout() {
             )}
           </div>
 
+          <div className="ml-auto md:hidden">
+            <ThemeToggle />
+          </div>
           <button
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl hover:bg-stone-100 md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-stone-100 md:hidden"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Menu"
             aria-expanded={menuOpen}
@@ -88,6 +93,9 @@ export function Layout() {
               )}
             </nav>
             <div className="mt-3 border-t border-stone-100 pt-3">
+              <ThemeSegmented />
+            </div>
+            <div className="mt-3 border-t border-stone-100 pt-3">
               {session ? (
                 <button className="btn-ghost w-full" onClick={() => void signOut()}>
                   Sign out
@@ -103,7 +111,7 @@ export function Layout() {
       </header>
 
       {!supabaseConfigured && (
-        <div className="bg-red-600 px-4 py-2 text-center text-sm text-white">
+        <div className="bg-red-600 px-4 py-2 text-center text-sm text-snow">
           Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
         </div>
       )}

@@ -105,7 +105,7 @@ export function MyActivity() {
                     {r.is_leader ? "Winning" : "Outbid"}
                   </span>
                 ) : r.status === "sold" && r.is_leader ? (
-                  <span className="chip bg-brand-400 text-stone-950">You won</span>
+                  <span className="chip bg-brand-400 text-black">You won</span>
                 ) : (
                   <LotBadge status={r.status} />
                 )}

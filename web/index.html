@@ -4,10 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Host and join live auctions with real-time bidding and chat." />
+    <meta name="theme-color" content="#fafaf9" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          var dark = t === "dark" || (t !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) {
+            document.documentElement.classList.add("dark");
+            document.querySelector('meta[name="theme-color"]').setAttribute("content", "#0f0e0d");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>AuctionHub</title>
   </head>
-  <body class="bg-stone-50 text-stone-900 antialiased">
+  <body class="text-stone-900 antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

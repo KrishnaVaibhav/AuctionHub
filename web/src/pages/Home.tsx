@@ -68,25 +68,25 @@ export function Home() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-3xl bg-stone-950 px-6 py-10 text-white sm:px-10 sm:py-14">
+      <section className="relative overflow-hidden rounded-3xl bg-ink px-6 py-10 text-snow ring-1 ring-transparent sm:px-10 sm:py-14 dark:ring-snow/10">
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-brand-500/30 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-rose-500/20 blur-3xl" />
         <div className="relative max-w-2xl">
-          <span className="chip bg-white/10 text-brand-300">
+          <span className="chip bg-snow/10 text-brand-300">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
             {counts.live} live now
           </span>
           <h1 className="mt-4 font-display text-4xl leading-[1.05] font-extrabold tracking-tight sm:text-5xl">
             Bid live. Chat with the room. <span className="text-brand-400">Win the lot.</span>
           </h1>
-          <p className="mt-4 max-w-xl text-stone-300">
+          <p className="mt-4 max-w-xl text-snow/70">
             Real-time auctions with auto-bidding, anti-sniping and live streams. Join one, or host your own in minutes.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <button className="btn-accent px-5 py-3" onClick={() => setTab("live")}>
               Browse live auctions
             </button>
-            <Link to="/host" className="btn border border-white/20 px-5 py-3 text-white hover:bg-white/10">
+            <Link to="/host" className="btn border border-snow/20 px-5 py-3 text-snow hover:bg-snow/10">
               Host an auction
             </Link>
           </div>
@@ -191,7 +191,7 @@ function AuctionCard({ a }: { a: Row }) {
         <Cover a={a} className="aspect-[4/3] w-full" />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <AuctionBadge status={a.status} />
-          {a.mode === "league" && <span className="chip bg-violet-600 text-white">League</span>}
+          {a.mode === "league" && <span className="chip bg-violet-600 text-snow">League</span>}
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-4">

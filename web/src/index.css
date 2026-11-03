@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Dark mode: class on <html>, set before first paint by the inline script in index.html. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -11,6 +14,10 @@
   --color-brand-500: #f59e0b;
   --color-brand-600: #d97706;
   --color-brand-700: #b45309;
+  --color-brand-800: #92400e;
+  /* Fixed colours that never flip with the theme (text on always-dark or coloured surfaces). */
+  --color-snow: #ffffff;
+  --color-ink: #0c0a09;
   --animate-flash: flash 1.2s ease-out;
   --animate-rise: rise 0.35s ease-out both;
 
@@ -49,11 +56,74 @@
   html {
     -webkit-tap-highlight-color: transparent;
   }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
     background:
       radial-gradient(60rem 30rem at 100% -10%, rgb(251 191 36 / 0.08), transparent 60%),
       radial-gradient(50rem 30rem at -10% 0%, rgb(120 113 108 / 0.08), transparent 60%),
-      #fafaf9;
+      var(--color-stone-50);
+    transition: background-color 200ms, color 200ms;
+  }
+
+  /*
+   * Dark theme by palette swap: the neutral scale is inverted and "white"
+   * becomes the card surface, so every existing stone and white utility keeps
+   * its contrast relationship. Tinted 50-200 backgrounds become translucent
+   * and 700-900 text tones become light, so chips and notices stay readable.
+   */
+  .dark {
+    --color-white: #1a1816;
+    --color-stone-50: #0f0e0d;
+    --color-stone-100: #201d1b;
+    --color-stone-200: #2e2a27;
+    --color-stone-300: #423d39;
+    --color-stone-400: #6f6862;
+    --color-stone-500: #a39b94;
+    --color-stone-600: #c2bbb4;
+    --color-stone-700: #d8d2cc;
+    --color-stone-800: #e9e5e1;
+    --color-stone-900: #f4f2ef;
+    --color-stone-950: #fafaf9;
+
+    --color-brand-50: rgb(245 158 11 / 0.1);
+    --color-brand-100: rgb(245 158 11 / 0.16);
+    --color-brand-200: rgb(245 158 11 / 0.24);
+    --color-brand-700: #fcd34d;
+    --color-brand-800: #fde68a;
+
+    --color-emerald-50: rgb(16 185 129 / 0.1);
+    --color-emerald-100: rgb(16 185 129 / 0.18);
+    --color-emerald-700: #6ee7b7;
+    --color-emerald-800: #a7f3d0;
+
+    --color-red-50: rgb(239 68 68 / 0.12);
+    --color-red-100: rgb(239 68 68 / 0.2);
+    --color-red-200: rgb(239 68 68 / 0.3);
+    --color-red-700: #fca5a5;
+
+    --color-amber-50: rgb(245 158 11 / 0.1);
+    --color-amber-100: rgb(245 158 11 / 0.16);
+    --color-amber-200: rgb(245 158 11 / 0.3);
+    --color-amber-700: #fcd34d;
+    --color-amber-800: #fde68a;
+
+    --color-sky-50: rgb(14 165 233 / 0.1);
+    --color-sky-100: rgb(14 165 233 / 0.18);
+    --color-sky-200: rgb(14 165 233 / 0.3);
+    --color-sky-700: #7dd3fc;
+    --color-sky-800: #bae6fd;
+
+    --color-violet-50: rgb(139 92 246 / 0.12);
+    --color-violet-100: rgb(139 92 246 / 0.2);
+    --color-violet-200: rgb(139 92 246 / 0.32);
+    --color-violet-800: #ddd6fe;
+
+    --color-rose-200: rgb(244 63 94 / 0.3);
   }
 }
 
@@ -62,13 +132,13 @@
     @apply btn bg-stone-900 text-white shadow-sm hover:bg-stone-700;
   }
   .btn-accent {
-    @apply btn bg-brand-400 text-stone-950 shadow-sm shadow-brand-500/30 hover:bg-brand-300;
+    @apply btn bg-brand-400 text-black shadow-sm shadow-brand-500/30 hover:bg-brand-300;
   }
   .btn-ghost {
     @apply btn border border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50;
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-500;
+    @apply btn bg-red-600 text-snow hover:bg-red-500;
   }
   .input {
     @apply w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-stone-400 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5;
@@ -77,7 +147,7 @@
     @apply mb-1.5 block text-[11px] font-semibold tracking-wider text-stone-500 uppercase;
   }
   .card {
-    @apply rounded-2xl border border-stone-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)];
+    @apply rounded-2xl border border-stone-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] dark:shadow-none;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;

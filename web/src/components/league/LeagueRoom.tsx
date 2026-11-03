@@ -337,15 +337,15 @@ function OnTheBlock({
       )}
 
       <div
-        className="relative overflow-hidden rounded-3xl p-5 text-white sm:p-7"
+        className="relative overflow-hidden rounded-3xl p-5 text-snow sm:p-7"
         style={{ background: leader ? `linear-gradient(135deg, #0c0a09 40%, ${leader.color})` : "linear-gradient(135deg, #0c0a09 50%, #44403c)" }}
       >
         <div className="flex flex-col gap-5 sm:flex-row">
-          <div className="h-40 w-full shrink-0 overflow-hidden rounded-2xl bg-white/10 sm:h-44 sm:w-44">
+          <div className="h-40 w-full shrink-0 overflow-hidden rounded-2xl bg-snow/10 sm:h-44 sm:w-44">
             {cover ? (
               <img src={publicUrl("lot-media", cover.path)} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full items-center justify-center font-display text-5xl font-extrabold text-white/30">#{current.position + 1}</div>
+              <div className="flex h-full items-center justify-center font-display text-5xl font-extrabold text-snow/30">#{current.position + 1}</div>
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -353,15 +353,15 @@ function OnTheBlock({
             <h2 className="mt-1 font-display text-3xl font-extrabold tracking-tight">{current.title}</h2>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {Object.entries(current.custom_fields ?? {}).map(([k, v]) => (
-                <span key={k} className="chip bg-white/10 text-white/90">
+                <span key={k} className="chip bg-snow/10 text-snow/90">
                   {k}: {v}
                 </span>
               ))}
-              <span className="chip bg-white/10 text-white/90">Base {money(current.start_price, s)}</span>
+              <span className="chip bg-snow/10 text-snow/90">Base {money(current.start_price, s)}</span>
             </div>
             <div className="mt-5 flex flex-wrap items-end gap-x-6 gap-y-2">
               <div>
-                <p className="text-xs text-white/60">{current.current_bid == null ? "No bids yet" : "Current bid"}</p>
+                <p className="text-xs text-snow/60">{current.current_bid == null ? "No bids yet" : "Current bid"}</p>
                 <p key={String(current.current_bid)} className="animate-flash rounded-lg font-display text-4xl font-extrabold tabular-nums sm:text-5xl">
                   {money(current.current_bid ?? current.start_price, s)}
                 </p>
@@ -378,10 +378,10 @@ function OnTheBlock({
             <p className={`font-mono text-5xl font-bold tabular-nums ${!waiting && endsIn < 5000 ? "text-red-400" : ""}`}>
               {waiting ? remaining(opensIn) : remaining(endsIn)}
             </p>
-            <p className="text-xs text-white/60">{waiting ? "until bidding opens" : "left"}</p>
+            <p className="text-xs text-snow/60">{waiting ? "until bidding opens" : "left"}</p>
           </div>
         </div>
-        <div className="absolute inset-x-0 bottom-0 h-1.5 bg-white/10">
+        <div className="absolute inset-x-0 bottom-0 h-1.5 bg-snow/10">
           <div className="h-full bg-brand-400 transition-[width] duration-200" style={{ width: `${pct}%` }} />
         </div>
       </div>

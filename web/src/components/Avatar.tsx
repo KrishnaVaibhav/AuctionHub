@@ -1,4 +1,5 @@
-const palette = ["bg-amber-200 text-amber-900", "bg-sky-200 text-sky-900", "bg-emerald-200 text-emerald-900", "bg-rose-200 text-rose-900", "bg-violet-200 text-violet-900", "bg-stone-300 text-stone-800"];
+// 300 backgrounds + 950 text are not remapped by the dark theme, so avatars read the same in both modes.
+const palette = ["bg-amber-300 text-amber-950", "bg-sky-300 text-sky-950", "bg-emerald-300 text-emerald-950", "bg-rose-300 text-rose-950", "bg-violet-300 text-violet-950", "bg-stone-300 text-stone-800"];
 
 function hash(s: string): number {
   let h = 0;
