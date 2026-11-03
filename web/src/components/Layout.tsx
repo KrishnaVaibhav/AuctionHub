@@ -135,6 +135,9 @@ export function Layout() {
             <Link to="/terms" className="hover:text-stone-900">
               Terms
             </Link>
+            <Link to="/support" className="hover:text-stone-900">
+              Support
+            </Link>
           </span>
         </div>
       </footer>

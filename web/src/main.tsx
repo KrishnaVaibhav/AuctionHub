@@ -17,6 +17,7 @@ const HostDashboard = lazy(() => import("./pages/host/HostDashboard").then((m) =
 const AuctionEditor = lazy(() => import("./pages/host/AuctionEditor").then((m) => ({ default: m.AuctionEditor })));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
 const Privacy = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Privacy })));
+const Support = lazy(() => import("./pages/Support").then((m) => ({ default: m.Support })));
 const Terms = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Terms })));
 
 const page = (el: ReactNode) => (
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
       { path: "/a/:id", element: page(<AuctionRoom />) },
       { path: "/privacy", element: page(<Privacy />) },
       { path: "/terms", element: page(<Terms />) },
+      { path: "/support", element: page(<Support />) },
       {
         element: <RequireAuth />,
         children: [

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 
 const UPDATED = "3 November 2026";
-const CONTACT = "https://github.com/KrishnaVaibhav/AuctionHub/issues";
 
 function Doc({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -84,9 +84,9 @@ export function Privacy() {
       <p>Hosts can delete their draft, ended or cancelled auctions at any time, which removes the auction's lots, bids, chat and files.</p>
       <p>
         We keep the rest of your data while your account exists. To delete your account and personal data, open a request at{" "}
-        <a className="underline" href={CONTACT}>
-          {CONTACT}
-        </a>
+        <Link className="underline" to="/support">
+          the support form
+        </Link>
         . Bid records tied to completed sales may be kept where needed to resolve disputes.
       </p>
 
@@ -99,9 +99,9 @@ export function Privacy() {
       <h2>Contact</h2>
       <p>
         Questions:{" "}
-        <a className="underline" href={CONTACT}>
-          {CONTACT}
-        </a>
+        <Link className="underline" to="/support">
+          the support form
+        </Link>
       </p>
     </Doc>
   );

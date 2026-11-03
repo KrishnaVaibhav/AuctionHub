@@ -9,7 +9,7 @@ import { AuctionBadge } from "../../components/StatusBadge";
 import { NotFound } from "../NotFound";
 import type { AuctionStatus } from "../../lib/types";
 
-type Tab = "overview" | "users" | "auctions" | "activity" | "audit";
+type Tab = "overview" | "users" | "auctions" | "activity" | "support" | "audit";
 
 export function AdminDashboard() {
   const { isAdmin, checked } = useIsAdmin();
@@ -23,6 +23,7 @@ export function AdminDashboard() {
     ["users", "Users"],
     ["auctions", "Auctions"],
     ["activity", "Live activity"],
+    ["support", "Support"],
     ["audit", "Audit log"],
   ];
 
@@ -48,6 +49,7 @@ export function AdminDashboard() {
       {tab === "users" && <Users />}
       {tab === "auctions" && <Auctions />}
       {tab === "activity" && <Activity />}
+      {tab === "support" && <SupportInbox />}
       {tab === "audit" && <Audit />}
     </div>
   );
@@ -698,6 +700,64 @@ function Audit() {
         </div>
       ))}
       {rows.length === 0 && <p className="px-4 py-6 text-center text-sm text-stone-500">No admin actions yet.</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Support inbox
+// ---------------------------------------------------------------------------
+interface SupportRow {
+  id: number;
+  created_at: string;
+  category: string;
+  message: string;
+  contact: string | null;
+  status: string;
+  user_id: string | null;
+  user_name: string | null;
+  user_email: string | null;
+}
+
+function SupportInbox() {
+  const [status, setStatus] = useState("open");
+  const { data, error, reload } = useRpc<SupportRow[]>("admin_support", { p_status: status }, 30_000);
+
+  async function setRowStatus(id: number, next: string) {
+    await supabase.from("support_requests").update({ status: next }).eq("id", id);
+    await reload();
+  }
+
+  return (
+    <div className="animate-rise space-y-4">
+      <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
+        {["open", "resolved", ""].map((s) => (
+          <button key={s || "all"} className={`tab ${status === s ? "tab-active" : ""}`} onClick={() => setStatus(s)}>
+            {s || "all"}
+          </button>
+        ))}
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="space-y-3">
+        {(data ?? []).map((r) => (
+          <div key={r.id} className="card space-y-2 p-4">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="chip bg-stone-100 text-stone-700">{r.category}</span>
+              <span className={`chip ${r.status === "open" ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{r.status}</span>
+              <span className="text-stone-500">{dateTime(r.created_at)}</span>
+              <span className="ml-auto text-stone-500">
+                {r.user_id ? `${r.user_name ?? "user"} · ${r.user_email ?? ""}` : "anonymous"}
+                {r.contact && ` · reply to: ${r.contact}`}
+              </span>
+            </div>
+            <p className="text-sm break-words whitespace-pre-line">{r.message}</p>
+            <button className="btn-ghost py-1 text-xs" onClick={() => void setRowStatus(r.id, r.status === "open" ? "resolved" : "open")}>
+              Mark {r.status === "open" ? "resolved" : "open"}
+            </button>
+          </div>
+        ))}
+        {(data ?? []).length === 0 && <p className="card px-4 py-6 text-center text-sm text-stone-500">No requests.</p>}
+      </div>
     </div>
   );
 }
