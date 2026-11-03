@@ -11,6 +11,7 @@ import { AuctionRoom } from "./pages/AuctionRoom";
 import { HostDashboard } from "./pages/host/HostDashboard";
 import { AuctionEditor } from "./pages/host/AuctionEditor";
 import { NotFound } from "./pages/NotFound";
+import { Privacy, Terms } from "./pages/Legal";
 import { RequireAuth } from "./components/RequireAuth";
 
 const router = createBrowserRouter([
@@ -20,6 +21,8 @@ const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/login", element: <Login /> },
       { path: "/a/:id", element: <AuctionRoom /> },
+      { path: "/privacy", element: <Privacy /> },
+      { path: "/terms", element: <Terms /> },
       {
         element: <RequireAuth />,
         children: [

@@ -51,7 +51,14 @@ export function Layout() {
       </main>
 
       <footer className="border-t border-stone-200 py-6 text-center text-xs text-stone-500">
-        AuctionHub. Live auctions with real-time bidding.
+        AuctionHub ·{" "}
+        <Link to="/privacy" className="hover:text-stone-900">
+          Privacy
+        </Link>{" "}
+        ·{" "}
+        <Link to="/terms" className="hover:text-stone-900">
+          Terms
+        </Link>
       </footer>
     </div>
   );
