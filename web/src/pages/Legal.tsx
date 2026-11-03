@@ -49,6 +49,11 @@ export function Privacy() {
         details after a sale" in your account, and then only with the other side of a completed sale (the host of a lot you won, or
         the winner of a lot you sold). Deal-chat messages are visible only to that host and winner.
       </p>
+      <p>
+        <strong>Platform administrators</strong> (the operator of AuctionHub) can access all data on the service, including private
+        auctions, contact details and deal-chat messages, to keep the platform safe, investigate abuse and fraud, provide support and
+        comply with the law. Administrator actions such as bans and auction removals are recorded in an audit log.
+      </p>
 
       <h2>Google sign-in</h2>
       <p>

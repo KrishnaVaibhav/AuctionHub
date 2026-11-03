@@ -55,6 +55,17 @@ People join a private auction through `join_private_auction(id, code)`. The invi
 
 `auction_visible()` is the single rule behind every read policy. Bids, chat and league teams also run a trigger guard for private auctions. `auction_preview()` returns just the title, cover and host, so the invite page can show something before joining.
 
+## Platform admin
+
+- Rows in `platform_admins` can only be added with direct SQL. There is no UI or RPC for it, and clients have no grants on the table:
+  ```sql
+  insert into public.platform_admins (user_id) select id from auth.users where email = '<owner email>';
+  ```
+- `is_platform_admin()` gives full read access through `auction_visible()`, `is_auction_staff()`, the auctions policy, and extra admin `select` policies on private tables (reserves, proxies, contacts, deal chats, members, mutes, watchlist).
+- Monitoring RPCs, which raise "Admins only" for anyone else: `admin_overview` (counts, DB and storage usage, table sizes, cron health), `admin_users`, `admin_user_detail`, `admin_auctions`, `admin_activity`.
+- Moderation, recorded in `admin_audit_log`: `admin_set_ban`, `admin_cancel_auction`, `admin_delete_auction`, `admin_remove_chat`.
+- UI: `/admin`. The link appears only for admins, and the page shows Not Found to everyone else.
+
 ## Deletion and retention (free-tier size)
 
 - `delete_auction()` (host only) works on draft, ended or cancelled auctions. The client removes storage files first, and the database cascades everything else.

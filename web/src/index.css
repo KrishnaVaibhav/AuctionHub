@@ -27,7 +27,8 @@
   }
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    /* "none" (not translateY(0)) so finished elements don't trap position:fixed children. */
+    to { opacity: 1; transform: none; }
   }
 }
 

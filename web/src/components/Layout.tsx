@@ -4,10 +4,12 @@ import { useAuth } from "../lib/auth";
 import { supabaseConfigured } from "../lib/supabase";
 import { Avatar } from "./Avatar";
 import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
+import { useIsAdmin } from "../lib/admin";
 
 export function Layout() {
   const { session, profile, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isAdmin } = useIsAdmin();
   const location = useLocation();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
@@ -18,6 +20,7 @@ export function Layout() {
       ? [
           { to: "/me", label: "My bids" },
           { to: "/host", label: "Host" },
+          ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
         ]
       : []),
   ];

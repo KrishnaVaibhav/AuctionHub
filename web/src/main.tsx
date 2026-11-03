@@ -15,6 +15,7 @@ const AuctionRoom = lazy(() => import("./pages/AuctionRoom").then((m) => ({ defa
 const MyActivity = lazy(() => import("./pages/MyActivity").then((m) => ({ default: m.MyActivity })));
 const HostDashboard = lazy(() => import("./pages/host/HostDashboard").then((m) => ({ default: m.HostDashboard })));
 const AuctionEditor = lazy(() => import("./pages/host/AuctionEditor").then((m) => ({ default: m.AuctionEditor })));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
 const Privacy = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Privacy })));
 const Terms = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Terms })));
 
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
           { path: "/account", element: page(<Account />) },
           { path: "/host", element: page(<HostDashboard />) },
           { path: "/host/a/:id", element: page(<AuctionEditor />) },
+          { path: "/admin", element: page(<AdminDashboard />) },
         ],
       },
       { path: "*", element: <NotFound /> },

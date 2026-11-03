@@ -18,6 +18,7 @@ import { Results } from "../components/Results";
 import { LeagueRoom } from "../components/league/LeagueRoom";
 import { PrivateGate } from "../components/PrivateGate";
 import { visibilityLabel } from "../lib/auctions";
+import { useIsAdmin } from "../lib/admin";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
 
@@ -30,13 +31,14 @@ export function AuctionRoom() {
   const [params] = useSearchParams();
   const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
   const [hostError, setHostError] = useState<string | null>(null);
+  const { isAdmin } = useIsAdmin();
 
   if (loading) return <RoomSkeleton />;
   if (!auction) return id ? <PrivateGate auctionId={id} onJoined={reload} /> : null;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
 
   const isHost = userId === auction.host_id;
-  const isStaff = isHost || (userId != null && moderatorIds.includes(userId));
+  const isStaff = isHost || isAdmin || (userId != null && moderatorIds.includes(userId));
   const selected: Lot | undefined = lots.find((l) => l.id === selectedId) ?? lots.find((l) => l.status === "open") ?? lots[0];
   const selectedIndex = selected ? lots.indexOf(selected) : -1;
   const finished = auction.status === "ended" || auction.status === "cancelled";

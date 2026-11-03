@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { supabase, errorMessage } from "../lib/supabase";
 
 interface DealMessage {
@@ -62,7 +63,7 @@ export function DealChat({
     else setText("");
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
         className="flex h-[85dvh] w-full max-w-lg animate-rise flex-col rounded-t-3xl bg-white shadow-2xl sm:h-[36rem] sm:rounded-3xl"
@@ -109,6 +110,7 @@ export function DealChat({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
