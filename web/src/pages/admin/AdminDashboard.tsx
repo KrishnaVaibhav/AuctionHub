@@ -7,9 +7,10 @@ import { dateTime } from "../../lib/format";
 import { Avatar } from "../../components/Avatar";
 import { AuctionBadge } from "../../components/StatusBadge";
 import { NotFound } from "../NotFound";
+import { SafetyTab } from "./SafetyTab";
 import type { AuctionStatus } from "../../lib/types";
 
-type Tab = "overview" | "users" | "auctions" | "activity" | "support" | "audit";
+type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit";
 
 export function AdminDashboard() {
   const { isAdmin, checked } = useIsAdmin();
@@ -23,6 +24,7 @@ export function AdminDashboard() {
     ["users", "Users"],
     ["auctions", "Auctions"],
     ["activity", "Live activity"],
+    ["safety", "Safety"],
     ["support", "Support"],
     ["audit", "Audit log"],
   ];
@@ -49,6 +51,7 @@ export function AdminDashboard() {
       {tab === "users" && <Users />}
       {tab === "auctions" && <Auctions />}
       {tab === "activity" && <Activity />}
+      {tab === "safety" && <SafetyTab />}
       {tab === "support" && <SupportInbox />}
       {tab === "audit" && <Audit />}
     </div>

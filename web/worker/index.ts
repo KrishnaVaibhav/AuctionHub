@@ -72,6 +72,41 @@ async function auctionPage(request: Request, env: Env, id: string): Promise<Resp
   return new Response(rewritten.body, { status: 200, headers });
 }
 
+function robots(origin: string): Response {
+  const body = [
+    "User-agent: *",
+    "Allow: /",
+    "Disallow: /admin",
+    "Disallow: /host",
+    "Disallow: /me",
+    "Disallow: /account",
+    "Disallow: /login",
+    `Sitemap: ${origin}/sitemap.xml`,
+    "",
+  ].join("\n");
+  return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
+}
+
+/** Public auctions and host profiles for search engines (private/unlisted/draft never listed). */
+async function sitemap(origin: string, env: Env): Promise<Response> {
+  const headers = { apikey: env.SUPABASE_ANON_KEY };
+  const [auctions, hosts] = await Promise.all([
+    fetch(`${env.SUPABASE_URL}/rest/v1/auctions?select=id,updated_at,host_id&visibility=eq.public&status=neq.draft&order=updated_at.desc&limit=5000`, { headers })
+      .then((r) => (r.ok ? (r.json() as Promise<{ id: string; updated_at: string; host_id: string }[]>) : []))
+      .catch(() => []),
+    fetch(`${env.SUPABASE_URL}/rest/v1/rpc/sitemap_hosts`, { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: "{}" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ username: string }[]>) : []))
+      .catch(() => []),
+  ]);
+  const urls = [
+    `<url><loc>${origin}/</loc><changefreq>hourly</changefreq></url>`,
+    ...auctions.map((a) => `<url><loc>${origin}/a/${a.id}</loc><lastmod>${a.updated_at.slice(0, 10)}</lastmod></url>`),
+    ...hosts.map((h) => `<url><loc>${origin}/u/${encodeURIComponent(h.username)}</loc></url>`),
+  ];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join("")}</urlset>`;
+  return new Response(xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
+}
+
 const KEEPALIVE_CRON = "0 6 */2 * *";
 const CLEANUP_CRON = "30 3 * * *";
 
@@ -130,6 +165,8 @@ export default {
     if (url.pathname.startsWith("/api/")) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }
+    if (url.pathname === "/robots.txt") return robots(url.origin);
+    if (url.pathname === "/sitemap.xml") return sitemap(url.origin, env);
     const match = url.pathname.match(UUID);
     if (match && request.method === "GET") {
       return auctionPage(request, env, match[1].toLowerCase());

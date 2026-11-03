@@ -22,7 +22,7 @@ export interface AuctionSettings {
   anti_snipe_seconds?: number;
   lot_duration_minutes?: number;
   lot_stagger_seconds?: number;
-  chat?: { enabled?: boolean; slow_mode_s?: number };
+  chat?: { enabled?: boolean; slow_mode_s?: number; allow_links?: boolean };
 }
 
 export interface Profile {

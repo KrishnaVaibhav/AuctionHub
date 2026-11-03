@@ -168,6 +168,7 @@ function AuctionForm({
   const [duration, setDuration] = useState(String(s.lot_duration_minutes ?? 10));
   const [stagger, setStagger] = useState(String(s.lot_stagger_seconds ?? 0));
   const [chatEnabled, setChatEnabled] = useState(s.chat?.enabled !== false);
+  const [allowLinks, setAllowLinks] = useState(Boolean(s.chat?.allow_links));
   const [slowMode, setSlowMode] = useState(String(s.chat?.slow_mode_s ?? 2));
   const [increments, setIncrements] = useState(formatIncrements(s.increments ?? DEFAULT_INCREMENTS));
   const [mode, setMode] = useState(auction.mode);
@@ -207,7 +208,7 @@ function AuctionForm({
       anti_snipe_seconds: Math.max(0, Number(antiSnipe) || 0),
       lot_duration_minutes: Math.max(1, Number(duration) || 10),
       lot_stagger_seconds: Math.max(0, Number(stagger) || 0),
-      chat: { enabled: chatEnabled, slow_mode_s: Math.max(0, Number(slowMode) || 0) },
+      chat: { enabled: chatEnabled, slow_mode_s: Math.max(0, Number(slowMode) || 0), allow_links: allowLinks },
       compact,
       league: {
         purse: Math.max(1, Number(purse) || LEAGUE_DEFAULTS.purse),
@@ -432,6 +433,10 @@ function AuctionForm({
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
             Chat enabled
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={allowLinks} onChange={(e) => setAllowLinks(e.target.checked)} />
+            Allow links in chat
           </label>
           <div>
             <label className="label" htmlFor="sm">
