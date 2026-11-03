@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.0.0
       - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor
       - run: supabase test db
       - run: supabase db lint --level error
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.0.0
       - run: supabase link --project-ref "$PROJECT_REF"
       - name: Pending migrations
         run: supabase db push --remote --dry-run
