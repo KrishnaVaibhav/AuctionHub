@@ -3,15 +3,16 @@
 Live auctions with real-time bidding, proxy (auto) bids, anti-sniping, live chat, host-managed media and an embedded live stream.
 It runs entirely on free tiers: Cloudflare Workers and Supabase.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the architecture and business rules.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the architecture and business rules, and [docs/OPERATIONS.md](docs/OPERATIONS.md) for email, backups, monitoring and tests.
 
 ## Repo layout
 
 ```
 web/                 React + Vite + Tailwind frontend, Cloudflare Worker (web/worker), wrangler.jsonc
-supabase/migrations  Schema, RLS, bid engine, storage buckets (deployed by the Supabase GitHub integration)
+supabase/migrations  Schema, RLS, bid engine, storage buckets (deployed by CI job deploy-db)
 supabase/tests       pgTAP tests for the bid engine and security rules
-.github/workflows    CI (typecheck, unit tests, build, DB tests)
+.github/workflows    CI (typecheck, unit, DB and browser tests, DB deploy) and nightly encrypted backups
+web/e2e              Playwright browser tests
 ```
 
 ## Local development

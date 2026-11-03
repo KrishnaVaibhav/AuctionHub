@@ -29,6 +29,7 @@ export function Privacy() {
         <li>Auction activity: auctions and lots you create, bids you place, league teams you create, chat and deal-chat messages you send.</li>
         <li>Media you upload: photos, videos, cover images.</li>
         <li>Technical data: a sign-in session stored in your browser's local storage, and standard server logs (IP address, browser type).</li>
+        <li>Error reports: if the app crashes, a technical error report (page, browser, error message) may be sent to our error monitoring service. It contains no account details, IP address or cookies.</li>
       </ul>
 
       <h2>How we use it</h2>

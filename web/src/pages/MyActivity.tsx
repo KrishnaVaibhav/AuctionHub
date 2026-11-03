@@ -7,6 +7,7 @@ import type { LotStatus, AuctionStatus } from "../lib/types";
 import { LotBadge } from "../components/StatusBadge";
 import { Countdown } from "../components/Countdown";
 import { DealChat } from "../components/DealChat";
+import { WatchingList } from "../components/WatchingList";
 import { useAuth } from "../lib/auth";
 
 interface MyLot {
@@ -29,7 +30,7 @@ interface MyLot {
   host_note: string | null;
 }
 
-type Tab = "active" | "won" | "lost";
+type Tab = "active" | "won" | "lost" | "watching";
 
 export function MyActivity() {
   const [rows, setRows] = useState<MyLot[]>([]);
@@ -51,7 +52,7 @@ export function MyActivity() {
   const active = rows.filter((r) => r.status === "open" || r.status === "pending");
   const won = rows.filter((r) => r.status === "sold" && r.is_leader);
   const lost = rows.filter((r) => !(r.status === "open" || r.status === "pending") && !(r.status === "sold" && r.is_leader));
-  const lists: Record<Tab, MyLot[]> = { active, won, lost };
+  const lists: Record<Tab, MyLot[]> = { active, won, lost, watching: [] };
   const spent = won.reduce((n, r) => n + Number(r.current_bid), 0);
   const winningNow = active.filter((r) => r.is_leader).length;
 
@@ -69,10 +70,10 @@ export function MyActivity() {
       </div>
 
       <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
-        {(["active", "won", "lost"] as Tab[]).map((t) => (
+        {(["active", "won", "lost", "watching"] as Tab[]).map((t) => (
           <button key={t} className={`tab ${tab === t ? "tab-active" : ""}`} onClick={() => setTab(t)}>
-            {t === "active" ? "Active" : t === "won" ? "Won" : "Not won"}
-            <span className="ml-1.5 text-xs text-stone-400">{lists[t].length}</span>
+            {t === "active" ? "Active" : t === "won" ? "Won" : t === "lost" ? "Not won" : "Watching"}
+            {t !== "watching" && <span className="ml-1.5 text-xs text-stone-400">{lists[t].length}</span>}
           </button>
         ))}
       </div>
@@ -80,7 +81,9 @@ export function MyActivity() {
       {error && <p className="text-sm text-red-600">{error}</p>}
       {loading && <div className="h-40 animate-pulse rounded-2xl bg-stone-100" />}
 
-      {!loading && lists[tab].length === 0 && (
+      {tab === "watching" && session && <WatchingList userId={session.user.id} />}
+
+      {tab !== "watching" && !loading && lists[tab].length === 0 && (
         <div className="card py-14 text-center">
           <p className="font-semibold">{tab === "won" ? "No wins yet" : tab === "active" ? "No active bids" : "Nothing here"}</p>
           <Link to="/" className="btn-primary mt-4">

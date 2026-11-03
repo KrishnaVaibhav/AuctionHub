@@ -6,6 +6,72 @@ interface Env {
   SUPABASE_SERVICE_ROLE_KEY?: string;
 }
 
+const UUID = /^\/a\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
+
+interface Preview {
+  title: string;
+  cover_url: string | null;
+  visibility: string;
+  status: string;
+  host_name: string;
+}
+
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** Serve the SPA for /a/:id with Open Graph tags so shared links show a preview card. */
+async function auctionPage(request: Request, env: Env, id: string): Promise<Response> {
+  const shell = await env.ASSETS.fetch(new Request(new URL("/", request.url), request));
+  let preview: Preview | undefined;
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/auction_preview`, {
+      method: "POST",
+      headers: { apikey: env.SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_auction_id: id }),
+      cf: { cacheTtl: 60, cacheEverything: true },
+    });
+    if (res.ok) preview = ((await res.json()) as Preview[])[0];
+  } catch {
+    // Preview is best-effort; the app still loads.
+  }
+  if (!preview) return shell;
+
+  const title = `${preview.title} · AuctionHub`;
+  const what =
+    preview.visibility === "private"
+      ? "Private auction (invite only)"
+      : preview.status === "live"
+        ? "Live now. Join the room and bid"
+        : preview.status === "scheduled"
+          ? "Upcoming auction"
+          : "Auction";
+  const description = `${what}, hosted by ${preview.host_name} on AuctionHub.`;
+  const url = new URL(request.url);
+  url.search = "";
+  const tags = [
+    ["og:type", "website"],
+    ["og:site_name", "AuctionHub"],
+    ["og:title", title],
+    ["og:description", description],
+    ["og:url", url.toString()],
+    ...(preview.cover_url ? [["og:image", preview.cover_url]] : []),
+  ]
+    .map(([p, c]) => `<meta property="${p}" content="${esc(c)}" />`)
+    .concat([
+      `<meta name="twitter:card" content="${preview.cover_url ? "summary_large_image" : "summary"}" />`,
+      `<meta name="description" content="${esc(description)}" />`,
+    ])
+    .join("");
+
+  const rewritten = new HTMLRewriter()
+    .on("title", { element: (el) => void el.setInnerContent(title) })
+    .on('meta[name="description"], meta[name="twitter:card"], meta[property^="og:"]', { element: (el) => void el.remove() })
+    .on("head", { element: (el) => void el.append(tags, { html: true }) })
+    .transform(shell);
+  const headers = new Headers(rewritten.headers);
+  headers.set("cache-control", "public, max-age=0, must-revalidate");
+  return new Response(rewritten.body, { status: 200, headers });
+}
+
 const KEEPALIVE_CRON = "0 6 */2 * *";
 const CLEANUP_CRON = "30 3 * * *";
 
@@ -63,6 +129,10 @@ export default {
     }
     if (url.pathname.startsWith("/api/")) {
       return Response.json({ error: "Not found" }, { status: 404 });
+    }
+    const match = url.pathname.match(UUID);
+    if (match && request.method === "GET") {
+      return auctionPage(request, env, match[1].toLowerCase());
     }
     return env.ASSETS.fetch(request);
   },

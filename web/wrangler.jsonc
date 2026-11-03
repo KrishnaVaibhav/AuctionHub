@@ -7,7 +7,7 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/a/*"]
   },
   // Every 2 days: ping Supabase so the free project never pauses for inactivity.
   // Keepalive every 2 days; storage orphan sweep nightly (needs SUPABASE_SERVICE_ROLE_KEY secret).

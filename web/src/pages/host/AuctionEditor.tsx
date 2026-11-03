@@ -11,6 +11,7 @@ import type { Auction, AuctionSettings } from "../../lib/types";
 import { AuctionBadge } from "../../components/StatusBadge";
 import { LotEditor, NewLotForm } from "./LotEditor";
 import { VisibilityPanel } from "./VisibilityPanel";
+import { ModeratorsPanel } from "./ModeratorsPanel";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
@@ -92,7 +93,10 @@ export function AuctionEditor() {
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
 
-      <VisibilityPanel auction={auction} onChanged={reload} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <VisibilityPanel auction={auction} onChanged={reload} />
+        <ModeratorsPanel auction={auction} />
+      </div>
 
       <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />
 

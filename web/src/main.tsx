@@ -7,6 +7,9 @@ import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
+import { initMonitoring } from "./lib/monitoring";
+
+initMonitoring();
 
 // Route-level code splitting: each page downloads only when visited.
 const Login = lazy(() => import("./pages/Login").then((m) => ({ default: m.Login })));

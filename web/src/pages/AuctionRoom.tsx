@@ -19,6 +19,7 @@ import { LeagueRoom } from "../components/league/LeagueRoom";
 import { PrivateGate } from "../components/PrivateGate";
 import { visibilityLabel } from "../lib/auctions";
 import { useIsAdmin } from "../lib/admin";
+import { WatchButton } from "../components/WatchButton";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
 
@@ -118,6 +119,7 @@ export function AuctionRoom() {
                         {selected.title}
                       </h2>
                       <div className="flex shrink-0 gap-1">
+                        <WatchButton lotId={selected.id} userId={userId} />
                         <button className="btn-ghost px-2.5" disabled={selectedIndex <= 0} onClick={() => setSelectedId(lots[selectedIndex - 1]?.id ?? null)} aria-label="Previous lot">
                           &larr;
                         </button>
