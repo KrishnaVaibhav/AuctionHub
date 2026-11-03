@@ -123,7 +123,7 @@ set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-000000000001","
 select is((select count(*)::int from public.auction_results('10000000-0000-0000-0000-000000000001')), 2,
   'host sees all lot results');
 select is((select winner_email from public.auction_results('10000000-0000-0000-0000-000000000001') where title = 'Watch'),
-  'alice@test.dev', 'host sees winner email for sold lot');
+  null, 'winner email hidden until they opt in');
 select is((select winner_email from public.auction_results('10000000-0000-0000-0000-000000000001') where title = 'Lamp'),
   null, 'no email for unsold lot');
 

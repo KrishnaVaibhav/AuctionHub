@@ -2,8 +2,22 @@ export type AuctionStatus = "draft" | "scheduled" | "live" | "paused" | "ended" 
 export type LotStatus = "pending" | "open" | "sold" | "unsold" | "withdrawn";
 export type ChatKind = "text" | "bid" | "system";
 
+export interface LeagueSettings {
+  purse?: number;
+  squad_min?: number;
+  squad_max?: number;
+  max_teams?: number;
+  lot_seconds?: number;
+  bid_seconds?: number;
+  break_seconds?: number;
+  min_base?: number;
+  host_can_play?: boolean;
+}
+
 export interface AuctionSettings {
   currency?: string;
+  compact?: boolean;
+  league?: LeagueSettings;
   increments?: [number, number][];
   anti_snipe_seconds?: number;
   lot_duration_minutes?: number;
@@ -25,6 +39,7 @@ export interface Auction {
   title: string;
   description: string;
   status: AuctionStatus;
+  mode: "standard" | "league";
   starts_at: string | null;
   ends_at: string | null;
   paused_at: string | null;
@@ -50,6 +65,8 @@ export interface Lot {
   reserve_met: boolean;
   opens_at: string | null;
   ends_at: string | null;
+  winner_team_id: string | null;
+  points: number | null;
 }
 
 export interface LotMedia {
@@ -66,6 +83,18 @@ export interface Bid {
   bidder_id: string;
   amount: number;
   is_auto: boolean;
+  team_id?: string | null;
+  created_at: string;
+}
+
+export interface LeagueTeam {
+  id: string;
+  auction_id: string;
+  owner_id: string;
+  name: string;
+  short_name: string;
+  color: string;
+  purse_left: number;
   created_at: string;
 }
 

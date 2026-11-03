@@ -6,11 +6,12 @@ import { useAuctionRoom } from "../../lib/useAuctionRoom";
 import { formatIncrements, fromLocalInput, parseIncrements, toLocalInput } from "../../lib/format";
 import { uploadMedia } from "../../lib/media";
 import { DEFAULT_INCREMENTS } from "../../lib/bidding";
+import { LEAGUE_DEFAULTS, LEAGUE_INCREMENTS } from "../../lib/useLeagueTeams";
 import type { Auction, AuctionSettings } from "../../lib/types";
 import { AuctionBadge } from "../../components/StatusBadge";
 import { LotEditor, NewLotForm } from "./LotEditor";
 
-const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED"];
+const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
 export function AuctionEditor() {
   const { id } = useParams();
@@ -90,7 +91,7 @@ export function AuctionEditor() {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Lots ({lots.length})</h2>
+          <h2 className="text-lg font-bold">{auction.mode === "league" ? "Players" : "Lots"} ({lots.length})</h2>
           {!editable && <p className="text-xs text-stone-500">Lot details lock once the auction starts. You can still add photos.</p>}
         </div>
         {lots.map((lot, i) => (
@@ -134,7 +135,27 @@ function AuctionForm({
   const [chatEnabled, setChatEnabled] = useState(s.chat?.enabled !== false);
   const [slowMode, setSlowMode] = useState(String(s.chat?.slow_mode_s ?? 2));
   const [increments, setIncrements] = useState(formatIncrements(s.increments ?? DEFAULT_INCREMENTS));
+  const [mode, setMode] = useState(auction.mode);
+  const lg = { ...LEAGUE_DEFAULTS, ...s.league };
+  const [compact, setCompact] = useState(Boolean(s.compact));
+  const [purse, setPurse] = useState(String(lg.purse));
+  const [squadMin, setSquadMin] = useState(String(lg.squad_min));
+  const [squadMax, setSquadMax] = useState(String(lg.squad_max));
+  const [maxTeams, setMaxTeams] = useState(String(lg.max_teams));
+  const [lotSeconds, setLotSeconds] = useState(String(lg.lot_seconds));
+  const [bidSeconds, setBidSeconds] = useState(String(lg.bid_seconds));
+  const [breakSeconds, setBreakSeconds] = useState(String(lg.break_seconds));
+  const [minBase, setMinBase] = useState(String(lg.min_base));
+  const [hostCanPlay, setHostCanPlay] = useState(lg.host_can_play);
   const [busy, setBusy] = useState(false);
+
+  function chooseMode(next: "standard" | "league") {
+    setMode(next);
+    if (next === "league") {
+      setCompact(true);
+      if (increments === formatIncrements(DEFAULT_INCREMENTS)) setIncrements(formatIncrements(LEAGUE_INCREMENTS));
+    }
+  }
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -152,6 +173,18 @@ function AuctionForm({
       lot_duration_minutes: Math.max(1, Number(duration) || 10),
       lot_stagger_seconds: Math.max(0, Number(stagger) || 0),
       chat: { enabled: chatEnabled, slow_mode_s: Math.max(0, Number(slowMode) || 0) },
+      compact,
+      league: {
+        purse: Math.max(1, Number(purse) || LEAGUE_DEFAULTS.purse),
+        squad_min: Math.max(0, Number(squadMin) || 0),
+        squad_max: Math.max(1, Number(squadMax) || LEAGUE_DEFAULTS.squad_max),
+        max_teams: Math.max(2, Number(maxTeams) || LEAGUE_DEFAULTS.max_teams),
+        lot_seconds: Math.max(5, Number(lotSeconds) || LEAGUE_DEFAULTS.lot_seconds),
+        bid_seconds: Math.max(3, Number(bidSeconds) || LEAGUE_DEFAULTS.bid_seconds),
+        break_seconds: Math.max(0, Number(breakSeconds) || 0),
+        min_base: Math.max(0, Number(minBase) || 0),
+        host_can_play: hostCanPlay,
+      },
     };
     setBusy(true);
     const { error } = await supabase
@@ -163,6 +196,7 @@ function AuctionForm({
         ends_at: fromLocalInput(endsAt),
         stream_url: streamUrl.trim() || null,
         settings,
+        ...(auction.status === "draft" ? { mode } : {}),
       })
       .eq("id", auction.id);
     setBusy(false);
@@ -229,6 +263,74 @@ function AuctionForm({
           />
         </div>
 
+        <div>
+          <p className="label">Auction type</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {(
+              [
+                ["standard", "Standard auction", "Many lots, timed or host-run. Real bids from anyone."],
+                ["league", "Team league (IPL-style)", "Teams join with a virtual purse. Players go up one at a time."],
+              ] as const
+            ).map(([key, title, desc]) => (
+              <button
+                key={key}
+                type="button"
+                disabled={auction.status !== "draft"}
+                onClick={() => chooseMode(key)}
+                className={`rounded-xl border p-3 text-left transition disabled:opacity-60 ${mode === key ? "border-stone-900 bg-stone-50 ring-2 ring-stone-900/10" : "border-stone-200 hover:border-stone-300"}`}
+              >
+                <span className="block text-sm font-semibold">{title}</span>
+                <span className="block text-xs text-stone-500">{desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {mode === "league" && (
+          <fieldset className="grid gap-4 rounded-xl border border-violet-200 bg-violet-50/50 p-4 sm:grid-cols-3">
+            <legend className="px-1 text-sm font-semibold">League rules</legend>
+            <div>
+              <label className="label">Purse per team</label>
+              <input type="number" min={1} className="input" value={purse} onChange={(e) => setPurse(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Max teams</label>
+              <input type="number" min={2} max={50} className="input" value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Squad min / max</label>
+              <div className="flex gap-2">
+                <input type="number" min={0} className="input" value={squadMin} onChange={(e) => setSquadMin(e.target.value)} />
+                <input type="number" min={1} className="input" value={squadMax} onChange={(e) => setSquadMax(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <label className="label">Timer per player (sec)</label>
+              <input type="number" min={5} className="input" value={lotSeconds} onChange={(e) => setLotSeconds(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Timer after a bid (sec)</label>
+              <input type="number" min={3} className="input" value={bidSeconds} onChange={(e) => setBidSeconds(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Break between players (sec)</label>
+              <input type="number" min={0} className="input" value={breakSeconds} onChange={(e) => setBreakSeconds(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Keep back per empty min slot</label>
+              <input type="number" min={0} className="input" value={minBase} onChange={(e) => setMinBase(e.target.value)} />
+            </div>
+            <label className="flex items-center gap-2 text-sm sm:col-span-2">
+              <input type="checkbox" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
+              Host can also own a team
+            </label>
+            <p className="text-xs text-stone-500 sm:col-span-3">
+              Add players below as lots (their start price is the base price). Schedule the league so teams can join, then go live. Purses
+              are virtual points, not real money.
+            </p>
+          </fieldset>
+        )}
+
         <fieldset className="grid gap-4 rounded-xl bg-stone-50 p-4 sm:grid-cols-3">
           <legend className="px-1 text-sm font-semibold">Bidding rules</legend>
           <div>
@@ -265,6 +367,10 @@ function AuctionForm({
             </label>
             <input id="inc" className="input font-mono" value={increments} onChange={(e) => setIncrements(e.target.value)} />
           </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
+            Short amounts (e.g. 1.5Cr)
+          </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
             Chat enabled

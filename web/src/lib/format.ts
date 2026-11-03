@@ -3,10 +3,14 @@ import type { AuctionSettings, AuctionStatus, LotStatus } from "./types";
 export function money(amount: number | null | undefined, settings?: AuctionSettings): string {
   if (amount == null) return "-";
   const currency = settings?.currency ?? "INR";
+  const n = Number(amount);
+  const locale = currency === "INR" ? "en-IN" : undefined;
+  const compact = settings?.compact ? ({ notation: "compact", maximumFractionDigits: 2 } as const) : ({ maximumFractionDigits: 2 } as const);
+  if (currency === "PTS") return `${new Intl.NumberFormat(undefined, compact).format(n)} pts`;
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
+    return new Intl.NumberFormat(locale, { style: "currency", currency, ...compact }).format(n);
   } catch {
-    return `${currency} ${Number(amount).toFixed(2)}`;
+    return `${currency} ${n.toFixed(2)}`;
   }
 }
 

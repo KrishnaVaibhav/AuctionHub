@@ -5,6 +5,7 @@ import { supabase, errorMessage } from "../../lib/supabase";
 import { dateTime } from "../../lib/format";
 import type { Auction } from "../../lib/types";
 import { AuctionBadge } from "../../components/StatusBadge";
+import { LEAGUE_DEFAULTS, LEAGUE_INCREMENTS } from "../../lib/useLeagueTeams";
 
 type Row = Auction & { lots: { count: number }[] };
 
@@ -13,6 +14,7 @@ export function HostDashboard() {
   const navigate = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
   const [title, setTitle] = useState("");
+  const [mode, setMode] = useState<"standard" | "league">("standard");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const userId = session!.user.id;
@@ -38,7 +40,11 @@ export function HostDashboard() {
       .insert({
         host_id: userId,
         title: title.trim(),
-        settings: { currency: "INR", anti_snipe_seconds: 30, lot_duration_minutes: 10, chat: { enabled: true, slow_mode_s: 2 } },
+        mode,
+        settings:
+          mode === "league"
+            ? { currency: "INR", compact: true, increments: LEAGUE_INCREMENTS, league: LEAGUE_DEFAULTS, chat: { enabled: true, slow_mode_s: 1 } }
+            : { currency: "INR", anti_snipe_seconds: 30, lot_duration_minutes: 10, chat: { enabled: true, slow_mode_s: 2 } },
       })
       .select("id")
       .single();
@@ -70,8 +76,12 @@ export function HostDashboard() {
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
+        <select className="input sm:w-56" value={mode} onChange={(e) => setMode(e.target.value as "standard" | "league")}>
+          <option value="standard">Standard auction</option>
+          <option value="league">Team league (IPL-style)</option>
+        </select>
         <button className="btn-primary" disabled={busy}>
-          Create auction
+          Create
         </button>
       </form>
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -83,6 +93,7 @@ export function HostDashboard() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <AuctionBadge status={a.status} />
+                {a.mode === "league" && <span className="chip bg-violet-100 text-violet-800">League</span>}
                 <span className="text-xs text-stone-500">{a.lots[0]?.count ?? 0} lots</span>
               </div>
               <p className="mt-1 font-semibold">{a.title}</p>

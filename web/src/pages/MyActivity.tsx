@@ -6,6 +6,8 @@ import { useProfileNames } from "../lib/profiles";
 import type { LotStatus, AuctionStatus } from "../lib/types";
 import { LotBadge } from "../components/StatusBadge";
 import { Countdown } from "../components/Countdown";
+import { DealChat } from "../components/DealChat";
+import { useAuth } from "../lib/auth";
 
 interface MyLot {
   lot_id: string;
@@ -22,6 +24,9 @@ interface MyLot {
   is_leader: boolean;
   ends_at: string | null;
   last_bid_at: string;
+  host_email: string | null;
+  host_phone: string | null;
+  host_note: string | null;
 }
 
 type Tab = "active" | "won" | "lost";
@@ -32,6 +37,8 @@ export function MyActivity() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hosts = useProfileNames(rows.map((r) => r.host_id));
+  const { session } = useAuth();
+  const [deal, setDeal] = useState<MyLot | null>(null);
 
   useEffect(() => {
     void supabase.rpc("my_lots").then(({ data, error }) => {
@@ -86,7 +93,8 @@ export function MyActivity() {
         {lists[tab].map((r) => {
           const cur = { currency: r.currency };
           return (
-            <Link key={r.lot_id} to={`/a/${r.auction_id}`} className="card animate-rise p-4 transition hover:shadow-md">
+            <div key={r.lot_id} className="card animate-rise p-4 transition hover:shadow-md">
+              <Link to={`/a/${r.auction_id}`} className="block">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-xs text-stone-500">{r.auction_title}</p>
@@ -118,15 +126,27 @@ export function MyActivity() {
                   </p>
                 </div>
               </div>
+              </Link>
               {r.status === "sold" && r.is_leader && (
-                <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-xs text-brand-700">
-                  The host ({hosts.get(r.host_id) ?? "..."}) will contact you by email to arrange payment and delivery.
-                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">
+                  <span className="min-w-0 flex-1">
+                    Arrange payment and delivery with {hosts.get(r.host_id) ?? "the host"}.
+                    {(r.host_email || r.host_phone) && (
+                      <span className="block font-medium">{[r.host_email, r.host_phone, r.host_note].filter(Boolean).join(" · ")}</span>
+                    )}
+                  </span>
+                  <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => setDeal(r)}>
+                    Message host
+                  </button>
+                </div>
               )}
-            </Link>
+            </div>
           );
         })}
       </div>
+      {deal && session && (
+        <DealChat lotId={deal.lot_id} lotTitle={deal.title} userId={session.user.id} otherName={hosts.get(deal.host_id) ?? "the host"} onClose={() => setDeal(null)} />
+      )}
     </div>
   );
 }

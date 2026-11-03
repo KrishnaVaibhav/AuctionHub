@@ -15,6 +15,7 @@ import { StreamEmbed } from "../components/StreamEmbed";
 import { Countdown } from "../components/Countdown";
 import { BidLog } from "../components/BidLog";
 import { Results } from "../components/Results";
+import { LeagueRoom } from "../components/league/LeagueRoom";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
 
@@ -65,8 +66,9 @@ export function AuctionRoom() {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <AuctionBadge status={auction.status} />
+            {auction.mode === "league" && <span className="chip bg-violet-100 text-violet-800">Team league</span>}
             {auction.status === "scheduled" && <span className="text-sm text-stone-500">Starts {dateTime(auction.starts_at)}</span>}
-            {auction.status === "live" && auction.ends_at && (
+            {auction.status === "live" && auction.mode !== "league" && auction.ends_at && (
               <span className="text-sm text-stone-500">
                 Last lot closes in <Countdown endsAt={auction.ends_at} className="font-semibold text-stone-800" />
               </span>
@@ -80,120 +82,126 @@ export function AuctionRoom() {
       </div>
       {hostError && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{hostError}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0 space-y-5">
-          {auction.stream_url && !finished && <StreamEmbed url={auction.stream_url} />}
+      {auction.mode === "league" ? (
+        <LeagueRoom auction={auction} lots={lots} media={media} userId={userId} isHost={isHost} isStaff={isStaff} />
+      ) : (
+        <>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="min-w-0 space-y-5">
+            {auction.stream_url && !finished && <StreamEmbed url={auction.stream_url} />}
 
-          {/* Tabs */}
-          <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
-              {tabs.map((t) => (
-                <button key={t.key} className={`tab ${tab === t.key ? "tab-active" : ""} ${t.mobileOnly ? "lg:hidden" : ""}`} onClick={() => setTab(t.key)}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {tab === "lot" &&
-            (selected ? (
-              <div className="grid animate-rise gap-6 md:grid-cols-2">
-                <div className="min-w-0">
-                  <LotGallery items={media.get(selected.id) ?? []} title={selected.title} />
-                  <div className="mt-4 flex items-start justify-between gap-3">
-                    <h2 className="font-display text-xl font-bold">
-                      <span className="mr-2 text-stone-400">#{selected.position + 1}</span>
-                      {selected.title}
-                    </h2>
-                    <div className="flex shrink-0 gap-1">
-                      <button className="btn-ghost px-2.5" disabled={selectedIndex <= 0} onClick={() => setSelectedId(lots[selectedIndex - 1]?.id ?? null)} aria-label="Previous lot">
-                        &larr;
-                      </button>
-                      <button
-                        className="btn-ghost px-2.5"
-                        disabled={selectedIndex >= lots.length - 1}
-                        onClick={() => setSelectedId(lots[selectedIndex + 1]?.id ?? null)}
-                        aria-label="Next lot"
-                      >
-                        &rarr;
-                      </button>
-                    </div>
-                  </div>
-                  {selected.description && <p className="mt-2 whitespace-pre-line text-sm text-stone-600">{selected.description}</p>}
-                  {Object.keys(selected.custom_fields ?? {}).length > 0 && (
-                    <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                      {Object.entries(selected.custom_fields).map(([k, v]) => (
-                        <div key={k} className="rounded-xl bg-stone-100 px-3 py-2">
-                          <dt className="text-[11px] font-semibold tracking-wider text-stone-500 uppercase">{k}</dt>
-                          <dd className="font-medium">{v}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
-                  {isHost && selected.status === "open" && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button className="btn-primary" onClick={() => void hostAction("close_lot_now", { p_lot_id: selected.id }, `Close "${selected.title}" now?`)}>
-                        Sold! Close lot now
-                      </button>
-                      <button className="btn-ghost" onClick={() => void hostAction("withdraw_lot", { p_lot_id: selected.id }, `Withdraw "${selected.title}"?`)}>
-                        Withdraw
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div id="bid" className="scroll-mt-20">
-                  <BidPanel auction={auction} lot={selected} userId={userId} isHost={isHost} />
-                </div>
+            {/* Tabs */}
+            <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
+                {tabs.map((t) => (
+                  <button key={t.key} className={`tab ${tab === t.key ? "tab-active" : ""} ${t.mobileOnly ? "lg:hidden" : ""}`} onClick={() => setTab(t.key)}>
+                    {t.label}
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div className="card py-16 text-center text-sm text-stone-500">No lots in this auction yet.</div>
-            ))}
-
-          {tab === "lots" && <LotGrid auction={auction} lots={lots} media={media} userId={userId} selectedId={selected?.id} onOpen={openLot} />}
-          {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
-          {tab === "results" && <Results auction={auction} lots={lots} isHost={isHost} userId={userId} />}
-          {tab === "chat" && (
-            <div className="lg:hidden">
-              <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
             </div>
-          )}
-        </div>
 
-        <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
-          <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
-        </aside>
-      </div>
+            {tab === "lot" &&
+              (selected ? (
+                <div className="grid animate-rise gap-6 md:grid-cols-2">
+                  <div className="min-w-0">
+                    <LotGallery items={media.get(selected.id) ?? []} title={selected.title} />
+                    <div className="mt-4 flex items-start justify-between gap-3">
+                      <h2 className="font-display text-xl font-bold">
+                        <span className="mr-2 text-stone-400">#{selected.position + 1}</span>
+                        {selected.title}
+                      </h2>
+                      <div className="flex shrink-0 gap-1">
+                        <button className="btn-ghost px-2.5" disabled={selectedIndex <= 0} onClick={() => setSelectedId(lots[selectedIndex - 1]?.id ?? null)} aria-label="Previous lot">
+                          &larr;
+                        </button>
+                        <button
+                          className="btn-ghost px-2.5"
+                          disabled={selectedIndex >= lots.length - 1}
+                          onClick={() => setSelectedId(lots[selectedIndex + 1]?.id ?? null)}
+                          aria-label="Next lot"
+                        >
+                          &rarr;
+                        </button>
+                      </div>
+                    </div>
+                    {selected.description && <p className="mt-2 whitespace-pre-line text-sm text-stone-600">{selected.description}</p>}
+                    {Object.keys(selected.custom_fields ?? {}).length > 0 && (
+                      <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                        {Object.entries(selected.custom_fields).map(([k, v]) => (
+                          <div key={k} className="rounded-xl bg-stone-100 px-3 py-2">
+                            <dt className="text-[11px] font-semibold tracking-wider text-stone-500 uppercase">{k}</dt>
+                            <dd className="font-medium">{v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
+                    {isHost && selected.status === "open" && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button className="btn-primary" onClick={() => void hostAction("close_lot_now", { p_lot_id: selected.id }, `Close "${selected.title}" now?`)}>
+                          Sold! Close lot now
+                        </button>
+                        <button className="btn-ghost" onClick={() => void hostAction("withdraw_lot", { p_lot_id: selected.id }, `Withdraw "${selected.title}"?`)}>
+                          Withdraw
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div id="bid" className="scroll-mt-20">
+                    <BidPanel auction={auction} lot={selected} userId={userId} isHost={isHost} />
+                  </div>
+                </div>
+              ) : (
+                <div className="card py-16 text-center text-sm text-stone-500">No lots in this auction yet.</div>
+              ))}
 
-      {/* Mobile sticky bid bar */}
-      {selected && tab !== "chat" && selected.status === "open" && auction.status === "live" && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
-          <div className="mx-auto flex max-w-xl items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-stone-500">
-                #{selected.position + 1} {selected.title}
-              </p>
-              <p className="flex items-baseline gap-2">
-                <span className="text-lg font-bold tabular-nums">{money(selected.current_bid ?? selected.start_price, auction.settings)}</span>
-                <Countdown endsAt={selected.ends_at} className="text-sm" />
-              </p>
-            </div>
-            {userId && selected.current_winner_id === userId ? (
-              <span className="chip bg-emerald-100 text-emerald-800">Winning</span>
-            ) : (
-              !isHost && (
-                <button
-                  className="btn-accent px-6 py-3"
-                  onClick={() => {
-                    setTab("lot");
-                    setTimeout(() => document.getElementById("bid")?.scrollIntoView({ behavior: "smooth" }), 50);
-                  }}
-                >
-                  Bid
-                </button>
-              )
+            {tab === "lots" && <LotGrid auction={auction} lots={lots} media={media} userId={userId} selectedId={selected?.id} onOpen={openLot} />}
+            {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
+            {tab === "results" && <Results auction={auction} lots={lots} isHost={isHost} userId={userId} />}
+            {tab === "chat" && (
+              <div className="lg:hidden">
+                <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
+              </div>
             )}
           </div>
+
+          <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
+            <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
+          </aside>
         </div>
+
+        {/* Mobile sticky bid bar */}
+        {selected && tab !== "chat" && selected.status === "open" && auction.status === "live" && (
+          <div className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
+            <div className="mx-auto flex max-w-xl items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs text-stone-500">
+                  #{selected.position + 1} {selected.title}
+                </p>
+                <p className="flex items-baseline gap-2">
+                  <span className="text-lg font-bold tabular-nums">{money(selected.current_bid ?? selected.start_price, auction.settings)}</span>
+                  <Countdown endsAt={selected.ends_at} className="text-sm" />
+                </p>
+              </div>
+              {userId && selected.current_winner_id === userId ? (
+                <span className="chip bg-emerald-100 text-emerald-800">Winning</span>
+              ) : (
+                !isHost && (
+                  <button
+                    className="btn-accent px-6 py-3"
+                    onClick={() => {
+                      setTab("lot");
+                      setTimeout(() => document.getElementById("bid")?.scrollIntoView({ behavior: "smooth" }), 50);
+                    }}
+                  >
+                    Bid
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

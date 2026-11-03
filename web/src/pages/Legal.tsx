@@ -25,7 +25,8 @@ export function Privacy() {
       <ul>
         <li>Account data: your email address, plus your name and profile picture if you sign in with Google.</li>
         <li>Profile data you choose to add: display name, username, avatar.</li>
-        <li>Auction activity: auctions and lots you create, bids you place, chat messages you send.</li>
+        <li>Optional contact details you choose to add: phone number and a short note.</li>
+        <li>Auction activity: auctions and lots you create, bids you place, league teams you create, chat and deal-chat messages you send.</li>
         <li>Media you upload: photos, videos, cover images.</li>
         <li>Technical data: a sign-in session stored in your browser's local storage, and standard server logs (IP address, browser type).</li>
       </ul>
@@ -40,9 +41,13 @@ export function Privacy() {
 
       <h2>What other users can see</h2>
       <p>
-        Your display name, avatar, bids, chat messages and uploaded media are visible to other users of the auction. Your auto-bid
-        maximums are never shown. Your email address is hidden from other users, except that the host of an auction can see the
-        email of the winner of each lot they sold, so they can arrange payment and delivery.
+        Your display name, avatar, bids, league team, chat messages and uploaded media are visible to other users of the auction. We
+        never use your email or Google name to create your public profile. Your auto-bid maximums are never shown.
+      </p>
+      <p>
+        Your email, phone and note are <strong>private by default</strong>. They are shared only if you turn on "Share my contact
+        details after a sale" in your account, and then only with the other side of a completed sale (the host of a lot you won, or
+        the winner of a lot you sold). Deal-chat messages are visible only to that host and winner.
       </p>
 
       <h2>Google sign-in</h2>

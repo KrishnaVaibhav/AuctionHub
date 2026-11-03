@@ -5,6 +5,7 @@ import { useProfileNames } from "../lib/profiles";
 import type { Auction, Lot, LotStatus } from "../lib/types";
 import { LotBadge } from "./StatusBadge";
 import { Avatar } from "./Avatar";
+import { DealChat } from "./DealChat";
 
 interface HostRow {
   lot_id: string;
@@ -18,6 +19,8 @@ interface HostRow {
   winner_name: string | null;
   winner_username: string | null;
   winner_email: string | null;
+  winner_phone: string | null;
+  winner_note: string | null;
   closed_at: string | null;
 }
 
@@ -30,6 +33,7 @@ function csvCell(v: unknown): string {
 export function Results({ auction, lots, isHost, userId }: { auction: Auction; lots: Lot[]; isHost: boolean; userId: string | null }) {
   const [hostRows, setHostRows] = useState<HostRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deal, setDeal] = useState<Lot | null>(null);
   const names = useProfileNames(lots.map((l) => l.current_winner_id));
   const closedKey = lots.map((l) => `${l.id}:${l.status}:${l.current_bid}`).join("|");
 
@@ -48,9 +52,9 @@ export function Results({ auction, lots, isHost, userId }: { auction: Auction; l
 
   function exportCsv() {
     if (!hostRows) return;
-    const header = ["Lot", "Title", "Status", "Final price", "Currency", "Bids", "Winner", "Username", "Email", "Closed at"];
+    const header = ["Lot", "Title", "Status", "Final price", "Currency", "Bids", "Winner", "Username", "Email (if shared)", "Phone (if shared)", "Note", "Closed at"];
     const lines = hostRows.map((r) =>
-      [r.position + 1, r.title, r.status, r.final_price ?? "", auction.settings.currency ?? "INR", r.bid_count, r.winner_name ?? "", r.winner_username ?? "", r.winner_email ?? "", r.closed_at ?? ""]
+      [r.position + 1, r.title, r.status, r.final_price ?? "", auction.settings.currency ?? "INR", r.bid_count, r.winner_name ?? "", r.winner_username ?? "", r.winner_email ?? "", r.winner_phone ?? "", r.winner_note ?? "", r.closed_at ?? ""]
         .map(csvCell)
         .join(","),
     );
@@ -107,10 +111,10 @@ export function Results({ auction, lots, isHost, userId }: { auction: Auction; l
                           {l.status === "sold" ? "Won by " : "Leading: "}
                           {winnerName}
                         </p>
-                        {isHost && h?.winner_email && (
-                          <a href={`mailto:${h.winner_email}`} className="block truncate text-xs text-sky-700 hover:underline">
-                            {h.winner_email}
-                          </a>
+                        {isHost && l.status === "sold" && (h?.winner_email || h?.winner_phone) && (
+                          <p className="truncate text-xs text-sky-700">
+                            {[h.winner_email, h.winner_phone, h.winner_note].filter(Boolean).join(" · ")}
+                          </p>
                         )}
                       </div>
                     </>
@@ -119,13 +123,31 @@ export function Results({ auction, lots, isHost, userId }: { auction: Auction; l
                 <div className="ml-auto flex items-center gap-3">
                   <span className="font-semibold tabular-nums">{money(l.current_bid ?? l.start_price, auction.settings)}</span>
                   <LotBadge status={l.status} />
+                  {isHost && userId && l.status === "sold" && l.current_winner_id && (
+                    <button className="btn-ghost px-2.5 py-1 text-xs" onClick={() => setDeal(l)}>
+                      Message
+                    </button>
+                  )}
                 </div>
               </li>
             );
           })}
         </ul>
       </div>
-      {isHost && <p className="text-xs text-stone-500">Only you (the host) can see winner emails, so you can arrange payment and delivery.</p>}
+      {isHost && (
+        <p className="text-xs text-stone-500">
+          Winner contact details appear only if the winner chose to share them. You can always use "Message" for a private deal chat.
+        </p>
+      )}
+      {deal && userId && (
+        <DealChat
+          lotId={deal.id}
+          lotTitle={deal.title}
+          userId={userId}
+          otherName={(deal.current_winner_id && names.get(deal.current_winner_id)) || "the winner"}
+          onClose={() => setDeal(null)}
+        />
+      )}
     </div>
   );
 }

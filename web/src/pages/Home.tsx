@@ -188,8 +188,9 @@ function AuctionCard({ a }: { a: Row }) {
     <Link to={`/a/${a.id}`} className="card group flex animate-rise flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg">
       <div className="relative">
         <Cover a={a} className="aspect-[4/3] w-full" />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 flex gap-1.5">
           <AuctionBadge status={a.status} />
+          {a.mode === "league" && <span className="chip bg-violet-600 text-white">League</span>}
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-4">

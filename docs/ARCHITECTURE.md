@@ -38,6 +38,27 @@ directly.
 - **Buy now:** available until the first bid. It closes the lot immediately.
 - **Pause:** freezes bidding. Resume shifts every open lot's `ends_at` by the time spent paused.
 
+## Privacy
+
+- Public profile: display name, username and avatar only. New accounts get `user_<hash>` and `Bidder XXXX`; nothing is derived from email or the Google name.
+- `contact_settings` (email share, phone, note) is readable only by its owner. `auction_results()` and `my_lots()` reveal contact details only when that person has `share_contact = true`, and only to the other side of a completed sale.
+- `deal_messages`: a private chat between host and winner of a sold lot, readable only by those two (`is_deal_party()`).
+
+## Team league mode (`auctions.mode = 'league'`)
+
+An IPL-style auction game with virtual purses (no real money).
+
+- Teams join through `join_league()` while the league is `scheduled`. There is one team per user, and each starts with `settings.league.purse`.
+- When the league starts, lots ("players") go on the block **one at a time**.
+  - `lot_seconds` sets the opening timer. Each bid resets the timer to at least `bid_seconds`. `break_seconds` adds a pause between players.
+- `league_bid()` checks that:
+  - the bidder owns a team,
+  - the team isn't already the highest bidder,
+  - the squad isn't full (`squad_max`),
+  - the purse can cover the bid while keeping `min_base` back for each unfilled `squad_min` slot.
+- When the timer expires, any client calls `league_tick()`. It is safe for anyone to call. It closes the player (the price comes out of the winning team's purse) and opens the next. pg_cron is a fallback.
+- Host tools: close or skip the current player, `league_requeue_unsold()`, `set_lot_points()`. The leaderboard ranks teams by total points, then by purse left.
+
 ## Auction settings (`auctions.settings` jsonb)
 
 ```json
