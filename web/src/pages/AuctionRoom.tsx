@@ -20,6 +20,7 @@ import { PrivateGate } from "../components/PrivateGate";
 import { visibilityLabel } from "../lib/auctions";
 import { useIsAdmin } from "../lib/admin";
 import { WatchButton } from "../components/WatchButton";
+import { HostLine } from "../components/HostLine";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
 
@@ -82,6 +83,7 @@ export function AuctionRoom() {
             )}
           </div>
           <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{auction.title}</h1>
+          <HostLine hostId={auction.host_id} category={auction.category} />
           {auction.description && <p className="mt-2 line-clamp-3 max-w-3xl whitespace-pre-line text-sm text-stone-600 sm:text-base">{auction.description}</p>}
         </div>
 

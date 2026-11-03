@@ -13,6 +13,7 @@ import { LotEditor, NewLotForm } from "./LotEditor";
 import { VisibilityPanel } from "./VisibilityPanel";
 import { ModeratorsPanel } from "./ModeratorsPanel";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
+import { CATEGORIES, parseTags } from "../../lib/categories";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
@@ -139,6 +140,8 @@ function AuctionForm({
   const [startsAt, setStartsAt] = useState(toLocalInput(auction.starts_at));
   const [endsAt, setEndsAt] = useState(toLocalInput(auction.ends_at));
   const [streamUrl, setStreamUrl] = useState(auction.stream_url ?? "");
+  const [category, setCategory] = useState(auction.category ?? "");
+  const [tags, setTags] = useState((auction.tags ?? []).join(", "));
   const [currency, setCurrency] = useState(s.currency ?? "INR");
   const [antiSnipe, setAntiSnipe] = useState(String(s.anti_snipe_seconds ?? 30));
   const [duration, setDuration] = useState(String(s.lot_duration_minutes ?? 10));
@@ -206,6 +209,8 @@ function AuctionForm({
         starts_at: fromLocalInput(startsAt),
         ends_at: fromLocalInput(endsAt),
         stream_url: streamUrl.trim() || null,
+        category: category || null,
+        tags: parseTags(tags),
         settings,
         ...(auction.status === "draft" ? { mode } : {}),
       })
@@ -257,6 +262,27 @@ function AuctionForm({
               Lots close at (optional)
             </label>
             <input id="ea" type="datetime-local" className="input" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="label" htmlFor="cat">
+              Category
+            </label>
+            <select id="cat" className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">Choose a category</option>
+              {CATEGORIES.map(([k, label, icon]) => (
+                <option key={k} value={k}>
+                  {icon} {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label" htmlFor="tags">
+              Tags (comma separated, up to 8)
+            </label>
+            <input id="tags" className="input" placeholder="vintage, silver, 1970s" value={tags} onChange={(e) => setTags(e.target.value)} />
           </div>
         </div>
         <div>

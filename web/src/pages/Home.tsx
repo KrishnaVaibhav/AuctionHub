@@ -5,6 +5,7 @@ import type { Auction, AuctionStatus } from "../lib/types";
 import { AuctionBadge } from "../components/StatusBadge";
 import { Countdown } from "../components/Countdown";
 import { dateTime } from "../lib/format";
+import { CATEGORIES, categoryIcon, categoryLabel } from "../lib/categories";
 
 type Row = Auction & { lots: { count: number }[] };
 type Tab = "live" | "upcoming" | "ended";
@@ -21,6 +22,7 @@ export function Home() {
   const [rows, setRows] = useState<Row[]>([]);
   const [counts, setCounts] = useState<Record<Tab, number>>({ live: 0, upcoming: 0, ended: 0 });
   const [query, setQuery] = useState("");
+  const [cat, setCat] = useState("");
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,11 @@ export function Home() {
       .select("*, lots(count)")
       .eq("visibility", "public")
       .in("status", tabStatuses[tab])
-      .order(tab === "ended" ? "ends_at" : "starts_at", { ascending: tab !== "ended", nullsFirst: false })
+      .order(tab === "upcoming" ? "starts_at" : "ends_at", { ascending: tab !== "ended", nullsFirst: false })
       .range(from, from + PAGE - 1);
     if (query.trim()) q = q.ilike("title", `%${query.trim().replace(/[%_]/g, "")}%`);
+    if (cat === "league") q = q.eq("mode", "league");
+    else if (cat) q = q.eq("category", cat);
     const { data, error } = await q;
     if (error) setError(errorMessage(error));
     const page = (data as Row[] | null) ?? [];
@@ -61,9 +65,9 @@ export function Home() {
   useEffect(() => {
     const t = setTimeout(() => void load(true), query ? 250 : 0);
     return () => clearTimeout(t);
-  }, [tab, query]);
+  }, [tab, query, cat]);
 
-  const featured = useMemo(() => (tab === "live" && !query ? rows[0] : undefined), [rows, tab, query]);
+  const featured = useMemo(() => (tab === "live" && !query && !cat ? rows[0] : undefined), [rows, tab, query, cat]);
   const rest = featured ? rows.slice(1) : rows;
 
   return (
@@ -109,6 +113,18 @@ export function Home() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+      </div>
+
+      <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+        {[["", "All", "🔥"] as const, ["league", "Team leagues", "🏆"] as const, ...CATEGORIES].map(([k, label, icon]) => (
+          <button
+            key={k || "all"}
+            onClick={() => setCat(k)}
+            className={`chip shrink-0 border px-3 py-1.5 ${cat === k ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}
+          >
+            {icon} {label}
+          </button>
+        ))}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -196,6 +212,11 @@ function AuctionCard({ a }: { a: Row }) {
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-4">
         <h3 className="line-clamp-2 font-semibold leading-snug group-hover:underline">{a.title}</h3>
+        {a.category && (
+          <p className="text-xs text-stone-500">
+            {categoryIcon(a.category)} {categoryLabel(a.category)}
+          </p>
+        )}
         <p className="mt-auto flex items-center justify-between pt-2 text-xs text-stone-500">
           <span>
             <When a={a} />

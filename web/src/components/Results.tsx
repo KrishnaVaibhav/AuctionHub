@@ -6,6 +6,7 @@ import type { Auction, Lot, LotStatus } from "../lib/types";
 import { LotBadge } from "./StatusBadge";
 import { Avatar } from "./Avatar";
 import { DealChat } from "./DealChat";
+import { RateTrade } from "./RateTrade";
 
 interface HostRow {
   lot_id: string;
@@ -129,6 +130,11 @@ export function Results({ auction, lots, isHost, userId }: { auction: Auction; l
                     </button>
                   )}
                 </div>
+                {isHost && userId && l.status === "sold" && l.current_winner_id && (
+                  <div className="basis-full pl-11">
+                    <RateTrade lotId={l.id} userId={userId} label="buyer" />
+                  </div>
+                )}
               </li>
             );
           })}

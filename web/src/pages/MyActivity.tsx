@@ -8,6 +8,7 @@ import { LotBadge } from "../components/StatusBadge";
 import { Countdown } from "../components/Countdown";
 import { DealChat } from "../components/DealChat";
 import { WatchingList } from "../components/WatchingList";
+import { RateTrade } from "../components/RateTrade";
 import { useAuth } from "../lib/auth";
 
 interface MyLot {
@@ -141,6 +142,11 @@ export function MyActivity() {
                   <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => setDeal(r)}>
                     Message host
                   </button>
+                </div>
+              )}
+              {r.status === "sold" && r.is_leader && session && (
+                <div className="mt-2">
+                  <RateTrade lotId={r.lot_id} userId={session.user.id} label="seller" />
                 </div>
               )}
             </div>
