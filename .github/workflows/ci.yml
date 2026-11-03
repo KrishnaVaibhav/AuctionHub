@@ -6,7 +6,8 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main midway: it may be deploying migrations.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   web:
@@ -15,8 +16,8 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/setup-node@v7
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -40,3 +41,25 @@ jobs:
       - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor
       - run: supabase test db
       - run: supabase db lint --level error
+
+  # Apply new migrations to the production Supabase project, only after tests pass on main.
+  deploy-db:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [web, database]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-db
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: yuqccqmzxmpxfedmkgwp
+    steps:
+      - uses: actions/checkout@v7
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase link --project-ref "$PROJECT_REF"
+      - name: Pending migrations
+        run: supabase db push --remote --dry-run
+      - name: Apply migrations
+        run: supabase db push --remote --yes
