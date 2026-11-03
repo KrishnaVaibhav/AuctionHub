@@ -32,6 +32,13 @@ export function HostDashboard() {
       });
   }, [userId]);
 
+  async function duplicate(a: Row) {
+    setError(null);
+    const { data, error } = await supabase.rpc("duplicate_auction", { p_auction_id: a.id });
+    if (error) setError(errorMessage(error));
+    else navigate(`/host/a/${data}`);
+  }
+
   async function remove(a: Row) {
     if (!window.confirm(`Permanently delete "${a.title}" with all its lots, bids, chat and files? This cannot be undone.`)) return;
     setError(null);
@@ -123,6 +130,9 @@ export function HostDashboard() {
             <Link to={`/a/${a.id}`} className="btn-primary">
               Open room
             </Link>
+            <button className="btn-ghost" onClick={() => void duplicate(a)} aria-label={`Duplicate ${a.title}`}>
+              Duplicate
+            </button>
             {canDelete(a.status) && (
               <button className="btn-ghost text-red-600" onClick={() => void remove(a)} aria-label={`Delete ${a.title}`}>
                 Delete

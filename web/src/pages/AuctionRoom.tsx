@@ -24,7 +24,13 @@ import { HostLine } from "../components/HostLine";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
 
+/** Remount per auction so no state (form fields, selection, tabs) leaks between auctions. */
 export function AuctionRoom() {
+  const { id } = useParams();
+  return <AuctionRoomInner key={id} />;
+}
+
+function AuctionRoomInner() {
   const { id } = useParams();
   const { session } = useAuth();
   const userId = session?.user.id ?? null;

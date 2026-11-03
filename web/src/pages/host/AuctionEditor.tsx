@@ -12,12 +12,20 @@ import { AuctionBadge } from "../../components/StatusBadge";
 import { LotEditor, NewLotForm } from "./LotEditor";
 import { VisibilityPanel } from "./VisibilityPanel";
 import { ModeratorsPanel } from "./ModeratorsPanel";
+import { ImportLots } from "./ImportLots";
+import { AnalyticsPanel } from "./AnalyticsPanel";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 import { CATEGORIES, parseTags } from "../../lib/categories";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
+/** Remount per auction so no state (form fields, selection, tabs) leaks between auctions. */
 export function AuctionEditor() {
+  const { id } = useParams();
+  return <AuctionEditorInner key={id} />;
+}
+
+function AuctionEditorInner() {
   const { id } = useParams();
   const { session } = useAuth();
   const navigate = useNavigate();
@@ -43,6 +51,13 @@ export function AuctionEditor() {
     }
   }
 
+  async function duplicate() {
+    setError(null);
+    const { data, error } = await supabase.rpc("duplicate_auction", { p_auction_id: auction!.id });
+    if (error) setError(errorMessage(error));
+    else navigate(`/host/a/${data}`);
+  }
+
   async function remove() {
     if (!window.confirm("Permanently delete this auction with all lots, bids, chat, teams and uploaded files? This cannot be undone.")) return;
     try {
@@ -61,6 +76,9 @@ export function AuctionEditor() {
         </Link>
         <AuctionBadge status={auction.status} />
         <div className="ml-auto flex flex-wrap gap-2">
+          <button className="btn-ghost" onClick={() => void duplicate()}>
+            Duplicate
+          </button>
           <Link to={`/a/${auction.id}`} className="btn-ghost">
             Open room
           </Link>
@@ -101,6 +119,8 @@ export function AuctionEditor() {
 
       <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />
 
+      {auction.status !== "draft" && <AnalyticsPanel auction={auction} />}
+
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">{auction.mode === "league" ? "Players" : "Lots"} ({lots.length})</h2>
@@ -120,6 +140,7 @@ export function AuctionEditor() {
           />
         ))}
         {editable && <NewLotForm auction={auction} nextPosition={lots.length} onCreated={reload} />}
+        {editable && <ImportLots auction={auction} nextPosition={lots.length} onDone={reload} />}
       </section>
     </div>
   );
