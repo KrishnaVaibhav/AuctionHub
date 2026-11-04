@@ -44,6 +44,15 @@ directly.
 - `contact_settings` (email share, phone, note) is readable only by its owner. `auction_results()` and `my_lots()` reveal contact details only when that person has `share_contact = true`, and only to the other side of a completed sale.
 - `deal_messages`: a private chat between host and winner of a sold lot, readable only by those two (`is_deal_party()`).
 
+## Sale types (`lots.sale_type`)
+
+Each lot picks one. The type locks once the lot opens, and league auctions always use `english`.
+
+- `english` (default): ascending bids with proxy auto-bids and anti-snipe. `place_bid` and `buy_now` are thin wrappers that reject other types, then call the original engine (`_place_bid_english`, `_buy_now_core`).
+- `dutch`: `sale_settings = {step, floor, interval_s}`. The price drops by `step` every `interval_s` seconds from `start_price` down to `floor`, and freezes while the auction is paused. `dutch_accept()` buys at the server's current price.
+- `sealed`: `place_sealed_bid()` stores raise-only bids in `sealed_bids`. Only the bidder can read their own, not the host. The public sees only the bidder count. At close, every sealed bid is copied into `bids` and the highest wins (earliest on a tie). The reserve still applies.
+- `offer`: `make_offer()` adds a row to `lot_offers` (one pending per bidder; `start_price` is the minimum offer). The host calls `respond_offer()` to accept, which sells the lot and declines the rest, or to decline. Buy now still works. Pending offers expire at close.
+
 ## Visibility
 
 `auctions.visibility` can be:
@@ -111,6 +120,54 @@ An IPL-style auction game with virtual purses (no real money).
   - the purse can cover the bid while keeping `min_base` back for each unfilled `squad_min` slot.
 - When the timer expires, any client calls `league_tick()`. It is safe for anyone to call. It closes the player (the price comes out of the winning team's purse) and opens the next. pg_cron is a fallback.
 - Host tools: close or skip the current player, `league_requeue_unsold()`, `set_lot_points()`. The leaderboard ranks teams by total points, then by purse left.
+
+### League upgrades
+
+Settings in `settings.league`:
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `retain_max` | 4 | Players a team can keep |
+| `rtm_cards` | 0 (off) | Right-to-match cards per team |
+| `rtm_seconds` | 20 | Time to decide on a match |
+| `category_max` | none | Per-category limit, e.g. `{"Overseas": 8}`, using `custom_fields.Category` |
+| `trades` | true | Whether trades are allowed |
+| `season` | none | Season number, set by `league_next_season()` |
+
+- **Retention:** before the league starts, the host calls `league_retain()` or `league_unretain()`. The price comes out of the team's purse.
+- **Right to match:**
+  - `lots.rtm_team_id` names the previous owner.
+  - When the player closes with another winner, `_close_lot` sets `rtm_offered`, extends the timer by `rtm_seconds` and notifies the previous owner.
+  - `league_rtm(match)` decides. The timer running out counts as a pass.
+  - The `bids_league_guard` trigger blocks other bids during the decision and enforces `category_max`.
+- **Trades:**
+  - Available while the league is paused or after it ends.
+  - `league_propose_trade()` takes players in each direction plus cash. The receiving team calls `league_respond_trade()` to accept or reject.
+  - The proposer or the host can cancel.
+  - Squads and purses are re-checked when a trade is accepted. Other pending trades that involve the same players are cancelled.
+- **Next season:** `league_next_season()` creates a draft league with the same teams and fresh purses, the same members, and every player. Each player's last owner gets the right to match.
+
+## Price hints, webhooks, embed
+
+- **Price hints:** `price_hint(category, currency, title)` returns the 25th, 50th and 75th percentile prices of public standard sales in that category over the last 365 days. It prefers title matches when there are at least 3. It returns null below 3 sales.
+- **Webhooks:**
+  - The `host_webhooks` table holds up to 5 per host. URLs must be https on a public host; private and internal addresses are refused.
+  - Triggers on lot and auction status changes POST JSON through Supabase's built-in `pg_net`. The events are `auction.live`, `auction.ended`, `lot.sold` and `lot.unsold`.
+  - The `X-AuctionHub-Signature` header is a hex HMAC-SHA256 of the body, keyed with the webhook's secret.
+  - `test_webhook()` sends a ping.
+- **Embed:** the Worker serves `/embed/:id`, a self-contained page. It reads the public REST API with the anon key, so RLS hides private auctions. It refreshes every 15 seconds and links to the room. Hosts copy an iframe snippet from the auction editor.
+
+## Languages
+
+`web/src/lib/i18n.ts` is a small helper with no extra dependencies:
+
+- `t("English text", vars)`, where the English text is the key and missing keys fall back to English.
+- Languages: Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi and Bengali, in `lib/locales/*.ts`.
+- Each language loads on demand (about 3 KB gzipped).
+- The language is the saved choice, else the browser language, else English.
+- Changing the language remounts the routed UI.
+- `i18n.test.ts` checks that every language has every key and keeps every `{placeholder}`.
+- Server-generated text stays in English for now: error messages, chat system lines and notifications.
 
 ## Auction settings (`auctions.settings` jsonb)
 
