@@ -145,7 +145,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
           <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
             {lot.current_bid == null ? "Starting price" : "Current bid"}
           </p>
-          <p key={String(lot.current_bid)} className="-mx-1 animate-flash rounded-lg px-1 font-display text-4xl font-extrabold tabular-nums">
+          <p key={String(lot.current_bid)} className="-mx-1 inline-block origin-left animate-bump rounded-lg px-1 font-display text-4xl font-extrabold tabular-nums">
             {money(lot.current_bid ?? lot.start_price, settings)}
           </p>
           <p className="mt-1 text-sm text-stone-500">

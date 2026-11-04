@@ -1,3 +1,4 @@
+import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { supabase, errorMessage, channelName } from "../lib/supabase";
@@ -74,8 +75,8 @@ export function DealChat({
             <p className="text-xs text-stone-500">Private deal chat · only you and {otherName}</p>
             <p className="truncate font-semibold">{lotTitle}</p>
           </div>
-          <button className="btn-ghost px-2.5 py-1" onClick={onClose} aria-label="Close">
-            ✕
+          <button className="btn-ghost h-9 w-9 p-0" onClick={onClose} aria-label="Close">
+            <XIcon size={16} weight="bold" aria-hidden="true" />
           </button>
         </div>
         <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto p-4">

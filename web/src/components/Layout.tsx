@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { ListIcon, XIcon } from "@phosphor-icons/react";
 import { useAuth } from "../lib/auth";
 import { supabaseConfigured } from "../lib/supabase";
 import { Avatar } from "./Avatar";
@@ -27,20 +28,23 @@ export function Layout() {
   ];
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-lg px-3 py-2 text-sm font-medium transition ${isActive ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"}`;
+    `rounded-full px-3.5 py-2 text-sm font-medium transition duration-300 ${
+      isActive ? "bg-stone-900 text-white shadow-sm" : "text-stone-600 hover:bg-stone-900/5 hover:text-stone-900 dark:hover:bg-white/5"
+    }`;
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-white/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2.5 font-display text-lg font-extrabold tracking-tight">
+      {/* Floating glass navigation: content scrolls underneath it. */}
+      <header className="sticky top-0 z-30 px-3 sm:px-6" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
+        <div className="glass mx-auto flex h-14 max-w-7xl items-center gap-2 rounded-full pr-2 pl-3 sm:pl-4">
+          <Link to="/" className="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight">
             <img src="/favicon.svg" alt="" className="h-8 w-8" />
             <span>
               Auction<span className="text-brand-600">Hub</span>
             </span>
           </Link>
 
-          <nav className="ml-6 hidden items-center gap-1 md:flex">
+          <nav className="ml-4 hidden items-center gap-1 md:flex">
             {links.map((l) => (
               <NavLink key={l.to} to={l.to} end={l.end} className={navClass}>
                 {l.label}
@@ -48,12 +52,12 @@ export function Layout() {
             ))}
           </nav>
 
-          <div className="ml-auto hidden items-center gap-2 md:flex">
+          <div className="ml-auto hidden items-center gap-1 md:flex">
             <NotificationBell />
             <ThemeToggle />
             {session ? (
               <>
-                <Link to="/account" className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 hover:bg-stone-100">
+                <Link to="/account" className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 transition hover:bg-stone-900/5 dark:hover:bg-white/5">
                   <Avatar name={profile?.display_name} url={profile?.avatar_url} size={32} />
                   <span className="max-w-32 truncate text-sm font-medium">{profile?.display_name ?? "Account"}</span>
                 </Link>
@@ -71,21 +75,19 @@ export function Layout() {
           <div className="ml-auto flex items-center md:hidden">
             <NotificationBell />
             <ThemeToggle />
+            <button
+              className="flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-stone-900/5"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Menu"
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <XIcon size={22} weight="bold" aria-hidden="true" /> : <ListIcon size={22} weight="bold" aria-hidden="true" />}
+            </button>
           </div>
-          <button
-            className="flex h-11 w-11 items-center justify-center rounded-xl hover:bg-stone-100 md:hidden"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Menu"
-            aria-expanded={menuOpen}
-          >
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
-            </svg>
-          </button>
         </div>
 
         {menuOpen && (
-          <div className="animate-rise border-t border-stone-200 bg-white px-4 pt-2 pb-4 md:hidden">
+          <div className="glass mx-auto mt-2 max-w-7xl animate-rise rounded-[28px] p-3 md:hidden">
             <nav className="flex flex-col gap-1">
               {links.map((l) => (
                 <NavLink key={l.to} to={l.to} end={l.end} className={navClass}>
@@ -98,10 +100,10 @@ export function Layout() {
                 </NavLink>
               )}
             </nav>
-            <div className="mt-3 border-t border-stone-100 pt-3">
+            <div className="mt-3 border-t border-stone-900/5 pt-3 dark:border-white/5">
               <ThemeSegmented />
             </div>
-            <div className="mt-3 border-t border-stone-100 pt-3">
+            <div className="mt-3 border-t border-stone-900/5 pt-3 dark:border-white/5">
               {session ? (
                 <button className="btn-ghost w-full" onClick={() => void signOut()}>
                   Sign out
@@ -117,7 +119,7 @@ export function Layout() {
       </header>
 
       {!supabaseConfigured && (
-        <div className="bg-red-600 px-4 py-2 text-center text-sm text-snow">
+        <div className="mx-3 mt-3 rounded-full bg-red-600 px-4 py-2 text-center text-sm text-snow sm:mx-6">
           Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
         </div>
       )}

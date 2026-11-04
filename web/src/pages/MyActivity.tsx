@@ -70,7 +70,7 @@ export function MyActivity() {
         <Stat label="Won total" value={won.length ? money(spent, { currency: won[0].currency }) : "-"} />
       </div>
 
-      <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
+      <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
         {(["active", "won", "lost", "watching"] as Tab[]).map((t) => (
           <button key={t} className={`tab ${tab === t ? "tab-active" : ""}`} onClick={() => setTab(t)}>
             {t === "active" ? "Active" : t === "won" ? "Won" : t === "lost" ? "Not won" : "Watching"}
@@ -109,7 +109,7 @@ export function MyActivity() {
                     {r.is_leader ? "Winning" : "Outbid"}
                   </span>
                 ) : r.status === "sold" && r.is_leader ? (
-                  <span className="chip bg-brand-400 text-black">You won</span>
+                  <span className="chip bg-brand-400 text-ink">You won</span>
                 ) : (
                   <LotBadge status={r.status} />
                 )}

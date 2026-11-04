@@ -1,3 +1,4 @@
+import { StarIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { supabase, errorMessage } from "../lib/supabase";
 
@@ -50,7 +51,7 @@ export function RateTrade({ lotId, userId, label }: { lotId: string; userId: str
             setOpen(true);
           }}
         >
-          ★
+          <StarIcon size={18} weight="fill" aria-hidden="true" />
         </button>
       ))}
     </span>

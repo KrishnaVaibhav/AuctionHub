@@ -127,7 +127,7 @@ function AuctionRoomInner() {
 
             {/* Tabs */}
             <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-              <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
+              <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
                 {tabs.map((t) => (
                   <button key={t.key} className={`tab ${tab === t.key ? "tab-active" : ""} ${t.mobileOnly ? "lg:hidden" : ""}`} onClick={() => setTab(t.key)}>
                     {t.label}
@@ -208,14 +208,15 @@ function AuctionRoomInner() {
 
         {/* Mobile sticky bid bar */}
         {selected && tab !== "chat" && selected.status === "open" && auction.status === "live" && (
-          <div className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
+          <div className="fixed inset-x-0 bottom-0 z-20 px-3 lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
+            <div className="glass mx-auto max-w-xl animate-rise rounded-[28px] px-4 py-3">
             <div className="mx-auto flex max-w-xl items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs text-stone-500">
                   #{selected.position + 1} {selected.title}
                 </p>
                 <p className="flex items-baseline gap-2">
-                  <span className="text-lg font-bold tabular-nums">{money(selected.current_bid ?? selected.start_price, auction.settings)}</span>
+                  <span key={String(selected.current_bid)} className="animate-bump rounded-md font-display text-lg font-extrabold tabular-nums">{money(selected.current_bid ?? selected.start_price, auction.settings)}</span>
                   <Countdown endsAt={selected.ends_at} className="text-sm" />
                 </p>
               </div>
@@ -249,6 +250,7 @@ function AuctionRoomInner() {
             <p role="status" aria-live="polite" className={`mx-auto max-w-xl text-xs font-medium empty:hidden ${barMsg?.ok ? "text-emerald-700" : "text-red-600"}`}>
               {barMsg?.text}
             </p>
+            </div>
           </div>
         )}
         </>

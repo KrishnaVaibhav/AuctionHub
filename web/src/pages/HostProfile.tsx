@@ -1,3 +1,4 @@
+import { StarIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { supabase } from "../lib/supabase";
@@ -39,7 +40,7 @@ function StarRow({ avg, count, label }: { avg: number | null; count: number; lab
       <p className="mt-1 font-display text-xl font-bold">
         {count ? (
           <>
-            <span className="text-brand-500">★</span> {Number(avg).toFixed(1)} <span className="text-sm font-normal text-stone-500">({count})</span>
+            <StarIcon className="inline text-brand-500" size="0.9em" weight="fill" aria-hidden="true" /> {Number(avg).toFixed(1)} <span className="text-sm font-normal text-stone-500">({count})</span>
           </>
         ) : (
           <span className="text-sm font-normal text-stone-500">No ratings yet</span>
@@ -111,8 +112,11 @@ export function HostProfile() {
             {reviews.map((r) => (
               <div key={r.id} className="px-4 py-3 text-sm">
                 <p>
-                  <span className="text-brand-500">{"★".repeat(r.stars)}</span>
-                  <span className="text-stone-300">{"★".repeat(5 - r.stars)}</span>
+                  <span className="inline-flex" aria-label={`${r.stars} of 5 stars`}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <StarIcon key={n} size={14} weight="fill" className={n <= r.stars ? "text-brand-500" : "text-stone-300"} aria-hidden="true" />
+                    ))}
+                  </span>
                   <span className="ml-2 text-xs text-stone-500">as {r.role} · {dateTime(r.created_at)}</span>
                 </p>
                 {r.comment && <p className="mt-1 text-stone-700">{r.comment}</p>}

@@ -1,3 +1,4 @@
+import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
@@ -40,7 +41,7 @@ export function AdminDashboard() {
         </div>
       </div>
       <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
+        <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
           {tabs.map(([k, label]) => (
             <button key={k} className={`tab ${tab === k ? "tab-active" : ""}`} onClick={() => setTab(k)}>
               {label}
@@ -425,8 +426,8 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
               </p>
             </div>
           </div>
-          <button className="btn-ghost px-2.5 py-1" onClick={onClose} aria-label="Close">
-            ✕
+          <button className="btn-ghost h-9 w-9 p-0" onClick={onClose} aria-label="Close">
+            <XIcon size={16} weight="bold" aria-hidden="true" />
           </button>
         </div>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
@@ -811,7 +812,7 @@ function SupportInbox() {
 
   return (
     <div className="animate-rise space-y-4">
-      <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
+      <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
         {["open", "resolved", ""].map((s) => (
           <button key={s || "all"} className={`tab ${status === s ? "tab-active" : ""}`} onClick={() => setStatus(s)}>
             {s || "all"}

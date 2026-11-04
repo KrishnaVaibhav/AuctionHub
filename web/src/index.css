@@ -5,7 +5,7 @@
 
 @theme {
   /* Body and controls use the system face; the self-hosted display face is for headlines and prices only. */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif;
   --font-display: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
   --color-brand-50: #fffbeb;
   --color-brand-100: #fef3c7;
@@ -19,8 +19,31 @@
   /* Fixed colours that never flip with the theme (text on always-dark or coloured surfaces). */
   --color-snow: #ffffff;
   --color-ink: #0c0a09;
+  /*
+   * Shape rule: buttons, chips, tabs and the nav are capsules (full radius);
+   * cards are 20px; inputs 12px; the hero and floating panels 28px.
+   * Motion rule: one spring curve for everything.
+   */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --animate-flash: flash 1.2s ease-out;
-  --animate-rise: rise 0.35s ease-out both;
+  --animate-rise: rise 0.45s var(--ease-spring) both;
+  --animate-enter: enter 0.8s var(--ease-spring) both;
+  --animate-bump: pop 0.5s var(--ease-spring), flash 1.2s ease-out;
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.07); }
+    100% { transform: none; }
+  }
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(16px) scale(0.98); filter: blur(4px); }
+    to { opacity: 1; transform: none; filter: none; }
+  }
+  @keyframes drift {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+    50% { transform: translate3d(3%, -4%, 0) rotate(8deg) scale(1.06); }
+    100% { transform: translate3d(-3%, 3%, 0) rotate(-6deg) scale(1); }
+  }
 
   @keyframes flash {
     0% { background-color: rgb(251 191 36 / 0.45); }
@@ -38,15 +61,19 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.75rem;
-  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  padding: 0.6rem 1.15rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 600;
   white-space: nowrap;
-  transition: background-color 150ms, color 150ms, box-shadow 150ms, transform 100ms;
+  transition: background-color 200ms, color 200ms, box-shadow 250ms, transform 300ms var(--ease-spring);
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
   &:active:not(:disabled) {
-    transform: scale(0.98);
+    transform: scale(0.97);
+    transition-duration: 80ms;
   }
   &:disabled {
     cursor: not-allowed;
@@ -88,6 +115,10 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+    .reveal,
+    .aurora::before {
+      animation: none !important;
     }
   }
 
@@ -158,7 +189,7 @@
     @apply btn bg-stone-900 text-white shadow-sm hover:bg-stone-700;
   }
   .btn-accent {
-    @apply btn bg-brand-400 text-black shadow-sm shadow-brand-500/30 hover:bg-brand-300;
+    @apply btn bg-brand-400 text-ink shadow-[0_6px_20px_-6px_rgb(245_158_11/0.6)] hover:bg-brand-300 hover:shadow-[0_10px_28px_-8px_rgb(245_158_11/0.7)];
   }
   .btn-ghost {
     @apply btn border border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50;
@@ -173,16 +204,91 @@
     @apply mb-1.5 block text-[11px] font-semibold tracking-wider text-stone-500 uppercase;
   }
   .card {
-    @apply rounded-2xl border border-stone-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] dark:shadow-none;
+    @apply rounded-[20px] border border-stone-200/70 bg-white shadow-[0_1px_2px_rgb(41_37_36/0.04),0_12px_32px_-18px_rgb(41_37_36/0.18)] dark:shadow-none;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
   }
   .tab {
-    @apply inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap text-stone-600 transition hover:text-stone-900 sm:min-h-9;
+    @apply inline-flex min-h-11 items-center rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap text-stone-600 transition duration-300 hover:text-stone-900 sm:min-h-9;
   }
   .tab-active {
-    @apply bg-white text-stone-900 shadow-sm;
+    @apply bg-white text-stone-900 shadow-[0_1px_3px_rgb(41_37_36/0.12),0_1px_1px_rgb(41_37_36/0.04)];
+  }
+  /* iOS-style segmented control track. */
+  .segmented {
+    @apply flex gap-1 rounded-full bg-stone-200/60 p-1;
+  }
+
+  /*
+   * Glass: a web approximation of Apple's Liquid Glass (Apple ships it for its
+   * own platforms only; there is no official web CSS). Used only on floating
+   * layers: the nav, menus, dialogs, the mobile bid bar and the hero board.
+   */
+  .glass {
+    background: rgb(255 255 255 / 0.62);
+    border: 1px solid rgb(255 255 255 / 0.7);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.75),
+      inset 0 -1px 0 rgb(255 255 255 / 0.2),
+      0 12px 40px -14px rgb(41 37 36 / 0.28);
+  }
+  .dark .glass {
+    background: rgb(28 25 23 / 0.6);
+    border-color: rgb(255 255 255 / 0.09);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 16px 48px -16px rgb(0 0 0 / 0.6);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass { background: var(--color-white); }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      background: var(--color-white);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Vibrant warm backdrop for the hero; drifts slowly so the glass above it shimmers. */
+  .aurora {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .aurora::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 45% at 78% 22%, rgb(251 191 36 / 0.55), transparent 70%),
+      radial-gradient(34% 40% at 92% 78%, rgb(244 63 94 / 0.35), transparent 70%),
+      radial-gradient(30% 38% at 58% 92%, rgb(249 115 22 / 0.35), transparent 70%),
+      radial-gradient(26% 30% at 12% 8%, rgb(20 184 166 / 0.16), transparent 70%);
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  .dark .aurora::before {
+    opacity: 0.6;
+  }
+
+  /* Staggered entrance: set --i on each child. */
+  .enter {
+    animation: var(--animate-enter);
+    animation-delay: calc(var(--i, 0) * 80ms);
+  }
+
+  /* Scroll reveal, compositor-driven (no JS); browsers without scroll timelines just show the element. */
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: enter linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
   }
   .scrollbar-none {
     scrollbar-width: none;

@@ -1,3 +1,4 @@
+import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../../lib/supabase";
@@ -104,7 +105,7 @@ export function SafetyTab() {
             <span key={w} className="chip bg-stone-100 text-stone-700">
               {w}
               <button className="-my-1 -mr-2 ml-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-stone-500 hover:bg-stone-200 hover:text-red-600" onClick={() => void remove(w)} aria-label={`Unblock ${w}`}>
-                ✕
+                <XIcon size={14} weight="bold" aria-hidden="true" />
               </button>
             </span>
           ))}

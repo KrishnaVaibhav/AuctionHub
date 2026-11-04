@@ -47,7 +47,7 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
         <JoinOrMyTeam auction={auction} myTeam={myTeam} teams={teams} isHost={isHost} league={league} />
 
         <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div className="inline-flex gap-1 rounded-xl bg-stone-100 p-1">
+          <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
             {tabs.map((t) => (
               <button key={t.key} className={`tab ${tab === t.key ? "tab-active" : ""} ${t.mobileOnly ? "lg:hidden" : ""}`} onClick={() => setTab(t.key)}>
                 {t.label}
@@ -635,7 +635,7 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
       };
     })
     .sort((a, b) => b.points - a.points || Number(b.team.purse_left) - Number(a.team.purse_left));
-  const medals = ["🥇", "🥈", "🥉"];
+  const medals = ["bg-brand-400 text-ink", "bg-stone-300 text-ink", "bg-orange-300 text-ink"];
 
   if (rows.length === 0) return <div className="card py-14 text-center text-sm text-stone-500">No teams yet.</div>;
 
@@ -654,7 +654,7 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
           key={r.team.id}
           className="grid grid-cols-[2.5rem_1fr_4rem_5rem] items-center gap-2 border-b border-stone-100 px-4 py-3 last:border-0 sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]"
         >
-          <span className="font-display text-lg font-bold">{medals[i] ?? i + 1}</span>
+          <span className={`flex h-8 w-8 items-center justify-center rounded-full font-display text-sm font-extrabold ${medals[i] ?? "text-stone-500"}`}>{i + 1}</span>
           <span className="flex min-w-0 items-center gap-2">
             <TeamChip team={r.team} />
             <span className="truncate font-semibold">{r.team.name}</span>

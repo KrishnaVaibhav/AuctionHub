@@ -26,7 +26,7 @@ function ConfirmDialog({ opts, onDone }: { opts: ConfirmOptions; onDone: (ok: bo
         // Click on the backdrop cancels.
         if (e.target === ref.current) ref.current?.close("cancel");
       }}
-      className="card m-auto w-[min(26rem,calc(100vw-2rem))] p-0 text-stone-900 backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+      className="glass m-auto w-[min(26rem,calc(100vw-2rem))] animate-rise rounded-[28px] p-0 text-stone-900 backdrop:bg-ink/40 backdrop:backdrop-blur-sm"
     >
       <form method="dialog" className="space-y-4 p-5">
         <h2 id="confirm-title" className="font-display text-lg font-extrabold tracking-tight">
