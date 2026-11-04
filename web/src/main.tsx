@@ -11,6 +11,7 @@ import { NotFound } from "./pages/NotFound";
 import { RouteError } from "./components/RouteError";
 import { initMonitoring } from "./lib/monitoring";
 import { registerServiceWorker } from "./lib/notifications";
+import { initI18n, useLanguage } from "./lib/i18n";
 
 initMonitoring();
 registerServiceWorker();
@@ -59,10 +60,18 @@ const router = createBrowserRouter([
   },
 ]);
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
-  </StrictMode>,
+/** Remounts the routed UI when the language changes, so every t() call re-runs. */
+function Localized() {
+  const lang = useLanguage();
+  return <RouterProvider key={lang} router={router} />;
+}
+
+void initI18n().then(() =>
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <AuthProvider>
+        <Localized />
+      </AuthProvider>
+    </StrictMode>,
+  ),
 );

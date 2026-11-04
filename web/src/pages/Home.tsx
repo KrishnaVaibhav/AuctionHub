@@ -8,6 +8,9 @@ import { Countdown } from "../components/Countdown";
 import { dateTime, money } from "../lib/format";
 import { CATEGORIES, categoryLabel } from "../lib/categories";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { t } from "../lib/i18n";
+
+const tr = t;
 
 type Row = Auction & { lots: { count: number }[] };
 type Tab = "live" | "upcoming" | "ended";
@@ -85,24 +88,24 @@ export function Home() {
           <div className="max-w-2xl">
             <span className="glass enter chip px-3 py-1 text-stone-700" style={{ ["--i" as string]: 0 }}>
               {counts.live > 0 && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" aria-hidden="true" />}
-              {counts.live > 0 ? `${counts.live} live now` : counts.upcoming > 0 ? `${counts.upcoming} starting soon` : "Real-time auctions"}
+              {counts.live > 0 ? t("{n} live now", { n: counts.live }) : counts.upcoming > 0 ? t("{n} starting soon", { n: counts.upcoming }) : t("Real-time auctions")}
             </span>
             <h1
-              className="enter mt-5 font-display text-4xl leading-[1.04] font-extrabold tracking-tight text-stone-900 sm:text-5xl lg:text-6xl"
+              className="hero-title enter mt-5 font-display text-4xl leading-[1.04] font-extrabold tracking-tight text-stone-900 sm:text-5xl lg:text-6xl"
               style={{ ["--i" as string]: 1 }}
             >
-              Bid live. Chat with the room. <span className="text-brand-600">Win the lot.</span>
+              {t("Bid live. Chat with the room.")} <span className="text-brand-600">{t("Win the lot.")}</span>
             </h1>
             <p className="enter mt-5 max-w-xl text-base leading-relaxed text-stone-600 sm:text-lg" style={{ ["--i" as string]: 2 }}>
-              Real-time auctions with auto-bidding, anti-sniping and live streams. Join one, or host your own in minutes.
+              {t("Real-time auctions with auto-bidding, anti-sniping and live streams. Join one, or host your own in minutes.")}
             </p>
             <div className="enter mt-8 flex flex-wrap gap-3" style={{ ["--i" as string]: 3 }}>
               <button className="btn-accent px-6 py-3 text-base" onClick={browse}>
-                Browse auctions
+                {t("Browse auctions")}
                 <ArrowRightIcon size={18} weight="bold" aria-hidden="true" />
               </button>
               <Link to="/host" className="btn-ghost px-6 py-3 text-base">
-                Host an auction
+                {t("Host an auction")}
               </Link>
             </div>
           </div>
@@ -113,10 +116,10 @@ export function Home() {
       </section>
 
       <div id="browse" className="flex scroll-mt-24 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="segmented scrollbar-none overflow-x-auto" role="tablist" aria-label="Auction status">
+        <div className="segmented scrollbar-none overflow-x-auto" role="tablist" aria-label={t("Auction status")}>
           {(["live", "upcoming", "ended"] as Tab[]).map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} className={`tab ${tab === t ? "tab-active" : ""}`} onClick={() => setTab(t)}>
-              {t === "live" ? "Live now" : t === "upcoming" ? "Upcoming" : "Ended"}
+              {tr(t === "live" ? "Live now" : t === "upcoming" ? "Upcoming" : "Ended")}
               <span className="ml-1.5 text-xs text-stone-500 tabular-nums">{counts[t]}</span>
             </button>
           ))}
@@ -126,8 +129,8 @@ export function Home() {
           <input
             className="input rounded-full pl-10"
             type="search"
-            aria-label="Search auctions"
-            placeholder="Search auctions"
+            aria-label={t("Search auctions")}
+            placeholder={t("Search auctions")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -146,7 +149,7 @@ export function Home() {
                 : "border-stone-200 bg-white text-stone-700 hover:-translate-y-px hover:border-stone-300 hover:shadow-sm"
             }`}
           >
-            <CategoryIcon name={k || "all"} className="h-3.5 w-3.5" /> {label}
+            <CategoryIcon name={k || "all"} className="h-3.5 w-3.5" /> {t(label)}
           </button>
         ))}
       </div>
@@ -169,7 +172,7 @@ export function Home() {
       {hasMore && !loading && (
         <div className="text-center">
           <button className="btn-ghost" onClick={() => void load(false)}>
-            Load more
+            {t("Load more")}
           </button>
         </div>
       )}
@@ -178,7 +181,7 @@ export function Home() {
 }
 
 function EmptyState({ tab, counts, onShow }: { tab: Tab; counts: Record<Tab, number>; onShow: (t: Tab) => void }) {
-  const text = tab === "live" ? "No auctions are live right now." : tab === "upcoming" ? "Nothing is scheduled yet." : "No finished auctions yet.";
+  const text = t(tab === "live" ? "No auctions are live right now." : tab === "upcoming" ? "Nothing is scheduled yet." : "No finished auctions yet.");
   return (
     <div className="card flex flex-col items-center gap-3 px-6 py-16 text-center">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-brand-700">
@@ -188,11 +191,11 @@ function EmptyState({ tab, counts, onShow }: { tab: Tab; counts: Record<Tab, num
       <div className="flex flex-wrap justify-center gap-2">
         {tab !== "upcoming" && counts.upcoming > 0 && (
           <button className="btn-ghost" onClick={() => onShow("upcoming")}>
-            See {counts.upcoming} upcoming
+            {t("See {n} upcoming", { n: counts.upcoming })}
           </button>
         )}
         <Link to="/host" className="btn-accent">
-          Host an auction
+          {t("Host an auction")}
         </Link>
       </div>
     </div>
@@ -203,12 +206,12 @@ function When({ a }: { a: Row }) {
   if (a.status === "live")
     return (
       <>
-        Ends in <Countdown endsAt={a.ends_at} className="font-semibold text-stone-900" />
+        {t("Ends in")} <Countdown endsAt={a.ends_at} className="font-semibold text-stone-900" />
       </>
     );
-  if (a.status === "paused") return <>Paused by host</>;
-  if (a.status === "scheduled") return <>Starts {dateTime(a.starts_at)}</>;
-  return <>Ended {dateTime(a.ends_at)}</>;
+  if (a.status === "paused") return <>{t("Paused by host")}</>;
+  if (a.status === "scheduled") return <>{t("Starts {date}", { date: dateTime(a.starts_at) })}</>;
+  return <>{t("Ended {date}", { date: dateTime(a.ends_at) })}</>;
 }
 
 function Cover({ a, className }: { a: Pick<Row, "cover_url" | "title">; className: string }) {
@@ -233,7 +236,7 @@ function FeaturedCard({ a }: { a: Row }) {
       <div className="flex flex-col justify-center gap-3 p-6 sm:p-8">
         <div className="flex items-center gap-2">
           <AuctionBadge status={a.status} />
-          <span className="text-xs font-medium text-stone-500">Featured · {a.lots[0]?.count ?? 0} lots</span>
+          <span className="text-xs font-medium text-stone-500">{t("Featured")} · {t("{n} lots", { n: a.lots[0]?.count ?? 0 })}</span>
         </div>
         <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{a.title}</h2>
         {a.description && <p className="line-clamp-3 text-sm text-stone-600">{a.description}</p>}
@@ -241,7 +244,7 @@ function FeaturedCard({ a }: { a: Row }) {
           <When a={a} />
         </p>
         <span className="btn-accent mt-2 self-start">
-          Join the room
+          {t("Join the room")}
           <ArrowRightIcon size={16} weight="bold" className="transition duration-300 group-hover:translate-x-0.5" aria-hidden="true" />
         </span>
       </div>
@@ -263,7 +266,7 @@ function AuctionCard({ a, i }: { a: Row; i: number }) {
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <AuctionBadge status={a.status} />
-          {a.mode === "league" && <span className="chip bg-stone-900 text-white">League</span>}
+          {a.mode === "league" && <span className="chip bg-stone-900 text-white">{t("League")}</span>}
           {a.category && (
             <span className="flex items-center gap-1 text-xs text-stone-500">
               <CategoryIcon name={a.category} className="h-3.5 w-3.5" /> {categoryLabel(a.category)}
@@ -275,7 +278,7 @@ function AuctionCard({ a, i }: { a: Row; i: number }) {
           <span>
             <When a={a} />
           </span>
-          <span>{a.lots[0]?.count ?? 0} lots</span>
+          <span>{t("{n} lots", { n: a.lots[0]?.count ?? 0 })}</span>
         </p>
       </div>
     </Link>
@@ -330,12 +333,12 @@ function HeroBoard() {
 
   if (lots === null) return <div className="glass h-72 animate-pulse rounded-[28px]" />;
 
-  const title = lots.length ? "On the block now" : upcoming.length ? "Starting soon" : "How it works";
+  const title = t(lots.length ? "On the block now" : upcoming.length ? "Starting soon" : "How it works");
   return (
     <div className="glass rounded-[28px] p-2 lg:rotate-[1.5deg] lg:transition lg:duration-700 lg:hover:rotate-0">
       <div className="flex items-center justify-between px-3 pt-2 pb-1">
         <p className="text-sm font-semibold text-stone-700">{title}</p>
-        {lots.length > 0 && <span className="chip bg-red-600 text-snow">Live</span>}
+        {lots.length > 0 && <span className="chip bg-red-600 text-snow">{t("Live")}</span>}
       </div>
       <ul>
         {lots.map((l, i) => (
@@ -345,7 +348,7 @@ function HeroBoard() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-stone-900">{l.title}</span>
                 <span className="text-xs text-stone-600">
-                  {l.bid_count} bid{l.bid_count === 1 ? "" : "s"}
+                  {t(l.bid_count === 1 ? "{n} bid" : "{n} bids", { n: l.bid_count })}
                   {l.ends_at && (
                     <>
                       {" · "}
@@ -391,8 +394,8 @@ function HeroBoard() {
                 <Glyph size={20} weight="bold" aria-hidden="true" />
               </span>
               <span>
-                <span className="block text-sm font-semibold text-stone-900">{name}</span>
-                <span className="text-sm text-stone-600">{text}</span>
+                <span className="block text-sm font-semibold text-stone-900">{t(name)}</span>
+                <span className="text-sm text-stone-600">{t(text)}</span>
               </span>
             </li>
           ))}

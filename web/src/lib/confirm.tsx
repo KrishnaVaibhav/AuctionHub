@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -39,7 +40,7 @@ function ConfirmDialog({ opts, onDone }: { opts: ConfirmOptions; onDone: (ok: bo
         )}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button value="cancel" className="btn-ghost" autoFocus={opts.danger}>
-            {opts.cancelLabel ?? "Cancel"}
+            {opts.cancelLabel ?? t("Cancel")}
           </button>
           <button value="ok" className={opts.danger ? "btn-danger" : "btn-accent"} autoFocus={!opts.danger}>
             {opts.confirmLabel}

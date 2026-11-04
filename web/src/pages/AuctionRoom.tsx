@@ -23,6 +23,7 @@ import { useIsAdmin } from "../lib/admin";
 import { WatchButton } from "../components/WatchButton";
 import { HostLine } from "../components/HostLine";
 import { PriceHint } from "../components/PriceHint";
+import { t } from "../lib/i18n";
 import { confirmDialog, type ConfirmOptions } from "../lib/confirm";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
@@ -74,17 +75,17 @@ function AuctionRoomInner() {
     const res = data as BidResult;
     setBarMsg(
       res.status === "leading"
-        ? { ok: true, text: `You're winning at ${money(res.current_bid, auction!.settings)}` }
-        : { ok: false, text: `Outbid by an auto-bid. Now ${money(res.current_bid, auction!.settings)}` },
+        ? { ok: true, text: t("You're winning at {amount}", { amount: money(res.current_bid, auction!.settings) }) }
+        : { ok: false, text: t("Outbid by an auto-bid. Current price {amount}", { amount: money(res.current_bid, auction!.settings) }) },
     );
   }
 
   const tabs: { key: Tab; label: string; mobileOnly?: boolean }[] = [
-    { key: "lot", label: "Current lot" },
-    { key: "lots", label: `All lots (${lots.length})` },
-    { key: "bids", label: "Bid log" },
-    { key: "results", label: finished ? "Results" : "Standings" },
-    { key: "chat", label: "Chat", mobileOnly: true },
+    { key: "lot", label: t("Current lot") },
+    { key: "lots", label: t("All lots ({n})", { n: lots.length }) },
+    { key: "bids", label: t("Bid log") },
+    { key: "results", label: t(finished ? "Results" : "Standings") },
+    { key: "chat", label: t("Chat"), mobileOnly: true },
   ];
 
   const openLot = (lotId: string) => {
@@ -225,26 +226,26 @@ function AuctionRoomInner() {
               {!isHost && (
                 <button
                   className="btn-ghost h-11 px-3"
-                  aria-label="More bid options"
+                  aria-label={t("More bid options")}
                   onClick={() => {
                     setTab("lot");
                     setTimeout(() => document.getElementById("bid")?.scrollIntoView({ behavior: "smooth" }), 50);
                   }}
                 >
-                  Options
+                  {t("Options")}
                 </button>
               )}
               {userId && selected.current_winner_id === userId ? (
-                <span className="chip min-h-11 bg-emerald-100 px-4 text-emerald-800">Winning</span>
+                <span className="chip min-h-11 bg-emerald-100 px-4 text-emerald-800">{t("Winning")}</span>
               ) : (
                 !isHost &&
                 (userId && selected.sale_type === "english" ? (
                   <button className="btn-accent min-h-11 px-5" disabled={barBusy} onClick={() => void quickBid(selected)}>
-                    {barBusy ? "Bidding..." : `Bid ${money(minNextBid(selected, auction.settings), auction.settings)}`}
+                    {barBusy ? t("Bidding...") : t("Bid {amount}", { amount: money(minNextBid(selected, auction.settings), auction.settings) })}
                   </button>
                 ) : userId ? null : (
                   <Link to={`/login?next=/a/${auction.id}`} className="btn-accent min-h-11 px-5">
-                    Sign in to bid
+                    {t("Sign in to bid")}
                   </Link>
                 ))
               )}
@@ -337,7 +338,7 @@ function LotGrid({
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-stone-500">
                 <LotBadge status={l.status} />
                 {l.status === "open" && auction.status === "live" && <Countdown endsAt={l.ends_at} />}
-                {leader && <span className="truncate">{l.status === "sold" ? `Won by ${leader}` : `Leader: ${leader}`}</span>}
+                {leader && <span className="truncate">{t(l.status === "sold" ? "Won by {name}" : "Leader: {name}", { name: leader })}</span>}
               </div>
             </div>
           </button>

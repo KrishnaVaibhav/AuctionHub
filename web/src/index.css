@@ -297,3 +297,15 @@
     }
   }
 }
+
+/*
+ * Indic scripts (unlayered, so it beats utility classes): tight tracking breaks
+ * conjuncts, a 1.0x line height clips vowel signs, and Dravidian words run long.
+ */
+html:not(:lang(en)) .font-display {
+  letter-spacing: 0;
+}
+html:not(:lang(en)) .hero-title {
+  font-size: clamp(1.85rem, 1.2rem + 2.2vw, 3rem);
+  line-height: 1.25;
+}

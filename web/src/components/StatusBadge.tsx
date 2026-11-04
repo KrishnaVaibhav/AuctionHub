@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { auctionStatusLabel, lotStatusLabel } from "../lib/format";
 import type { AuctionStatus, LotStatus } from "../lib/types";
 
@@ -22,7 +23,7 @@ export function AuctionBadge({ status }: { status: AuctionStatus }) {
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${auctionColors[status]}`}>
       {status === "live" && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-snow" />}
-      {auctionStatusLabel[status]}
+      {t(auctionStatusLabel[status])}
     </span>
   );
 }
@@ -30,7 +31,7 @@ export function AuctionBadge({ status }: { status: AuctionStatus }) {
 export function LotBadge({ status }: { status: LotStatus }) {
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${lotColors[status]}`}>
-      {lotStatusLabel[status]}
+      {t(lotStatusLabel[status])}
     </span>
   );
 }
