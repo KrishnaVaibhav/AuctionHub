@@ -4,6 +4,7 @@ import { deleteMedia, publicUrl, uploadMedia } from "../../lib/media";
 import { money } from "../../lib/format";
 import type { Auction, Lot, LotMedia } from "../../lib/types";
 import { LotBadge } from "../../components/StatusBadge";
+import { PriceHint } from "../../components/PriceHint";
 import { confirmDialog } from "../../lib/confirm";
 import { SALE_TYPES, dutchSettings, type SaleType } from "../../lib/saleTypes";
 
@@ -213,6 +214,7 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
     <form onSubmit={create} className="card space-y-4 border-dashed p-5">
       <h3 className="font-semibold">Add a lot</h3>
       <LotFieldInputs v={v} set={setV} league={auction.mode === "league"} />
+      {auction.mode !== "league" && <PriceHint category={auction.category} title={v.title} settings={auction.settings} />}
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button className="btn-primary" disabled={busy}>
         Add lot

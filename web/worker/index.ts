@@ -6,6 +6,9 @@ interface Env {
   SUPABASE_SERVICE_ROLE_KEY?: string;
 }
 
+import { embedPage } from "./embed";
+
+const EMBED = /^\/embed\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 const UUID = /^\/a\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 
 interface Preview {
@@ -167,6 +170,10 @@ export default {
     }
     if (url.pathname === "/robots.txt") return robots(url.origin);
     if (url.pathname === "/sitemap.xml") return sitemap(url.origin, env);
+    const embed = url.pathname.match(EMBED);
+    if (embed && request.method === "GET") {
+      return embedPage(embed[1].toLowerCase(), url.origin, env.SUPABASE_URL, env.SUPABASE_ANON_KEY, url.searchParams.get("theme") === "dark");
+    }
     const match = url.pathname.match(UUID);
     if (match && request.method === "GET") {
       return auctionPage(request, env, match[1].toLowerCase());
