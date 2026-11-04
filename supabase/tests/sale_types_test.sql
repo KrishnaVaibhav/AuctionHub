@@ -24,8 +24,11 @@ insert into public.lots (id, auction_id, position, title, start_price, sale_type
   ('e1000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000001', 3, 'Offer lamp', 100, 'offer', '{}');
 select public.start_auction('e0000000-0000-0000-0000-000000000001');
 
+-- RLS already hides open lots from host updates; check the trigger itself as the table owner.
+reset role;
 select throws_ok($$update public.lots set sale_type = 'english' where id = 'e1000000-0000-0000-0000-000000000001'$$,
   'P0001', 'Sale type can only change before the lot opens', 'sale type locked once open');
+set local role authenticated;
 
 -- Dutch
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000ee02","role":"authenticated"}';

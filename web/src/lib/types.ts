@@ -13,6 +13,12 @@ export interface LeagueSettings {
   break_seconds?: number;
   min_base?: number;
   host_can_play?: boolean;
+  retain_max?: number;
+  rtm_cards?: number;
+  rtm_seconds?: number;
+  category_max?: Record<string, number>;
+  trades?: boolean;
+  season?: number;
 }
 
 export interface AuctionSettings {
@@ -73,6 +79,9 @@ export interface Lot {
   points: number | null;
   sale_type: SaleType;
   sale_settings: Record<string, unknown>;
+  rtm_team_id: string | null;
+  rtm_offered: boolean;
+  retained: boolean;
 }
 
 export interface LotMedia {
@@ -101,6 +110,7 @@ export interface LeagueTeam {
   short_name: string;
   color: string;
   purse_left: number;
+  rtm_used: number;
   created_at: string;
 }
 
