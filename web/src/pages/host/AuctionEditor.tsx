@@ -190,6 +190,15 @@ function AuctionForm({
   const [breakSeconds, setBreakSeconds] = useState(String(lg.break_seconds));
   const [minBase, setMinBase] = useState(String(lg.min_base));
   const [hostCanPlay, setHostCanPlay] = useState(lg.host_can_play);
+  const [retainMax, setRetainMax] = useState(String(s.league?.retain_max ?? 4));
+  const [rtmCards, setRtmCards] = useState(String(s.league?.rtm_cards ?? 0));
+  const [rtmSeconds, setRtmSeconds] = useState(String(s.league?.rtm_seconds ?? 20));
+  const [trades, setTrades] = useState(s.league?.trades ?? true);
+  const [categoryMax, setCategoryMax] = useState(
+    Object.entries(s.league?.category_max ?? {})
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", "),
+  );
   const [busy, setBusy] = useState(false);
 
   function chooseMode(next: "standard" | "league") {
@@ -227,6 +236,18 @@ function AuctionForm({
         break_seconds: Math.max(0, Number(breakSeconds) || 0),
         min_base: Math.max(0, Number(minBase) || 0),
         host_can_play: hostCanPlay,
+        retain_max: Math.max(0, Number(retainMax) || 0),
+        rtm_cards: Math.max(0, Number(rtmCards) || 0),
+        rtm_seconds: Math.min(120, Math.max(5, Number(rtmSeconds) || 20)),
+        trades,
+        category_max: Object.fromEntries(
+          categoryMax
+            .split(",")
+            .map((part) => part.split(":").map((x) => x.trim()))
+            .filter(([k, v]) => k && Number(v) > 0)
+            .map(([k, v]) => [k, Math.floor(Number(v))]),
+        ),
+        ...(s.league?.season ? { season: s.league.season } : {}),
       },
     };
     setBusy(true);
@@ -389,6 +410,27 @@ function AuctionForm({
             <label className="flex items-center gap-2 text-sm sm:col-span-2">
               <input type="checkbox" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
               Host can also own a team
+            </label>
+            <div>
+              <label className="label">Retentions per team</label>
+              <input type="number" min={0} className="input" value={retainMax} onChange={(e) => setRetainMax(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Right-to-match cards per team</label>
+              <input type="number" min={0} className="input" value={rtmCards} onChange={(e) => setRtmCards(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Time to match (sec)</label>
+              <input type="number" min={5} max={120} className="input" value={rtmSeconds} onChange={(e) => setRtmSeconds(e.target.value)} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">Category limits per team</label>
+              <input className="input" placeholder="Overseas: 8, Wicket-keeper: 2" value={categoryMax} onChange={(e) => setCategoryMax(e.target.value)} />
+              <p className="mt-1 text-xs text-stone-500">Give players a "Category: Overseas" line in their details.</p>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
+              Allow trades
             </label>
             <p className="text-xs text-stone-500 sm:col-span-3">
               Add players below as lots (their start price is the base price). Schedule the league so teams can join, then go live. Purses

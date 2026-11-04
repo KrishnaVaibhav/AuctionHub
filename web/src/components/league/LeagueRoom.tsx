@@ -13,8 +13,9 @@ import { BidLog } from "../BidLog";
 import { LotBadge } from "../StatusBadge";
 import { TeamChip, textOn } from "./TeamChip";
 import { confirmDialog } from "../../lib/confirm";
+import { LeagueSetupPanel, NextSeasonButton, RtmBanner, TradesPanel } from "./LeagueExtras";
 
-type Tab = "block" | "teams" | "players" | "board" | "bids" | "chat";
+type Tab = "block" | "teams" | "players" | "board" | "trades" | "bids" | "chat";
 
 interface Props {
   auction: Auction;
@@ -37,6 +38,7 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
     { key: "teams", label: `Teams (${teams.length})` },
     { key: "players", label: `Players (${lots.length})` },
     { key: "board", label: "Leaderboard" },
+    ...(auction.status === "paused" || auction.status === "ended" ? [{ key: "trades" as Tab, label: "Trades" }] : []),
     { key: "bids", label: "Bid log" },
     { key: "chat", label: "Chat", mobileOnly: true },
   ];
@@ -56,7 +58,11 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
           </div>
         </div>
 
+        {tab === "block" && <RtmBanner auction={auction} lots={lots} teamById={teamById} myTeam={myTeam} />}
         {tab === "block" && <OnTheBlock auction={auction} lots={lots} media={media} myTeam={myTeam} teamById={teamById} league={league} isHost={isHost} />}
+        {tab === "block" && isHost && auction.status === "ended" && <NextSeasonButton auction={auction} />}
+        {tab === "players" && isHost && (auction.status === "draft" || auction.status === "scheduled") && <LeagueSetupPanel auction={auction} lots={lots} teams={teams} />}
+        {tab === "trades" && <TradesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
         {tab === "teams" && <TeamsPanel auction={auction} lots={lots} teams={teams} league={league} isHost={isHost} userId={userId} />}
         {tab === "players" && <PlayersPanel auction={auction} lots={lots} teamById={teamById} isHost={isHost} />}
         {tab === "board" && <Leaderboard auction={auction} lots={lots} teams={teams} />}
