@@ -8,6 +8,7 @@ import type { Auction, Bid, BidResult, Lot } from "../lib/types";
 import { Countdown } from "./Countdown";
 import { LotBadge } from "./StatusBadge";
 import { confirmDialog } from "../lib/confirm";
+import { SaleTypePanel } from "./SaleTypePanel";
 
 interface Props {
   auction: Auction;
@@ -131,6 +132,8 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
 
   const step = bidIncrement(Number(lot.current_bid ?? lot.start_price), settings);
   const quick = [minBid, round2(minBid + step), round2(minBid + step * 4)];
+
+  if (lot.sale_type && lot.sale_type !== "english") return <SaleTypePanel auction={auction} lot={lot} userId={userId} isHost={isHost} />;
 
   return (
     <div className="card space-y-4 p-5">

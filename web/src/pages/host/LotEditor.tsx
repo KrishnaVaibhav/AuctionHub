@@ -5,6 +5,7 @@ import { money } from "../../lib/format";
 import type { Auction, Lot, LotMedia } from "../../lib/types";
 import { LotBadge } from "../../components/StatusBadge";
 import { confirmDialog } from "../../lib/confirm";
+import { SALE_TYPES, dutchSettings, type SaleType } from "../../lib/saleTypes";
 
 function parseFields(text: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -34,17 +35,53 @@ interface LotFields {
   buyNow: string;
   reserve: string;
   fields: string;
+  saleType: SaleType;
+  dutchStep: string;
+  dutchFloor: string;
+  dutchInterval: string;
 }
 
-function LotFieldInputs({ v, set, disabled }: { v: LotFields; set: (v: LotFields) => void; disabled?: boolean }) {
+function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: LotFields) => void; disabled?: boolean; league?: boolean }) {
+  const help = SALE_TYPES.find((t) => t.value === v.saleType)?.help;
   return (
     <div className="grid gap-3 sm:grid-cols-3">
+      {!league && (
+        <div className="sm:col-span-3">
+          <label className="label" htmlFor="sale-type">
+            Sale type
+          </label>
+          <select id="sale-type" className="input" disabled={disabled} value={v.saleType} onChange={(e) => set({ ...v, saleType: e.target.value as SaleType })}>
+            {SALE_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          {help && <p className="mt-1 text-xs text-stone-500">{help}</p>}
+        </div>
+      )}
+      {v.saleType === "dutch" && (
+        <>
+          <div>
+            <label className="label">Drop by</label>
+            <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchStep} onChange={(e) => set({ ...v, dutchStep: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Every (seconds)</label>
+            <input className="input" type="number" min={5} max={3600} step={1} required disabled={disabled} value={v.dutchInterval} onChange={(e) => set({ ...v, dutchInterval: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Floor price</label>
+            <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchFloor} onChange={(e) => set({ ...v, dutchFloor: e.target.value })} />
+          </div>
+        </>
+      )}
       <div className="sm:col-span-3">
         <label className="label">Title</label>
         <input className="input" required maxLength={120} disabled={disabled} value={v.title} onChange={(e) => set({ ...v, title: e.target.value })} />
       </div>
       <div>
-        <label className="label">Start price</label>
+        <label className="label">{v.saleType === "offer" ? "Minimum offer" : v.saleType === "dutch" ? "Opening price" : "Start price"}</label>
         <input
           className="input"
           type="number"
@@ -91,11 +128,28 @@ function LotFieldInputs({ v, set, disabled }: { v: LotFields; set: (v: LotFields
 function validate(v: LotFields): string | null {
   const start = Number(v.startPrice);
   if (!Number.isFinite(start) || start < 0) return "Start price must be 0 or more";
+  if (v.saleType === "dutch") {
+    const step = Number(v.dutchStep);
+    const floor = Number(v.dutchFloor);
+    const every = Number(v.dutchInterval);
+    if (!(step > 0)) return "Drop amount must be more than 0";
+    if (!(every >= 5 && every <= 3600)) return "Drop interval must be 5 to 3600 seconds";
+    if (!(floor > 0 && floor < start)) return "Floor price must be above 0 and below the opening price";
+  }
+  if ((v.saleType === "dutch" || v.saleType === "sealed") && v.buyNow.trim() !== "") return "Buy now is only for standard and offer lots";
   const buy = num(v.buyNow);
   if (buy != null && !(buy > start)) return "Buy now price must be higher than the start price";
   const reserve = num(v.reserve);
   if (reserve != null && !(reserve > 0)) return "Reserve must be more than 0";
   return null;
+}
+
+function saleColumns(v: LotFields) {
+  return {
+    sale_type: v.saleType,
+    sale_settings:
+      v.saleType === "dutch" ? { step: Number(v.dutchStep), floor: Number(v.dutchFloor), interval_s: Math.round(Number(v.dutchInterval)) } : {},
+  };
 }
 
 async function saveReserve(lotId: string, reserve: number | null) {
@@ -107,7 +161,18 @@ async function saveReserve(lotId: string, reserve: number | null) {
 }
 
 export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auction; nextPosition: number; onCreated: () => Promise<void> }) {
-  const empty: LotFields = { title: "", description: "", startPrice: "", buyNow: "", reserve: "", fields: "" };
+  const empty: LotFields = {
+    title: "",
+    description: "",
+    startPrice: "",
+    buyNow: "",
+    reserve: "",
+    fields: "",
+    saleType: "english",
+    dutchStep: "",
+    dutchFloor: "",
+    dutchInterval: "60",
+  };
   const [v, setV] = useState<LotFields>(empty);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +194,7 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
           start_price: Number(v.startPrice),
           buy_now_price: num(v.buyNow),
           custom_fields: parseFields(v.fields),
+          ...saleColumns(v),
         })
         .select("id")
         .single();
@@ -146,7 +212,7 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
   return (
     <form onSubmit={create} className="card space-y-4 border-dashed p-5">
       <h3 className="font-semibold">Add a lot</h3>
-      <LotFieldInputs v={v} set={setV} />
+      <LotFieldInputs v={v} set={setV} league={auction.mode === "league"} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button className="btn-primary" disabled={busy}>
         Add lot
@@ -175,6 +241,10 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
     buyNow: lot.buy_now_price != null ? String(lot.buy_now_price) : "",
     reserve: "",
     fields: formatFields(lot.custom_fields),
+    saleType: lot.sale_type ?? "english",
+    dutchStep: lot.sale_type === "dutch" ? String(dutchSettings(lot).step) : "",
+    dutchFloor: lot.sale_type === "dutch" ? String(dutchSettings(lot).floor) : "",
+    dutchInterval: lot.sale_type === "dutch" ? String(dutchSettings(lot).interval_s) : "60",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -215,6 +285,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
           start_price: Number(v.startPrice),
           buy_now_price: num(v.buyNow),
           custom_fields: parseFields(v.fields),
+          ...saleColumns(v),
         })
         .eq("id", lot.id);
       if (error) throw error;
@@ -266,6 +337,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{lot.title}</p>
           <p className="text-sm text-stone-500">
+            {lot.sale_type !== "english" && <span className="chip mr-1.5 bg-brand-100 text-brand-700">{SALE_TYPES.find((t) => t.value === lot.sale_type)?.label}</span>}
             Start {money(lot.start_price, auction.settings)}
             {lot.buy_now_price != null && <> · Buy now {money(lot.buy_now_price, auction.settings)}</>}
             {lot.current_bid != null && <> · Current {money(lot.current_bid, auction.settings)}</>}
@@ -325,7 +397,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
 
       {open && editable && (
         <form onSubmit={save} className="mt-4 space-y-3 border-t border-stone-100 pt-4">
-          <LotFieldInputs v={v} set={setV} disabled={busy} />
+          <LotFieldInputs v={v} set={setV} disabled={busy} league={auction.mode === "league"} />
           <button className="btn-primary" disabled={busy}>
             Save lot
           </button>

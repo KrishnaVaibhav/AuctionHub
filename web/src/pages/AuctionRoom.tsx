@@ -236,11 +236,11 @@ function AuctionRoomInner() {
                 <span className="chip min-h-11 bg-emerald-100 px-4 text-emerald-800">Winning</span>
               ) : (
                 !isHost &&
-                (userId ? (
+                (userId && selected.sale_type === "english" ? (
                   <button className="btn-accent min-h-11 px-5" disabled={barBusy} onClick={() => void quickBid(selected)}>
                     {barBusy ? "Bidding..." : `Bid ${money(minNextBid(selected, auction.settings), auction.settings)}`}
                   </button>
-                ) : (
+                ) : userId ? null : (
                   <Link to={`/login?next=/a/${auction.id}`} className="btn-accent min-h-11 px-5">
                     Sign in to bid
                   </Link>
