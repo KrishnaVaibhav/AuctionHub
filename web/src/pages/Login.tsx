@@ -110,7 +110,7 @@ export function Login() {
         </button>
       </form>
 
-      <div className="my-5 flex items-center gap-3 text-xs text-stone-400">
+      <div className="my-5 flex items-center gap-3 text-xs text-stone-500">
         <span className="h-px flex-1 bg-stone-200" /> or <span className="h-px flex-1 bg-stone-200" />
       </div>
       <button className="btn-ghost w-full" onClick={() => void google()}>

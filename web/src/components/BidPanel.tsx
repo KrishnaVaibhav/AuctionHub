@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../lib/supabase";
 import { bidIncrement, minNextBid, round2 } from "../lib/bidding";
@@ -7,6 +7,7 @@ import { useProfileNames } from "../lib/profiles";
 import type { Auction, Bid, BidResult, Lot } from "../lib/types";
 import { Countdown } from "./Countdown";
 import { LotBadge } from "./StatusBadge";
+import { confirmDialog } from "../lib/confirm";
 
 interface Props {
   auction: Auction;
@@ -33,6 +34,25 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
   useEffect(() => {
     setAmount((prev) => (Number(prev) < minBid ? String(minBid) : prev));
   }, [minBid]);
+
+  // Screen-reader announcements for price and status changes made by other people.
+  const [announce, setAnnounce] = useState<{ text: string; urgent: boolean }>({ text: "", urgent: false });
+  const prev = useRef({ lot: lot.id, bid: lot.current_bid, winner: lot.current_winner_id, status: lot.status });
+  useEffect(() => {
+    const p = prev.current;
+    prev.current = { lot: lot.id, bid: lot.current_bid, winner: lot.current_winner_id, status: lot.status };
+    if (p.lot !== lot.id) return;
+    const price = money(lot.current_bid ?? lot.start_price, settings);
+    if (p.status === "open" && lot.status !== "open") {
+      const won = userId != null && lot.current_winner_id === userId;
+      setAnnounce({ text: lot.status === "sold" ? (won ? `You won this lot for ${price}` : `Sold for ${price}`) : `Lot closed: ${lot.status}`, urgent: won });
+    } else if (p.bid !== lot.current_bid) {
+      if (userId && p.winner === userId && lot.current_winner_id !== userId) setAnnounce({ text: `You've been outbid. Current bid ${price}`, urgent: true });
+      // My own bids are announced by the form feedback below.
+      else if (userId && lot.current_winner_id === userId) return;
+      else setAnnounce({ text: `New bid: ${price}`, urgent: false });
+    }
+  }, [lot.id, lot.current_bid, lot.current_winner_id, lot.status, lot.start_price, settings, userId]);
 
   // Reset the form when switching lots.
   const [shownLot, setShownLot] = useState(lot.id);
@@ -97,7 +117,12 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
 
   async function buyNow() {
     if (!lot.buy_now_price) return;
-    if (!window.confirm(`Buy "${lot.title}" now for ${money(lot.buy_now_price, settings)}?`)) return;
+    const ok = await confirmDialog({
+      title: `Buy "${lot.title}" now?`,
+      body: "Bidding on this lot closes and you become the winner. This can't be undone.",
+      confirmLabel: `Buy for ${money(lot.buy_now_price, settings)}`,
+    });
+    if (!ok) return;
     setBusy(true);
     const { error } = await supabase.rpc("buy_now", { p_lot_id: lot.id });
     setBusy(false);
@@ -109,6 +134,12 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
 
   return (
     <div className="card space-y-4 p-5">
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {announce.urgent ? "" : announce.text}
+      </p>
+      <p className="sr-only" aria-live="assertive" aria-atomic="true">
+        {announce.urgent ? announce.text : ""}
+      </p>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
@@ -195,19 +226,21 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
 
       {isHost && lot.status === "open" && <p className="text-sm text-stone-500">You're the host. Hosts can't bid.</p>}
 
-      {feedback && <p className={`text-sm font-medium ${feedback.ok ? "text-emerald-700" : "text-red-600"}`}>{feedback.text}</p>}
+      <div role="status" aria-live="polite">
+        {feedback && <p className={`text-sm font-medium ${feedback.ok ? "text-emerald-700" : "text-red-600"}`}>{feedback.text}</p>}
+      </div>
 
       <div>
         <h3 className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">Bid history</h3>
         {bids.length === 0 ? (
-          <p className="text-sm text-stone-400">No bids yet.</p>
+          <p className="text-sm text-stone-500">No bids yet.</p>
         ) : (
           <ul className="max-h-56 divide-y divide-stone-100 overflow-y-auto text-sm">
             {bids.map((b) => (
               <li key={b.id} className="flex items-center justify-between py-1.5">
                 <span>
                   {b.bidder_id === userId ? "You" : (names.get(b.bidder_id) ?? "Bidder")}
-                  {b.is_auto && <span className="ml-1.5 rounded bg-stone-100 px-1 text-[10px] text-stone-500">AUTO</span>}
+                  {b.is_auto && <span className="ml-1.5 rounded bg-stone-100 px-1 text-xs text-stone-600">AUTO</span>}
                 </span>
                 <span className="font-medium tabular-nums">{money(b.amount, settings)}</span>
               </li>

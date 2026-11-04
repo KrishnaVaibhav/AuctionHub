@@ -57,7 +57,7 @@ export function BidLog({ auction, lots, userId }: { auction: Auction; lots: Lot[
     <div className="card overflow-hidden">
       <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 p-4">
         <h2 className="mr-auto font-semibold">
-          Bid log <span className="text-sm font-normal text-stone-400">· {totalBids} bids</span>
+          Bid log <span className="text-sm font-normal text-stone-500">· {totalBids} bids</span>
         </h2>
         <select className="input w-auto py-1.5" value={lotFilter} onChange={(e) => setLotFilter(e.target.value)}>
           <option value="all">All lots</option>
@@ -86,8 +86,8 @@ export function BidLog({ auction, lots, userId }: { auction: Auction; lots: Lot[
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">
                     <span className="font-semibold">{name}</span>
-                    {b.is_auto && <span className="chip ml-1.5 bg-stone-100 px-1.5 text-[10px] text-stone-500">AUTO</span>}
-                    {isTop && <span className="chip ml-1.5 bg-emerald-100 px-1.5 text-[10px] text-emerald-800">TOP</span>}
+                    {b.is_auto && <span className="chip ml-1.5 bg-stone-100 px-1.5 text-xs text-stone-600">AUTO</span>}
+                    {isTop && <span className="chip ml-1.5 bg-emerald-100 px-1.5 text-xs text-emerald-800">TOP</span>}
                   </p>
                   <p className="truncate text-xs text-stone-500">
                     {lotTitle.get(b.lot_id)} · {new Date(b.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}

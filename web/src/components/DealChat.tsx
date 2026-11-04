@@ -92,7 +92,7 @@ export function DealChat({
                   className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-line ${mine ? "rounded-br-sm bg-stone-900 text-white" : "rounded-bl-sm bg-stone-100"}`}
                 >
                   {m.body}
-                  <span className={`mt-0.5 block text-[10px] ${mine ? "text-stone-400" : "text-stone-500"}`}>
+                  <span className={`mt-0.5 block text-[11px] ${mine ? "text-stone-400" : "text-stone-500"}`}>
                     {new Date(m.created_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                   </span>
                 </p>

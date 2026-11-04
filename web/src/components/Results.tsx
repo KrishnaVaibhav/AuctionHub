@@ -95,7 +95,7 @@ export function Results({ auction, lots, isHost, userId }: { auction: Auction; l
             const winnerName = userId && l.current_winner_id === userId ? "You" : l.current_winner_id ? (names.get(l.current_winner_id) ?? "...") : null;
             return (
               <li key={l.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <span className="w-8 font-mono text-xs text-stone-400">#{l.position + 1}</span>
+                <span className="w-8 font-mono text-xs text-stone-500">#{l.position + 1}</span>
                 <div className="min-w-[10rem] flex-1">
                   <p className="truncate font-medium">{l.title}</p>
                   <p className="text-xs text-stone-500">

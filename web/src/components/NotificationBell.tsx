@@ -29,14 +29,14 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+        className="relative flex h-11 w-11 items-center md:h-10 md:w-10 justify-center rounded-xl text-stone-600 hover:bg-stone-100 hover:text-stone-900"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />
         </svg>
         {unread > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-snow">
+          <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-snow">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -76,7 +76,7 @@ export function NotificationBell() {
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{n.title}</span>
                   {n.body && <span className="block text-xs text-stone-500">{n.body}</span>}
-                  <span className="mt-0.5 block text-[11px] text-stone-400">{ago(n.created_at)}</span>
+                  <span className="mt-0.5 block text-[11px] text-stone-500">{ago(n.created_at)}</span>
                 </span>
                 {!n.read_at && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />}
               </button>

@@ -9,6 +9,7 @@ import { AuctionBadge } from "../../components/StatusBadge";
 import { NotFound } from "../NotFound";
 import { SafetyTab } from "./SafetyTab";
 import type { AuctionStatus } from "../../lib/types";
+import { confirmDialog } from "../../lib/confirm";
 
 type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit";
 
@@ -196,7 +197,7 @@ function Overview() {
                 </span>
               </li>
             ))}
-            {Object.keys(d.storage_by_bucket).length === 0 && <li className="px-4 py-3 text-stone-400">No files yet.</li>}
+            {Object.keys(d.storage_by_bucket).length === 0 && <li className="px-4 py-3 text-stone-500">No files yet.</li>}
           </ul>
         </div>
       </div>
@@ -260,7 +261,7 @@ function ProviderPhoto({ url, name, size }: { url: string | null; name: string |
   const [broken, setBroken] = useState(false);
   if (!url || broken) {
     return (
-      <span style={{ width: size, height: size }} className="inline-flex shrink-0 items-center justify-center rounded-full bg-stone-100 text-[10px] text-stone-400">
+      <span style={{ width: size, height: size }} className="inline-flex shrink-0 items-center justify-center rounded-full bg-stone-100 text-[11px] text-stone-500">
         {url ? "error" : "none"}
       </span>
     );
@@ -528,7 +529,7 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
         </Section>
         <Section title={`Chat messages (${list("chat").length})`}>
           {list("chat").map((c) => (
-            <p key={String(c.id)} className={`py-1 text-sm ${c.deleted ? "text-stone-400 line-through" : ""}`}>
+            <p key={String(c.id)} className={`py-1 text-sm ${c.deleted ? "text-stone-500 line-through" : ""}`}>
               {String(c.body)} <span className="text-xs text-stone-500">· {ago(String(c.created_at))}</span>
             </p>
           ))}
@@ -605,7 +606,8 @@ function Auctions() {
 
   async function act(fn: "admin_cancel_auction" | "admin_delete_auction", a: AdminAuction) {
     const verb = fn === "admin_cancel_auction" ? "Cancel" : "Permanently delete";
-    if (!window.confirm(`${verb} "${a.title}"?`)) return;
+    if (!(await confirmDialog({ title: `${verb} "${a.title}"?`, body: "This is recorded in the audit log.", confirmLabel: fn === "admin_cancel_auction" ? "Cancel auction" : "Delete auction", cancelLabel: "Keep", danger: true })))
+      return;
     const reason = window.prompt("Reason (optional, stored in the audit log):");
     const { error } = await supabase.rpc(fn, { p_auction_id: a.id, p_reason: reason });
     setMsg(error ? errorMessage(error) : `${verb}d "${a.title}"`);

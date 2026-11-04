@@ -12,6 +12,7 @@ import { ChatPanel } from "../ChatPanel";
 import { BidLog } from "../BidLog";
 import { LotBadge } from "../StatusBadge";
 import { TeamChip, textOn } from "./TeamChip";
+import { confirmDialog } from "../../lib/confirm";
 
 type Tab = "block" | "teams" | "players" | "board" | "bids" | "chat";
 
@@ -117,7 +118,7 @@ function JoinOrMyTeam({
   }
 
   async function leave() {
-    if (!window.confirm("Leave the league? Your team will be deleted.")) return;
+    if (!(await confirmDialog({ title: "Leave the league?", body: "Your team will be deleted.", confirmLabel: "Leave league", danger: true }))) return;
     const { error } = await supabase.rpc("leave_league", { p_auction_id: auction.id });
     if (error) setError(errorMessage(error));
   }
@@ -322,16 +323,16 @@ function OnTheBlock({
     <div className="space-y-4">
       {lastClosed && (
         <div className="flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-2 text-sm text-white">
-          <span className="text-stone-400">Last:</span>
+          <span className="text-stone-500">Last:</span>
           <span className="truncate font-semibold">{lastClosed.title}</span>
           {lastClosed.status === "sold" && lastClosed.winner_team_id && teamById.get(lastClosed.winner_team_id) ? (
             <>
-              <span className="text-stone-400">sold to</span>
+              <span className="text-stone-500">sold to</span>
               <TeamChip team={teamById.get(lastClosed.winner_team_id)!} />
               <span className="ml-auto font-bold tabular-nums text-brand-300">{money(lastClosed.current_bid, s)}</span>
             </>
           ) : (
-            <span className="ml-auto text-stone-400">unsold</span>
+            <span className="ml-auto text-stone-500">unsold</span>
           )}
         </div>
       )}
@@ -470,7 +471,7 @@ function TeamsPanel({
   if (teams.length === 0) return <div className="card py-14 text-center text-sm text-stone-500">No teams yet.</div>;
 
   async function remove(t: LeagueTeam) {
-    if (!window.confirm(`Remove ${t.name}?`)) return;
+    if (!(await confirmDialog({ title: `Remove ${t.name}?`, body: "The team leaves the league.", confirmLabel: "Remove team", danger: true }))) return;
     await supabase.rpc("remove_league_team", { p_team_id: t.id });
   }
 
@@ -524,7 +525,7 @@ function TeamsPanel({
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-stone-400">No players yet.</p>
+                <p className="text-sm text-stone-500">No players yet.</p>
               )}
             </div>
           </div>
@@ -584,7 +585,7 @@ function PlayersPanel({ auction, lots, teamById, isHost }: { auction: Auction; l
                 const team = l.winner_team_id ? teamById.get(l.winner_team_id) : undefined;
                 return (
                   <li key={l.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
-                    <span className="w-8 font-mono text-xs text-stone-400">#{l.position + 1}</span>
+                    <span className="w-8 font-mono text-xs text-stone-500">#{l.position + 1}</span>
                     <div className="min-w-[8rem] flex-1">
                       <p className="truncate font-medium">{l.title}</p>
                       <p className="truncate text-xs text-stone-500">

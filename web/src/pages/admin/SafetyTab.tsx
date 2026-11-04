@@ -99,11 +99,11 @@ export function SafetyTab() {
           <button className="btn-primary">Block</button>
         </form>
         <div className="flex flex-wrap gap-2">
-          {words.length === 0 && <span className="text-sm text-stone-400">No blocked words.</span>}
+          {words.length === 0 && <span className="text-sm text-stone-500">No blocked words.</span>}
           {words.map((w) => (
             <span key={w} className="chip bg-stone-100 text-stone-700">
               {w}
-              <button className="ml-1 text-stone-400 hover:text-red-600" onClick={() => void remove(w)} aria-label={`Unblock ${w}`}>
+              <button className="-my-1 -mr-2 ml-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-stone-500 hover:bg-stone-200 hover:text-red-600" onClick={() => void remove(w)} aria-label={`Unblock ${w}`}>
                 ✕
               </button>
             </span>
@@ -125,7 +125,7 @@ export function SafetyTab() {
                 <p className="text-xs text-stone-500">{s.help}</p>
               </div>
               <ul className="divide-y divide-stone-100 text-sm">
-                {rows.length === 0 && <li className="px-4 py-3 text-stone-400">Nothing found.</li>}
+                {rows.length === 0 && <li className="px-4 py-3 text-stone-500">Nothing found.</li>}
                 {rows.map((r, i) => {
                   const href = s.link?.(r);
                   return (

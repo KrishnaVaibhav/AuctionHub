@@ -4,6 +4,7 @@ import { deleteMedia, publicUrl, uploadMedia } from "../../lib/media";
 import { money } from "../../lib/format";
 import type { Auction, Lot, LotMedia } from "../../lib/types";
 import { LotBadge } from "../../components/StatusBadge";
+import { confirmDialog } from "../../lib/confirm";
 
 function parseFields(text: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -232,8 +233,8 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
       if (b.error) throw b.error;
     });
 
-  const removeLot = () => {
-    if (!window.confirm(`Delete "${lot.title}"?`)) return;
+  const removeLot = async () => {
+    if (!(await confirmDialog({ title: `Delete "${lot.title}"?`, body: "Its photos are removed too.", confirmLabel: "Delete lot", danger: true }))) return;
     void run(async () => {
       await Promise.all(media.map((m) => deleteMedia("lot-media", m.path).catch(() => undefined)));
       const { error } = await supabase.from("lots").delete().eq("id", lot.id);
@@ -261,7 +262,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
   return (
     <div className="card p-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="w-8 text-center font-mono text-sm text-stone-400">#{index + 1}</span>
+        <span className="w-8 text-center font-mono text-sm text-stone-500">#{index + 1}</span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{lot.title}</p>
           <p className="text-sm text-stone-500">
@@ -282,7 +283,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
             <button className="btn-ghost" onClick={() => setOpen((o) => !o)}>
               {open ? "Close" : "Edit"}
             </button>
-            <button className="btn-ghost text-red-600" disabled={busy} onClick={removeLot}>
+            <button className="btn-ghost text-red-600" disabled={busy} onClick={() => void removeLot()}>
               Delete
             </button>
           </div>

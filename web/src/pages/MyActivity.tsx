@@ -74,7 +74,7 @@ export function MyActivity() {
         {(["active", "won", "lost", "watching"] as Tab[]).map((t) => (
           <button key={t} className={`tab ${tab === t ? "tab-active" : ""}`} onClick={() => setTab(t)}>
             {t === "active" ? "Active" : t === "won" ? "Won" : t === "lost" ? "Not won" : "Watching"}
-            {t !== "watching" && <span className="ml-1.5 text-xs text-stone-400">{lists[t].length}</span>}
+            {t !== "watching" && <span className="ml-1.5 text-xs text-stone-500">{lists[t].length}</span>}
           </button>
         ))}
       </div>

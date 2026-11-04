@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { useProfileNames } from "../../lib/profiles";
 import type { Auction } from "../../lib/types";
+import { confirmDialog } from "../../lib/confirm";
 
 const OPTIONS: { key: Auction["visibility"]; title: string; desc: string }[] = [
   { key: "public", title: "Public", desc: "Listed on the home page. Anyone can join." },
@@ -40,7 +41,7 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
   }
 
   async function regenerate() {
-    if (!window.confirm("Make a new code? The old link stops working for new people (existing members stay).")) return;
+    if (!(await confirmDialog({ title: "Make a new invite code?", body: "The old link stops working for new people. Existing members stay.", confirmLabel: "New code" }))) return;
     const { data, error } = await supabase.rpc("get_invite_code", { p_auction_id: auction.id, p_regenerate: true });
     if (error) setError(errorMessage(error));
     else setCode(data as string);
@@ -114,7 +115,7 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
           <div>
             <p className="label">Members ({members.length})</p>
             {members.length === 0 ? (
-              <p className="text-sm text-stone-400">Nobody has joined yet.</p>
+              <p className="text-sm text-stone-500">Nobody has joined yet.</p>
             ) : (
               <ul className="divide-y divide-stone-100 text-sm">
                 {members.map((m) => (

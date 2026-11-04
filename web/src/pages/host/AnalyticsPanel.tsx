@@ -113,7 +113,7 @@ export function AnalyticsPanel({ auction }: { auction: Auction }) {
             {d.per_lot.map((l) => (
               <tr key={l.id}>
                 <td className="max-w-48 truncate py-2">
-                  <span className="mr-1 text-stone-400">#{l.position + 1}</span>
+                  <span className="mr-1 text-stone-500">#{l.position + 1}</span>
                   {l.title}
                 </td>
                 <td className="py-2">

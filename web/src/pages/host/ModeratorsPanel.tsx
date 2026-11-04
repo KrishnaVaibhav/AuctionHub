@@ -53,7 +53,7 @@ export function ModeratorsPanel({ auction }: { auction: Auction }) {
       </form>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {ids.length === 0 ? (
-        <p className="text-sm text-stone-400">No moderators yet.</p>
+        <p className="text-sm text-stone-500">No moderators yet.</p>
       ) : (
         <ul className="divide-y divide-stone-100 text-sm">
           {ids.map((id) => (

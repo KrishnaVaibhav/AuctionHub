@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { supabase } from "../lib/supabase";
-import { categoryIcon, categoryLabel } from "../lib/categories";
+import { categoryLabel } from "../lib/categories";
+import { CategoryIcon } from "./CategoryIcon";
 import { Avatar } from "./Avatar";
 import { FollowButton } from "./FollowButton";
 
@@ -30,7 +31,7 @@ export function HostLine({ hostId, category }: { hostId: string; category: strin
       <FollowButton hostId={hostId} />
       {category && (
         <span className="chip bg-stone-100 text-stone-700">
-          {categoryIcon(category)} {categoryLabel(category)}
+          <CategoryIcon name={category} className="h-3.5 w-3.5" /> {categoryLabel(category)}
         </span>
       )}
     </div>

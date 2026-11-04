@@ -16,8 +16,8 @@ test("host creates an auction in the UI, goes live, and sees a rival bid in real
   await newLot.getByRole("button", { name: "Add lot" }).click();
   await expect(page.getByText("Vintage camera").first()).toBeVisible();
 
-  page.once("dialog", (d) => void d.accept());
   await page.getByRole("button", { name: "Go live now" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Go live" }).click();
   await expect(page).toHaveURL(/\/a\/[0-9a-f-]{36}$/);
   await expect(page.getByText("Live", { exact: true }).first()).toBeVisible();
 

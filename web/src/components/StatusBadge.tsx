@@ -7,7 +7,7 @@ const auctionColors: Record<AuctionStatus, string> = {
   live: "bg-red-600 text-snow",
   paused: "bg-amber-100 text-amber-800",
   ended: "bg-stone-200 text-stone-700",
-  cancelled: "bg-stone-100 text-stone-400 line-through",
+  cancelled: "bg-stone-100 text-stone-500 line-through",
 };
 
 const lotColors: Record<LotStatus, string> = {
@@ -15,7 +15,7 @@ const lotColors: Record<LotStatus, string> = {
   open: "bg-emerald-100 text-emerald-800",
   sold: "bg-stone-900 text-white",
   unsold: "bg-stone-200 text-stone-600",
-  withdrawn: "bg-stone-100 text-stone-400",
+  withdrawn: "bg-stone-100 text-stone-500",
 };
 
 export function AuctionBadge({ status }: { status: AuctionStatus }) {

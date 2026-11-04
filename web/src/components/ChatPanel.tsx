@@ -122,25 +122,29 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
 
       <div
         ref={listRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label="Chat messages"
         className="flex-1 space-y-2 overflow-y-auto px-4 py-3 text-sm"
         onScroll={(e) => {
           const el = e.currentTarget;
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
         }}
       >
-        {visible.length === 0 && <p className="text-stone-400">No messages yet. Say hello!</p>}
+        {visible.length === 0 && <p className="text-stone-500">No messages yet. Say hello!</p>}
         {visible.map((m) =>
           m.kind === "text" ? (
             <div key={m.id} className="group flex items-start gap-2">
               <p className="min-w-0 flex-1 break-words">
                 <span className={`mr-1.5 font-semibold ${m.user_id === auction.host_id ? "text-brand-700" : ""}`}>
                   {m.user_id ? (names.get(m.user_id) ?? "...") : "Unknown"}
-                  {m.user_id === auction.host_id && <span className="ml-1 text-[10px] uppercase">host</span>}
+                  {m.user_id === auction.host_id && <span className="ml-1 text-[11px] uppercase">host</span>}
                 </span>
                 {m.body}
               </p>
               {isStaff && (
-                <span className="hidden shrink-0 gap-1 text-xs text-stone-400 group-hover:flex">
+                <span className="hidden shrink-0 gap-1 text-xs text-stone-500 group-focus-within:flex group-hover:flex">
                   <button onClick={() => void moderate(m, m.pinned ? "unpin" : "pin")} className="hover:text-stone-900">
                     {m.pinned ? "unpin" : "pin"}
                   </button>

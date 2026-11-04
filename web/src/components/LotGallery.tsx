@@ -5,7 +5,7 @@ import type { LotMedia } from "../lib/types";
 export function LotGallery({ items, title }: { items: LotMedia[]; title: string }) {
   const [index, setIndex] = useState(0);
   if (items.length === 0) {
-    return <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-stone-100 text-sm text-stone-400">No photos</div>;
+    return <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-stone-100 text-sm text-stone-500">No photos</div>;
   }
   const current = items[Math.min(index, items.length - 1)];
   const src = publicUrl("lot-media", current.path);

@@ -31,7 +31,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-white/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-white/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2.5 font-display text-lg font-extrabold tracking-tight">
             <img src="/favicon.svg" alt="" className="h-8 w-8" />
@@ -73,7 +73,7 @@ export function Layout() {
             <ThemeToggle />
           </div>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-stone-100 md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-xl hover:bg-stone-100 md:hidden"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Menu"
             aria-expanded={menuOpen}

@@ -4,9 +4,10 @@ import { useAuth } from "../lib/auth";
 import { useAuctionRoom } from "../lib/useAuctionRoom";
 import { supabase, errorMessage } from "../lib/supabase";
 import { dateTime, money } from "../lib/format";
+import { minNextBid } from "../lib/bidding";
 import { useProfileNames } from "../lib/profiles";
 import { publicUrl } from "../lib/media";
-import type { Auction, Lot, LotMedia } from "../lib/types";
+import type { Auction, BidResult, Lot, LotMedia } from "../lib/types";
 import { AuctionBadge, LotBadge } from "../components/StatusBadge";
 import { BidPanel } from "../components/BidPanel";
 import { ChatPanel } from "../components/ChatPanel";
@@ -21,6 +22,7 @@ import { visibilityLabel } from "../lib/auctions";
 import { useIsAdmin } from "../lib/admin";
 import { WatchButton } from "../components/WatchButton";
 import { HostLine } from "../components/HostLine";
+import { confirmDialog, type ConfirmOptions } from "../lib/confirm";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
 
@@ -40,6 +42,8 @@ function AuctionRoomInner() {
   const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
   const [hostError, setHostError] = useState<string | null>(null);
   const { isAdmin } = useIsAdmin();
+  const [barBusy, setBarBusy] = useState(false);
+  const [barMsg, setBarMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   if (loading) return <RoomSkeleton />;
   if (!auction) return id ? <PrivateGate auctionId={id} onJoined={reload} /> : null;
@@ -51,11 +55,27 @@ function AuctionRoomInner() {
   const selectedIndex = selected ? lots.indexOf(selected) : -1;
   const finished = auction.status === "ended" || auction.status === "cancelled";
 
-  async function hostAction(fn: string, args: Record<string, string>, confirmText?: string) {
-    if (confirmText && !window.confirm(confirmText)) return;
+  async function hostAction(fn: string, args: Record<string, string>, confirm?: ConfirmOptions) {
+    if (confirm && !(await confirmDialog(confirm))) return;
     setHostError(null);
     const { error } = await supabase.rpc(fn, args);
     if (error) setHostError(errorMessage(error));
+  }
+
+  /** One-tap minimum bid from the mobile bar. */
+  async function quickBid(lot: Lot) {
+    const amount = minNextBid(lot, auction!.settings);
+    setBarBusy(true);
+    setBarMsg(null);
+    const { data, error } = await supabase.rpc("place_bid", { p_lot_id: lot.id, p_amount: amount, p_max_amount: null });
+    setBarBusy(false);
+    if (error) return setBarMsg({ ok: false, text: errorMessage(error) });
+    const res = data as BidResult;
+    setBarMsg(
+      res.status === "leading"
+        ? { ok: true, text: `You're winning at ${money(res.current_bid, auction!.settings)}` }
+        : { ok: false, text: `Outbid by an auto-bid. Now ${money(res.current_bid, auction!.settings)}` },
+    );
   }
 
   const tabs: { key: Tab; label: string; mobileOnly?: boolean }[] = [
@@ -123,7 +143,7 @@ function AuctionRoomInner() {
                     <LotGallery items={media.get(selected.id) ?? []} title={selected.title} />
                     <div className="mt-4 flex items-start justify-between gap-3">
                       <h2 className="font-display text-xl font-bold">
-                        <span className="mr-2 text-stone-400">#{selected.position + 1}</span>
+                        <span className="mr-2 text-stone-500">#{selected.position + 1}</span>
                         {selected.title}
                       </h2>
                       <div className="flex shrink-0 gap-1">
@@ -154,10 +174,10 @@ function AuctionRoomInner() {
                     )}
                     {isHost && selected.status === "open" && (
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <button className="btn-primary" onClick={() => void hostAction("close_lot_now", { p_lot_id: selected.id }, `Close "${selected.title}" now?`)}>
+                        <button className="btn-primary" onClick={() => void hostAction("close_lot_now", { p_lot_id: selected.id }, { title: `Close "${selected.title}" now?`, body: "The lot sells to the current leader at the current bid.", confirmLabel: "Close lot" })}>
                           Sold! Close lot now
                         </button>
-                        <button className="btn-ghost" onClick={() => void hostAction("withdraw_lot", { p_lot_id: selected.id }, `Withdraw "${selected.title}"?`)}>
+                        <button className="btn-ghost" onClick={() => void hostAction("withdraw_lot", { p_lot_id: selected.id }, { title: `Withdraw "${selected.title}"?`, body: "Bidding stops and the lot is marked withdrawn.", confirmLabel: "Withdraw lot", danger: true })}>
                           Withdraw
                         </button>
                       </div>
@@ -199,22 +219,36 @@ function AuctionRoomInner() {
                   <Countdown endsAt={selected.ends_at} className="text-sm" />
                 </p>
               </div>
+              {!isHost && (
+                <button
+                  className="btn-ghost h-11 px-3"
+                  aria-label="More bid options"
+                  onClick={() => {
+                    setTab("lot");
+                    setTimeout(() => document.getElementById("bid")?.scrollIntoView({ behavior: "smooth" }), 50);
+                  }}
+                >
+                  Options
+                </button>
+              )}
               {userId && selected.current_winner_id === userId ? (
-                <span className="chip bg-emerald-100 text-emerald-800">Winning</span>
+                <span className="chip min-h-11 bg-emerald-100 px-4 text-emerald-800">Winning</span>
               ) : (
-                !isHost && (
-                  <button
-                    className="btn-accent px-6 py-3"
-                    onClick={() => {
-                      setTab("lot");
-                      setTimeout(() => document.getElementById("bid")?.scrollIntoView({ behavior: "smooth" }), 50);
-                    }}
-                  >
-                    Bid
+                !isHost &&
+                (userId ? (
+                  <button className="btn-accent min-h-11 px-5" disabled={barBusy} onClick={() => void quickBid(selected)}>
+                    {barBusy ? "Bidding..." : `Bid ${money(minNextBid(selected, auction.settings), auction.settings)}`}
                   </button>
-                )
+                ) : (
+                  <Link to={`/login?next=/a/${auction.id}`} className="btn-accent min-h-11 px-5">
+                    Sign in to bid
+                  </Link>
+                ))
               )}
             </div>
+            <p role="status" aria-live="polite" className={`mx-auto max-w-xl text-xs font-medium empty:hidden ${barMsg?.ok ? "text-emerald-700" : "text-red-600"}`}>
+              {barMsg?.text}
+            </p>
           </div>
         )}
         </>
@@ -223,7 +257,7 @@ function AuctionRoomInner() {
   );
 }
 
-function HostBar({ auction, onAction }: { auction: Auction; onAction: (fn: string, args: Record<string, string>, confirm?: string) => Promise<void> }) {
+function HostBar({ auction, onAction }: { auction: Auction; onAction: (fn: string, args: Record<string, string>, confirm?: ConfirmOptions) => Promise<void> }) {
   const args = { p_auction_id: auction.id };
   return (
     <div className="card flex flex-wrap items-center gap-2 p-2.5">
@@ -232,7 +266,7 @@ function HostBar({ auction, onAction }: { auction: Auction; onAction: (fn: strin
         Edit
       </Link>
       {(auction.status === "draft" || auction.status === "scheduled") && (
-        <button className="btn-accent py-1.5" onClick={() => void onAction("start_auction", args, "Start the auction now?")}>
+        <button className="btn-accent py-1.5" onClick={() => void onAction("start_auction", args, { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" })}>
           Go live
         </button>
       )}
@@ -247,7 +281,7 @@ function HostBar({ auction, onAction }: { auction: Auction; onAction: (fn: strin
         </button>
       )}
       {(auction.status === "live" || auction.status === "paused") && (
-        <button className="btn-danger py-1.5" onClick={() => void onAction("end_auction_now", args, "End the auction now? Open lots close at their current bid.")}>
+        <button className="btn-danger py-1.5" onClick={() => void onAction("end_auction_now", args, { title: "End the auction now?", body: "Open lots close at their current bid.", confirmLabel: "End auction", cancelLabel: "Keep running", danger: true })}>
           End now
         </button>
       )}
@@ -287,12 +321,12 @@ function LotGrid({
               {cover ? (
                 <img src={publicUrl("lot-media", cover.path)} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
               ) : (
-                <div className="flex h-full items-center justify-center font-mono text-xs text-stone-400">#{l.position + 1}</div>
+                <div className="flex h-full items-center justify-center font-mono text-xs text-stone-500">#{l.position + 1}</div>
               )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="line-clamp-1 text-sm font-semibold">
-                <span className="mr-1 text-stone-400">#{l.position + 1}</span>
+                <span className="mr-1 text-stone-500">#{l.position + 1}</span>
                 {l.title}
               </p>
               <p className="font-bold tabular-nums">{money(l.current_bid ?? l.start_price, auction.settings)}</p>

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { supabase } from "../lib/supabase";
 import { dateTime } from "../lib/format";
-import { categoryIcon, categoryLabel } from "../lib/categories";
+import { categoryLabel } from "../lib/categories";
+import { CategoryIcon } from "../components/CategoryIcon";
 import type { Auction } from "../lib/types";
 import { Avatar } from "../components/Avatar";
 import { AuctionBadge } from "../components/StatusBadge";
@@ -41,7 +42,7 @@ function StarRow({ avg, count, label }: { avg: number | null; count: number; lab
             <span className="text-brand-500">★</span> {Number(avg).toFixed(1)} <span className="text-sm font-normal text-stone-500">({count})</span>
           </>
         ) : (
-          <span className="text-sm font-normal text-stone-400">No ratings yet</span>
+          <span className="text-sm font-normal text-stone-500">No ratings yet</span>
         )}
       </p>
     </div>
@@ -140,8 +141,16 @@ function AuctionList({ title, rows, empty }: { title: string; rows: Auction[]; e
               <div className="min-w-0">
                 <AuctionBadge status={a.status} />
                 <p className="mt-1 line-clamp-1 text-sm font-semibold">{a.title}</p>
-                <p className="text-xs text-stone-500">
-                  {a.category ? `${categoryIcon(a.category)} ${categoryLabel(a.category)}` : a.mode === "league" ? "Team league" : ""}
+                <p className="flex items-center gap-1 text-xs text-stone-500">
+                  {a.category ? (
+                    <>
+                      <CategoryIcon name={a.category} className="h-3.5 w-3.5" /> {categoryLabel(a.category)}
+                    </>
+                  ) : a.mode === "league" ? (
+                    "Team league"
+                  ) : (
+                    ""
+                  )}
                 </p>
               </div>
             </Link>

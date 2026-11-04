@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../lib/supabase";
-import type { Auction, AuctionStatus } from "../lib/types";
+import type { Auction, AuctionSettings, AuctionStatus } from "../lib/types";
 import { AuctionBadge } from "../components/StatusBadge";
 import { Countdown } from "../components/Countdown";
-import { dateTime } from "../lib/format";
-import { CATEGORIES, categoryIcon, categoryLabel } from "../lib/categories";
+import { dateTime, money } from "../lib/format";
+import { CATEGORIES, categoryLabel } from "../lib/categories";
+import { CategoryIcon } from "../components/CategoryIcon";
 
 type Row = Auction & { lots: { count: number }[] };
 type Tab = "live" | "upcoming" | "ended";
@@ -72,10 +73,8 @@ export function Home() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-3xl bg-ink px-6 py-10 text-snow ring-1 ring-transparent sm:px-10 sm:py-14 dark:ring-snow/10">
-        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-brand-500/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-rose-500/20 blur-3xl" />
-        <div className="relative max-w-2xl">
+      <section className="grid gap-8 overflow-hidden rounded-3xl bg-ink px-6 py-10 text-snow ring-1 ring-transparent sm:px-10 sm:py-14 lg:grid-cols-[1.3fr_1fr] lg:items-center dark:ring-snow/10">
+        <div className="max-w-2xl">
           <span className="chip bg-snow/10 text-brand-300">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
             {counts.live} live now
@@ -87,7 +86,13 @@ export function Home() {
             Real-time auctions with auto-bidding, anti-sniping and live streams. Join one, or host your own in minutes.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <button className="btn-accent px-5 py-3" onClick={() => setTab("live")}>
+            <button
+              className="btn-accent px-5 py-3"
+              onClick={() => {
+                setTab(counts.live === 0 && counts.upcoming > 0 ? "upcoming" : "live");
+                document.getElementById("browse")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
               Browse live auctions
             </button>
             <Link to="/host" className="btn border border-snow/20 px-5 py-3 text-snow hover:bg-snow/10">
@@ -95,20 +100,22 @@ export function Home() {
             </Link>
           </div>
         </div>
+        <LiveBoard />
       </section>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div id="browse" className="flex scroll-mt-24 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="scrollbar-none flex gap-1 overflow-x-auto rounded-xl bg-stone-100 p-1">
           {(["live", "upcoming", "ended"] as Tab[]).map((t) => (
             <button key={t} className={`tab ${tab === t ? "tab-active" : ""}`} onClick={() => setTab(t)}>
               {t === "live" ? "Live now" : t === "upcoming" ? "Upcoming" : "Ended"}
-              <span className="ml-1.5 text-xs text-stone-400">{counts[t]}</span>
+              <span className="ml-1.5 text-xs text-stone-500">{counts[t]}</span>
             </button>
           ))}
         </div>
         <input
           className="input sm:max-w-xs"
           type="search"
+          aria-label="Search auctions"
           placeholder="Search auctions..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -116,13 +123,14 @@ export function Home() {
       </div>
 
       <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-        {[["", "All", "🔥"] as const, ["league", "Team leagues", "🏆"] as const, ...CATEGORIES].map(([k, label, icon]) => (
+        {[["", "All"] as const, ["league", "Team leagues"] as const, ...CATEGORIES].map(([k, label]) => (
           <button
             key={k || "all"}
             onClick={() => setCat(k)}
-            className={`chip shrink-0 border px-3 py-1.5 ${cat === k ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}
+            aria-pressed={cat === k}
+            className={`chip min-h-11 shrink-0 border px-3.5 py-1.5 sm:min-h-8 ${cat === k ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}
           >
-            {icon} {label}
+            <CategoryIcon name={k || "all"} className="h-3.5 w-3.5" /> {label}
           </button>
         ))}
       </div>
@@ -213,8 +221,8 @@ function AuctionCard({ a }: { a: Row }) {
       <div className="flex flex-1 flex-col gap-1.5 p-4">
         <h3 className="line-clamp-2 font-semibold leading-snug group-hover:underline">{a.title}</h3>
         {a.category && (
-          <p className="text-xs text-stone-500">
-            {categoryIcon(a.category)} {categoryLabel(a.category)}
+          <p className="flex items-center gap-1 text-xs text-stone-500">
+            <CategoryIcon name={a.category} className="h-3.5 w-3.5" /> {categoryLabel(a.category)}
           </p>
         )}
         <p className="mt-auto flex items-center justify-between pt-2 text-xs text-stone-500">
@@ -225,5 +233,64 @@ function AuctionCard({ a }: { a: Row }) {
         </p>
       </div>
     </Link>
+  );
+}
+
+type BoardLot = {
+  id: string;
+  title: string;
+  current_bid: number | null;
+  start_price: number;
+  bid_count: number;
+  ends_at: string | null;
+  auction_id: string;
+  auctions: { settings: AuctionSettings };
+};
+
+/** Hero board: the hottest open lots right now, refreshed every 20 seconds. */
+function LiveBoard() {
+  const [lots, setLots] = useState<BoardLot[]>([]);
+  useEffect(() => {
+    const load = () =>
+      void supabase
+        .from("lots")
+        .select("id, title, current_bid, start_price, bid_count, ends_at, auction_id, auctions!inner(settings, visibility, status)")
+        .eq("status", "open")
+        .eq("auctions.visibility", "public")
+        .eq("auctions.status", "live")
+        .order("bid_count", { ascending: false })
+        .limit(4)
+        .then(({ data }) => setLots((data as unknown as BoardLot[] | null) ?? []));
+    load();
+    const t = setInterval(load, 20_000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (lots.length === 0) return null;
+  return (
+    <div className="rounded-2xl bg-snow/5 p-2 ring-1 ring-snow/10">
+      <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wider text-snow/60 uppercase">On the block now</p>
+      <ul>
+        {lots.map((l) => (
+          <li key={l.id}>
+            <Link to={`/a/${l.auction_id}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-snow/10">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">{l.title}</span>
+                <span className="text-xs text-snow/60">
+                  {l.bid_count} bid{l.bid_count === 1 ? "" : "s"}
+                  {l.ends_at && (
+                    <>
+                      {" · "}
+                      <Countdown endsAt={l.ends_at} />
+                    </>
+                  )}
+                </span>
+              </span>
+              <span className="font-display text-lg font-extrabold text-brand-400 tabular-nums">{money(l.current_bid ?? l.start_price, l.auctions.settings)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

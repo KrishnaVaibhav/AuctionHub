@@ -16,6 +16,7 @@ import { ImportLots } from "./ImportLots";
 import { AnalyticsPanel } from "./AnalyticsPanel";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 import { CATEGORIES, parseTags } from "../../lib/categories";
+import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
@@ -40,8 +41,8 @@ function AuctionEditorInner() {
 
   const editable = auction.status === "draft" || auction.status === "scheduled";
 
-  async function rpc(fn: string, confirmText?: string) {
-    if (confirmText && !window.confirm(confirmText)) return;
+  async function rpc(fn: string, confirm?: ConfirmOptions) {
+    if (confirm && !(await confirmDialog(confirm))) return;
     setError(null);
     const { error } = await supabase.rpc(fn, { p_auction_id: auction!.id });
     if (error) setError(errorMessage(error));
@@ -59,7 +60,13 @@ function AuctionEditorInner() {
   }
 
   async function remove() {
-    if (!window.confirm("Permanently delete this auction with all lots, bids, chat, teams and uploaded files? This cannot be undone.")) return;
+    const ok = await confirmDialog({
+      title: "Delete this auction?",
+      body: "All lots, bids, chat, teams and uploaded files are removed. This can't be undone.",
+      confirmLabel: "Delete auction",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteAuctionCompletely(auction!);
       navigate("/host");
@@ -93,7 +100,7 @@ function AuctionEditorInner() {
             </button>
           )}
           {editable && (
-            <button className="btn-accent" onClick={() => void rpc("start_auction", "Go live now? Lots open immediately.")}>
+            <button className="btn-accent" onClick={() => void rpc("start_auction", { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" })}>
               Go live now
             </button>
           )}
@@ -103,7 +110,7 @@ function AuctionEditorInner() {
             </button>
           )}
           {!["draft", "ended", "cancelled"].includes(auction.status) && (
-            <button className="btn-danger" onClick={() => void rpc("cancel_auction", "Cancel this auction? All open lots are withdrawn.")}>
+            <button className="btn-danger" onClick={() => void rpc("cancel_auction", { title: "Cancel this auction?", body: "All open lots are withdrawn.", confirmLabel: "Cancel auction", cancelLabel: "Keep", danger: true })}>
               Cancel auction
             </button>
           )}
@@ -293,9 +300,9 @@ function AuctionForm({
             </label>
             <select id="cat" className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">Choose a category</option>
-              {CATEGORIES.map(([k, label, icon]) => (
+              {CATEGORIES.map(([k, label]) => (
                 <option key={k} value={k}>
-                  {icon} {label}
+                  {label}
                 </option>
               ))}
             </select>

@@ -7,6 +7,7 @@ import type { Auction } from "../../lib/types";
 import { AuctionBadge } from "../../components/StatusBadge";
 import { LEAGUE_DEFAULTS, LEAGUE_INCREMENTS } from "../../lib/useLeagueTeams";
 import { canDelete, deleteAuctionCompletely, visibilityLabel } from "../../lib/auctions";
+import { confirmDialog } from "../../lib/confirm";
 
 type Row = Auction & { lots: { count: number }[] };
 
@@ -40,7 +41,13 @@ export function HostDashboard() {
   }
 
   async function remove(a: Row) {
-    if (!window.confirm(`Permanently delete "${a.title}" with all its lots, bids, chat and files? This cannot be undone.`)) return;
+    const ok = await confirmDialog({
+      title: `Delete "${a.title}"?`,
+      body: "All its lots, bids, chat and files are removed. This can't be undone.",
+      confirmLabel: "Delete auction",
+      danger: true,
+    });
+    if (!ok) return;
     setError(null);
     try {
       await deleteAuctionCompletely(a);
