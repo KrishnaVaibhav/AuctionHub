@@ -22,6 +22,7 @@ import { visibilityLabel } from "../lib/auctions";
 import { useIsAdmin } from "../lib/admin";
 import { WatchButton } from "../components/WatchButton";
 import { HostLine } from "../components/HostLine";
+import { PriceHint } from "../components/PriceHint";
 import { confirmDialog, type ConfirmOptions } from "../lib/confirm";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "chat";
@@ -172,6 +173,7 @@ function AuctionRoomInner() {
                         ))}
                       </dl>
                     )}
+                    {selected.status === "open" && <PriceHint className="mt-4" category={auction.category} title={selected.title} settings={auction.settings} />}
                     {isHost && selected.status === "open" && (
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button className="btn-primary" onClick={() => void hostAction("close_lot_now", { p_lot_id: selected.id }, { title: `Close "${selected.title}" now?`, body: "The lot sells to the current leader at the current bid.", confirmLabel: "Close lot" })}>

@@ -14,6 +14,7 @@ import { VisibilityPanel } from "./VisibilityPanel";
 import { ModeratorsPanel } from "./ModeratorsPanel";
 import { ImportLots } from "./ImportLots";
 import { AnalyticsPanel } from "./AnalyticsPanel";
+import { EmbedPanel } from "./EmbedPanel";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 import { CATEGORIES, parseTags } from "../../lib/categories";
 import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
@@ -122,6 +123,7 @@ function AuctionEditorInner() {
       <div className="grid gap-6 lg:grid-cols-2">
         <VisibilityPanel auction={auction} onChanged={reload} />
         <ModeratorsPanel auction={auction} />
+        <EmbedPanel auction={auction} />
       </div>
 
       <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />

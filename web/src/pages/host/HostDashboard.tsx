@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../../lib/auth";
+import { WebhooksPanel } from "./WebhooksPanel";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { dateTime } from "../../lib/format";
 import type { Auction } from "../../lib/types";
@@ -148,6 +149,8 @@ export function HostDashboard() {
           </div>
         ))}
       </div>
+
+      <WebhooksPanel />
     </div>
   );
 }
