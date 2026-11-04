@@ -12,7 +12,7 @@ set search_path = ''
 as $$
   with sold as (
     select l.current_bid as price,
-           (p_title is not null and length(btrim(p_title)) >= 3 and l.title ilike '%' || btrim(p_title) || '%') as similar
+           (p_title is not null and length(btrim(p_title)) >= 3 and l.title ilike '%' || btrim(p_title) || '%') as is_similar
       from public.lots l
       join public.auctions a on a.id = l.auction_id
      where l.status = 'sold' and l.current_bid > 0
@@ -23,14 +23,14 @@ as $$
   ), pick as (
     -- Prefer title matches when there are enough of them.
     select price from sold
-     where similar or (select count(*) from sold where similar) < 3
+     where is_similar or (select count(*) from sold where is_similar) < 3
   )
   select case when count(*) < 3 then null else jsonb_build_object(
            'count', count(*),
            'low', percentile_cont(0.25) within group (order by price),
            'median', percentile_cont(0.5) within group (order by price),
            'high', percentile_cont(0.75) within group (order by price),
-           'similar', (select count(*) from sold where similar) >= 3)
+           'similar', (select count(*) from sold where is_similar) >= 3)
          end
     from pick;
 $$;
