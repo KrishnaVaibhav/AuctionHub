@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { TimerIcon } from "@phosphor-icons/react";
 import { useServerNow } from "../lib/clock";
 import { remaining } from "../lib/format";
@@ -12,10 +13,10 @@ export function Countdown({ endsAt, className = "" }: { endsAt: string | null; c
       {urgent && (
         <>
           <TimerIcon size="0.95em" weight="bold" aria-hidden="true" />
-          <span className="sr-only">Closing soon:</span>
+          <span className="sr-only">{t("Closing soon:")}</span>
         </>
       )}
-      {ms > 0 ? remaining(ms) : "Closing..."}
+      {ms > 0 ? remaining(ms) : t("Closing...")}
     </span>
   );
 }

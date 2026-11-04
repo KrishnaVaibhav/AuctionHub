@@ -1,3 +1,6 @@
+import { t } from "../lib/i18n";
+
+const tr = t;
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../lib/supabase";
@@ -60,20 +63,20 @@ export function MyActivity() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">My bids & wins</h1>
-        <p className="mt-1 text-sm text-stone-500">Everything you've bid on, what you're winning, and what you've won.</p>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("My bids & wins")}</h1>
+        <p className="mt-1 text-sm text-stone-500">{t("Everything you've bid on, what you're winning, and what you've won.")}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Winning now" value={`${winningNow} / ${active.length}`} accent />
-        <Stat label="Won" value={String(won.length)} />
-        <Stat label="Won total" value={won.length ? money(spent, { currency: won[0].currency }) : "-"} />
+        <Stat label={t("Winning now")} value={`${winningNow} / ${active.length}`} accent />
+        <Stat label={t("Won")} value={String(won.length)} />
+        <Stat label={t("Won total")} value={won.length ? money(spent, { currency: won[0].currency }) : "-"} />
       </div>
 
       <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
         {(["active", "won", "lost", "watching"] as Tab[]).map((t) => (
           <button key={t} className={`tab ${tab === t ? "tab-active" : ""}`} onClick={() => setTab(t)}>
-            {t === "active" ? "Active" : t === "won" ? "Won" : t === "lost" ? "Not won" : "Watching"}
+            {tr(t === "active" ? "Active" : t === "won" ? "Won" : t === "lost" ? "Not won" : "Watching")}
             {t !== "watching" && <span className="ml-1.5 text-xs text-stone-500">{lists[t].length}</span>}
           </button>
         ))}
@@ -86,9 +89,9 @@ export function MyActivity() {
 
       {tab !== "watching" && !loading && lists[tab].length === 0 && (
         <div className="card py-14 text-center">
-          <p className="font-semibold">{tab === "won" ? "No wins yet" : tab === "active" ? "No active bids" : "Nothing here"}</p>
+          <p className="font-semibold">{t(tab === "won" ? "No wins yet" : tab === "active" ? "No active bids" : "Nothing here")}</p>
           <Link to="/" className="btn-primary mt-4">
-            Find an auction
+            {t("Find an auction")}
           </Link>
         </div>
       )}
@@ -106,25 +109,25 @@ export function MyActivity() {
                 </div>
                 {r.status === "open" ? (
                   <span className={`chip ${r.is_leader ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700"}`}>
-                    {r.is_leader ? "Winning" : "Outbid"}
+                    {t(r.is_leader ? "Winning" : "Outbid")}
                   </span>
                 ) : r.status === "sold" && r.is_leader ? (
-                  <span className="chip bg-brand-400 text-ink">You won</span>
+                  <span className="chip bg-brand-400 text-ink">{t("You won")}</span>
                 ) : (
                   <LotBadge status={r.status} />
                 )}
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
                 <div>
-                  <p className="text-[11px] text-stone-500 uppercase">{r.status === "sold" ? "Final" : "Current"}</p>
+                  <p className="text-[11px] text-stone-500 uppercase">{t(r.status === "sold" ? "Final" : "Current")}</p>
                   <p className="font-bold tabular-nums">{money(r.current_bid, cur)}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-stone-500 uppercase">Your top bid</p>
+                  <p className="text-[11px] text-stone-500 uppercase">{t("Your top bid")}</p>
                   <p className="font-medium tabular-nums">{money(r.my_top_bid, cur)}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-stone-500 uppercase">{r.status === "open" ? "Ends in" : "Auto-bid max"}</p>
+                  <p className="text-[11px] text-stone-500 uppercase">{t(r.status === "open" ? "Ends in" : "Auto-bid max")}</p>
                   <p className="font-medium tabular-nums">
                     {r.status === "open" && r.auction_status === "live" ? <Countdown endsAt={r.ends_at} /> : r.my_max ? money(r.my_max, cur) : "-"}
                   </p>

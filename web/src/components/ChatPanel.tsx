@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase, errorMessage, channelName } from "../lib/supabase";
 import { useProfileNames } from "../lib/profiles";
@@ -106,14 +107,14 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
   return (
     <div className="card flex h-[70dvh] flex-col lg:h-[calc(100dvh-8rem)] lg:max-h-[44rem]">
       <div className="border-b border-stone-200 px-4 py-3">
-        <h2 className="font-semibold">Live chat</h2>
+        <h2 className="font-semibold">{t("Live chat")}</h2>
       </div>
 
       {pinned.length > 0 && (
         <div className="space-y-1 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm">
           {pinned.map((m) => (
             <p key={m.id}>
-              <span className="mr-1 font-semibold text-amber-800">Pinned:</span>
+              <span className="mr-1 font-semibold text-amber-800">{t("Pinned:")}</span>
               {m.body}
             </p>
           ))}
@@ -125,14 +126,14 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
         role="log"
         aria-live="polite"
         aria-relevant="additions"
-        aria-label="Chat messages"
+        aria-label={t("Chat messages")}
         className="flex-1 space-y-2 overflow-y-auto px-4 py-3 text-sm"
         onScroll={(e) => {
           const el = e.currentTarget;
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
         }}
       >
-        {visible.length === 0 && <p className="text-stone-500">No messages yet. Say hello!</p>}
+        {visible.length === 0 && <p className="text-stone-500">{t("No messages yet. Say hello!")}</p>}
         {visible.map((m) =>
           m.kind === "text" ? (
             <div key={m.id} className="group flex items-start gap-2">
@@ -176,17 +177,17 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
           <div className="flex gap-2">
             <input
               className="input"
-              placeholder="Say something..."
+              placeholder={t("Say something...")}
               maxLength={500}
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
             <button className="btn-primary" disabled={sending || !text.trim()}>
-              Send
+              {t("Send")}
             </button>
           </div>
         ) : (
-          <p className="text-center text-xs text-stone-500">{userId ? "Chat is closed." : "Sign in to chat."}</p>
+          <p className="text-center text-xs text-stone-500">{t(userId ? "Chat is closed." : "Sign in to chat.")}</p>
         )}
       </form>
     </div>

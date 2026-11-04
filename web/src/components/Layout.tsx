@@ -7,6 +7,8 @@ import { Avatar } from "./Avatar";
 import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
 import { useIsAdmin } from "../lib/admin";
 import { NotificationBell } from "./NotificationBell";
+import { LanguagePicker } from "./LanguagePicker";
+import { t } from "../lib/i18n";
 
 export function Layout() {
   const { session, profile, signOut } = useAuth();
@@ -17,12 +19,12 @@ export function Layout() {
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
   const links = [
-    { to: "/", label: "Auctions", end: true },
+    { to: "/", label: t("Auctions"), end: true },
     ...(session
       ? [
-          { to: "/me", label: "My bids" },
-          { to: "/host", label: "Host" },
-          ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
+          { to: "/me", label: t("My bids") },
+          { to: "/host", label: t("Host") },
+          ...(isAdmin ? [{ to: "/admin", label: t("Admin") }] : []),
         ]
       : []),
   ];
@@ -54,20 +56,21 @@ export function Layout() {
 
           <div className="ml-auto hidden items-center gap-1 md:flex">
             <NotificationBell />
+            <LanguagePicker />
             <ThemeToggle />
             {session ? (
               <>
                 <Link to="/account" className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 transition hover:bg-stone-900/5 dark:hover:bg-white/5">
                   <Avatar name={profile?.display_name} url={profile?.avatar_url} size={32} />
-                  <span className="max-w-32 truncate text-sm font-medium">{profile?.display_name ?? "Account"}</span>
+                  <span className="max-w-32 truncate text-sm font-medium">{profile?.display_name ?? t("Account")}</span>
                 </Link>
                 <button className="btn-ghost" onClick={() => void signOut()}>
-                  Sign out
+                  {t("Sign out")}
                 </button>
               </>
             ) : (
               <Link to="/login" className="btn-primary">
-                Sign in
+                {t("Sign in")}
               </Link>
             )}
           </div>
@@ -78,7 +81,7 @@ export function Layout() {
             <button
               className="flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-stone-900/5"
               onClick={() => setMenuOpen((o) => !o)}
-              aria-label="Menu"
+              aria-label={t("Menu")}
               aria-expanded={menuOpen}
             >
               {menuOpen ? <XIcon size={22} weight="bold" aria-hidden="true" /> : <ListIcon size={22} weight="bold" aria-hidden="true" />}
@@ -96,21 +99,22 @@ export function Layout() {
               ))}
               {session && (
                 <NavLink to="/account" className={navClass}>
-                  Account
+                  {t("Account")}
                 </NavLink>
               )}
             </nav>
-            <div className="mt-3 border-t border-stone-900/5 pt-3 dark:border-white/5">
+            <div className="mt-3 space-y-2 border-t border-stone-900/5 pt-3 dark:border-white/5">
               <ThemeSegmented />
+              <LanguagePicker full />
             </div>
             <div className="mt-3 border-t border-stone-900/5 pt-3 dark:border-white/5">
               {session ? (
                 <button className="btn-ghost w-full" onClick={() => void signOut()}>
-                  Sign out
+                  {t("Sign out")}
                 </button>
               ) : (
                 <Link to="/login" className="btn-primary w-full">
-                  Sign in
+                  {t("Sign in")}
                 </Link>
               )}
             </div>
@@ -131,17 +135,17 @@ export function Layout() {
       <footer className="border-t border-stone-200/70 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-xs text-stone-500 sm:flex-row sm:px-6">
           <span>
-            <span className="font-semibold text-stone-700">AuctionHub</span> · Live auctions, real-time bidding
+            <span className="font-semibold text-stone-700">AuctionHub</span> · {t("Live auctions, real-time bidding")}
           </span>
           <span className="flex gap-4">
             <Link to="/privacy" className="hover:text-stone-900">
-              Privacy
+              {t("Privacy")}
             </Link>
             <Link to="/terms" className="hover:text-stone-900">
-              Terms
+              {t("Terms")}
             </Link>
             <Link to="/support" className="hover:text-stone-900">
-              Support
+              {t("Support")}
             </Link>
           </span>
         </div>

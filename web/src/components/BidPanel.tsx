@@ -9,6 +9,7 @@ import { Countdown } from "./Countdown";
 import { LotBadge } from "./StatusBadge";
 import { confirmDialog } from "../lib/confirm";
 import { SaleTypePanel } from "./SaleTypePanel";
+import { t } from "../lib/i18n";
 
 interface Props {
   auction: Auction;
@@ -46,12 +47,12 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
     const price = money(lot.current_bid ?? lot.start_price, settings);
     if (p.status === "open" && lot.status !== "open") {
       const won = userId != null && lot.current_winner_id === userId;
-      setAnnounce({ text: lot.status === "sold" ? (won ? `You won this lot for ${price}` : `Sold for ${price}`) : `Lot closed: ${lot.status}`, urgent: won });
+      setAnnounce({ text: lot.status === "sold" ? (won ? t("You won this lot for {amount}", { amount: price }) : t("Sold for {amount}", { amount: price })) : t("Lot closed: {status}", { status: t(lot.status) }), urgent: won });
     } else if (p.bid !== lot.current_bid) {
-      if (userId && p.winner === userId && lot.current_winner_id !== userId) setAnnounce({ text: `You've been outbid. Current bid ${price}`, urgent: true });
+      if (userId && p.winner === userId && lot.current_winner_id !== userId) setAnnounce({ text: t("You've been outbid. Current bid {amount}", { amount: price }), urgent: true });
       // My own bids are announced by the form feedback below.
       else if (userId && lot.current_winner_id === userId) return;
-      else setAnnounce({ text: `New bid: ${price}`, urgent: false });
+      else setAnnounce({ text: t("New bid: {amount}", { amount: price }), urgent: false });
     }
   }, [lot.id, lot.current_bid, lot.current_winner_id, lot.status, lot.start_price, settings, userId]);
 
@@ -90,11 +91,11 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
     const value = round2(override ?? Number(amount));
     const max = maxAmount ? round2(Number(maxAmount)) : null;
     if (!leading && (!Number.isFinite(value) || value < minBid)) {
-      setFeedback({ ok: false, text: `Minimum bid is ${money(minBid, settings)}` });
+      setFeedback({ ok: false, text: t("Minimum bid is {amount}", { amount: money(minBid, settings) }) });
       return;
     }
     if (max != null && max < value) {
-      setFeedback({ ok: false, text: "Auto-bid maximum must be at least your bid" });
+      setFeedback({ ok: false, text: t("Auto-bid maximum must be at least your bid") });
       return;
     }
     setBusy(true);
@@ -111,9 +112,9 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
     }
     const res = data as BidResult;
     setMaxAmount("");
-    if (res.status === "leading") setFeedback({ ok: true, text: `You're the highest bidder at ${money(res.current_bid, settings)}` });
-    else if (res.status === "max_raised") setFeedback({ ok: true, text: `Auto-bid maximum raised to ${money(res.max_amount, settings)}` });
-    else setFeedback({ ok: false, text: `Outbid by an auto-bid. Current price ${money(res.current_bid, settings)}` });
+    if (res.status === "leading") setFeedback({ ok: true, text: t("You're the highest bidder at {amount}", { amount: money(res.current_bid, settings) }) });
+    else if (res.status === "max_raised") setFeedback({ ok: true, text: t("Auto-bid maximum raised to {amount}", { amount: money(res.max_amount, settings) }) });
+    else setFeedback({ ok: false, text: t("Outbid by an auto-bid. Current price {amount}", { amount: money(res.current_bid, settings) }) });
   }
 
   async function buyNow() {
@@ -127,7 +128,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
     setBusy(true);
     const { error } = await supabase.rpc("buy_now", { p_lot_id: lot.id });
     setBusy(false);
-    setFeedback(error ? { ok: false, text: errorMessage(error) } : { ok: true, text: "You bought this lot!" });
+    setFeedback(error ? { ok: false, text: errorMessage(error) } : { ok: true, text: t("You bought this lot!") });
   }
 
   const step = bidIncrement(Number(lot.current_bid ?? lot.start_price), settings);
@@ -146,15 +147,15 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
-            {lot.current_bid == null ? "Starting price" : "Current bid"}
+            {t(lot.current_bid == null ? "Starting price" : "Current bid")}
           </p>
           <p key={String(lot.current_bid)} className="-mx-1 inline-block origin-left animate-bump rounded-lg px-1 font-display text-4xl font-extrabold tabular-nums">
             {money(lot.current_bid ?? lot.start_price, settings)}
           </p>
           <p className="mt-1 text-sm text-stone-500">
-            {lot.bid_count} bid{lot.bid_count === 1 ? "" : "s"}
-            {lot.current_winner_id && <> · leader {leading ? "you" : (names.get(lot.current_winner_id) ?? "...")}</>}
-            {!lot.reserve_met && <span className="ml-2 font-medium text-amber-700">Reserve not met</span>}
+            {t(lot.bid_count === 1 ? "{n} bid" : "{n} bids", { n: lot.bid_count })}
+            {lot.current_winner_id && <> · {t("leader")} {leading ? t("you") : (names.get(lot.current_winner_id) ?? "...")}</>}
+            {!lot.reserve_met && <span className="ml-2 font-medium text-amber-700">{t("Reserve not met")}</span>}
           </p>
         </div>
         <div className="text-right">
@@ -162,7 +163,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
           {lot.status === "open" && (
             <p className="mt-2 text-2xl font-semibold">
               <Countdown endsAt={auction.status === "paused" ? null : lot.ends_at} />
-              {auction.status === "paused" && <span className="text-base text-amber-700">Paused</span>}
+              {auction.status === "paused" && <span className="text-base text-amber-700">{t("Paused")}</span>}
             </p>
           )}
         </div>
@@ -170,13 +171,14 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
 
       {leading && lot.status === "open" && (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
-          You're winning{myMax ? ` · auto-bid up to ${money(myMax, settings)}` : ""}
+          {t("You're winning")}
+          {myMax ? ` · ${t("auto-bid up to {amount}", { amount: money(myMax, settings) })}` : ""}
         </p>
       )}
 
       {!userId && lot.status === "open" && (
         <Link to={`/login?next=/a/${auction.id}`} className="btn-primary w-full">
-          Sign in to bid
+          {t("Sign in to bid")}
         </Link>
       )}
 
@@ -195,21 +197,21 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
             {!leading && (
               <div>
                 <label className="label" htmlFor="amt">
-                  Your bid
+                  {t("Your bid")}
                 </label>
                 <input id="amt" className="input" type="number" min={minBid} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </div>
             )}
             <div className={leading ? "col-span-2" : ""}>
               <label className="label" htmlFor="max">
-                {leading ? "Raise auto-bid max" : "Auto-bid max (optional)"}
+                {t(leading ? "Raise auto-bid max" : "Auto-bid max (optional)")}
               </label>
               <input
                 id="max"
                 className="input"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 5000"
+                placeholder={t("e.g. 5000")}
                 value={maxAmount}
                 onChange={(e) => setMaxAmount(e.target.value)}
                 required={leading}
@@ -217,32 +219,32 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
             </div>
           </div>
           <button className="btn-accent w-full py-3 text-base" disabled={busy}>
-            {busy ? "Placing..." : leading ? "Update auto-bid" : `Bid ${money(Number(amount) || minBid, settings)}`}
+            {busy ? t("Placing...") : leading ? t("Update auto-bid") : t("Bid {amount}", { amount: money(Number(amount) || minBid, settings) })}
           </button>
           {lot.buy_now_price && lot.bid_count === 0 && (
             <button type="button" className="btn-primary w-full" disabled={busy} onClick={() => void buyNow()}>
-              Buy now for {money(lot.buy_now_price, settings)}
+              {t("Buy now for {amount}", { amount: money(lot.buy_now_price, settings) })}
             </button>
           )}
         </form>
       )}
 
-      {isHost && lot.status === "open" && <p className="text-sm text-stone-500">You're the host. Hosts can't bid.</p>}
+      {isHost && lot.status === "open" && <p className="text-sm text-stone-500">{t("You're the host. Hosts can't bid.")}</p>}
 
       <div role="status" aria-live="polite">
         {feedback && <p className={`text-sm font-medium ${feedback.ok ? "text-emerald-700" : "text-red-600"}`}>{feedback.text}</p>}
       </div>
 
       <div>
-        <h3 className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">Bid history</h3>
+        <h3 className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">{t("Bid history")}</h3>
         {bids.length === 0 ? (
-          <p className="text-sm text-stone-500">No bids yet.</p>
+          <p className="text-sm text-stone-500">{t("No bids yet.")}</p>
         ) : (
           <ul className="max-h-56 divide-y divide-stone-100 overflow-y-auto text-sm">
             {bids.map((b) => (
               <li key={b.id} className="flex items-center justify-between py-1.5">
                 <span>
-                  {b.bidder_id === userId ? "You" : (names.get(b.bidder_id) ?? "Bidder")}
+                  {b.bidder_id === userId ? t("You") : (names.get(b.bidder_id) ?? t("Bidder"))}
                   {b.is_auto && <span className="ml-1.5 rounded bg-stone-100 px-1 text-xs text-stone-600">AUTO</span>}
                 </span>
                 <span className="font-medium tabular-nums">{money(b.amount, settings)}</span>
