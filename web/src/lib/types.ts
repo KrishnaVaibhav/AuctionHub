@@ -1,3 +1,4 @@
+import type { SaleType } from "./saleTypes";
 export type AuctionStatus = "draft" | "scheduled" | "live" | "paused" | "ended" | "cancelled";
 export type LotStatus = "pending" | "open" | "sold" | "unsold" | "withdrawn";
 export type ChatKind = "text" | "bid" | "system";
@@ -70,6 +71,8 @@ export interface Lot {
   ends_at: string | null;
   winner_team_id: string | null;
   points: number | null;
+  sale_type: SaleType;
+  sale_settings: Record<string, unknown>;
 }
 
 export interface LotMedia {

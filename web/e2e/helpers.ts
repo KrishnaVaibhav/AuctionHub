@@ -48,7 +48,7 @@ export async function uiLogin(page: Page, user: TestUser, next = "/") {
 }
 
 /** Host creates a live standard auction with one lot via the API. */
-export async function liveAuction(host: TestUser, opts: { title: string; visibility?: string; startPrice?: number }) {
+export async function liveAuction(host: TestUser, opts: { title: string; visibility?: string; startPrice?: number; saleType?: string; saleSettings?: Record<string, unknown> }) {
   const { data: a, error } = await host.client
     .from("auctions")
     .insert({ host_id: host.id, title: opts.title, visibility: opts.visibility ?? "public", settings: { currency: "INR", lot_duration_minutes: 30 } })
@@ -57,7 +57,14 @@ export async function liveAuction(host: TestUser, opts: { title: string; visibil
   if (error) throw error;
   const { data: lot, error: e2 } = await host.client
     .from("lots")
-    .insert({ auction_id: a.id, position: 0, title: "Test lot", start_price: opts.startPrice ?? 1000 })
+    .insert({
+      auction_id: a.id,
+      position: 0,
+      title: "Test lot",
+      start_price: opts.startPrice ?? 1000,
+      sale_type: opts.saleType ?? "english",
+      sale_settings: opts.saleSettings ?? {},
+    })
     .select("id")
     .single();
   if (e2) throw e2;
