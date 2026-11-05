@@ -77,6 +77,109 @@ export function parseStatsSheet(text: string, players: { id: string; title: stri
   return { rows, unmatched, columns };
 }
 
+// ---------------------------------------------------------------------------
+// Importing a stats sheet from a link (CSV, Google Sheets, or a JSON feed)
+// ---------------------------------------------------------------------------
+
+/**
+ * Turns a shared link into one that returns raw data. A Google Sheets
+ * "edit" or "view" link becomes its CSV export (same tab via gid).
+ * Returns null for anything that is not an https URL.
+ */
+export function statsSourceUrl(input: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(input.trim());
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:") return null;
+  const sheet = u.hostname === "docs.google.com" && u.pathname.match(/^\/spreadsheets\/d\/([\w-]+)/);
+  if (sheet && !u.pathname.includes("/pub") && !u.pathname.endsWith("/export")) {
+    const gid = u.searchParams.get("gid") ?? u.hash.match(/gid=(\d+)/)?.[1];
+    return `https://docs.google.com/spreadsheets/d/${sheet[1]}/export?format=csv${gid ? `&gid=${gid}` : ""}`;
+  }
+  return u.toString();
+}
+
+const csvCell = (v: unknown) => {
+  const s = v == null ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+/**
+ * A JSON feed as a stats sheet: an array of player objects (or one wrapped in
+ * "players", "data", "rows", "stats" or "results"). The player name comes from
+ * "player", "name" or "title"; every numeric field becomes a stat column.
+ */
+export function jsonToSheet(json: unknown): string {
+  let list: unknown = json;
+  if (list && !Array.isArray(list) && typeof list === "object") {
+    const o = list as Record<string, unknown>;
+    list = o.players ?? o.data ?? o.rows ?? o.stats ?? o.results;
+  }
+  if (!Array.isArray(list)) throw new Error("Expected a list of players");
+  const rows = list.filter((r): r is Record<string, unknown> => !!r && typeof r === "object" && !Array.isArray(r));
+  const nameKey = (r: Record<string, unknown>) => ["player", "name", "title", "Player", "Name"].find((k) => typeof r[k] === "string");
+  const cols: string[] = [];
+  for (const r of rows) {
+    const nk = nameKey(r);
+    for (const [k, v] of Object.entries(r)) {
+      if (k === nk || cols.includes(k)) continue;
+      if (typeof v === "number" || (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v.trim()))) cols.push(k);
+    }
+  }
+  const lines = [["player", ...cols].map(csvCell).join(",")];
+  for (const r of rows) {
+    const nk = nameKey(r);
+    if (!nk) continue;
+    lines.push([r[nk], ...cols.map((c) => r[c])].map(csvCell).join(","));
+  }
+  return lines.join("\n");
+}
+
+/** Raw text from a fetched stats link: JSON feeds become CSV, CSV passes through. */
+export function sheetFromResponse(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("[") || trimmed.startsWith("{")) return jsonToSheet(JSON.parse(trimmed));
+  if (/^\s*<(!doctype|html)/i.test(trimmed)) throw new Error("That link returned a web page, not data. Use a CSV or JSON link.");
+  return trimmed;
+}
+
+/**
+ * Fetches a stats link. Tries the browser first; most sites block that, so it
+ * then asks our server (signed-in hosts only) to fetch it.
+ */
+export async function fetchStatsSheet(link: string, auctionId: string): Promise<string> {
+  const url = statsSourceUrl(link);
+  if (!url) throw new Error("Use an https link");
+  try {
+    const res = await fetch(url, { credentials: "omit" });
+    if (res.ok) return sheetFromResponse(await res.text());
+  } catch {
+    /* blocked by CORS: use the proxy */
+  }
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Sign in first");
+  const res = await fetch("/api/stats-fetch", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({ url, auction_id: auctionId }),
+  });
+  const body = await res.text();
+  if (!res.ok) {
+    let msg = body;
+    try {
+      msg = (JSON.parse(body) as { error?: string }).error ?? body;
+    } catch {
+      /* plain text */
+    }
+    throw new Error(msg || `Could not fetch (${res.status})`);
+  }
+  return sheetFromResponse(body);
+}
+
 /** "runs: 1, wickets: 25" <-> {runs: 1, wickets: 25} */
 export function parseScoring(text: string): Record<string, number> {
   const out: Record<string, number> = {};
