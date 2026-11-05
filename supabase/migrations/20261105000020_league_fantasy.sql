@@ -13,8 +13,8 @@ update public.auctions set series_id = id where mode = 'league' and series_id is
 
 alter table public.league_teams
   add column franchise_id   uuid,
-  add column captain_lot_id uuid references public.lots (id) on delete set null,
-  add column vice_lot_id    uuid references public.lots (id) on delete set null;
+  add column captain_lot_id uuid,  -- no FKs to lots: they would make league_teams<->lots API embeds ambiguous
+  add column vice_lot_id    uuid;
 update public.league_teams set franchise_id = id where franchise_id is null;
 
 create or replace function public.default_series_ids()
