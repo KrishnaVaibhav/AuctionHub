@@ -101,7 +101,7 @@ export function ImportLots({ auction, nextPosition, onDone }: { auction: Auction
             Ready to import <strong>{preview.length}</strong> {league ? "players" : "lots"}
             {errors.length > 0 && ` (${errors.length} rows skipped)`}.
           </p>
-          <ul className="max-h-40 divide-y divide-stone-100 overflow-y-auto rounded-xl border border-stone-200 text-xs">
+          <ul className="max-h-40 divide-y divide-stone-900/[0.06] overflow-y-auto rounded-2xl bg-stone-900/[0.04] text-xs">
             {preview.slice(0, 50).map((l, i) => (
               <li key={i} className="flex justify-between gap-2 px-3 py-1.5">
                 <span className="truncate">{l.title}</span>

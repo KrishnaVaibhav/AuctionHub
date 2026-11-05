@@ -51,11 +51,11 @@ export function Support() {
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">Contact support</h1>
-        <p className="mt-1 text-sm text-stone-500">Questions, abuse reports, data or account deletion requests. Only the platform team can read these.</p>
+      <div className="enter">
+        <h1 className="page-title">Contact support</h1>
+        <p className="page-sub">Questions, abuse reports, data or account deletion requests. Only the platform team can read these.</p>
       </div>
-      <form onSubmit={submit} className="card space-y-4 p-5">
+      <form onSubmit={submit} className="card enter space-y-4 p-5 sm:p-6" style={{ ["--i" as string]: 1 }}>
         <div>
           <label className="label" htmlFor="cat">
             Topic
@@ -93,8 +93,8 @@ export function Support() {
           </div>
         )}
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button className="btn-primary" disabled={busy}>
-          {busy ? "Sending..." : "Send"}
+        <button className="btn-accent" disabled={busy}>
+          {busy ? "Sending..." : "Send message"}
         </button>
       </form>
     </div>

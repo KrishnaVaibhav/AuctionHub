@@ -29,7 +29,7 @@ export function SaleTypePanel(props: Props) {
   const label = lot.sale_type === "dutch" ? "Dutch auction" : lot.sale_type === "sealed" ? "Sealed bid" : "Make an offer";
 
   return (
-    <div className="card space-y-4 p-5">
+    <div className="glass space-y-4 rounded-[28px] p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <span className="chip bg-brand-100 text-brand-700">
           <Icon size={14} weight="bold" aria-hidden="true" /> {label}
@@ -166,7 +166,7 @@ function SealedBody({ auction, lot, userId, isHost, open }: Props & { open: bool
         </p>
       </div>
       {mine != null && (
-        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">Your sealed bid: {money(mine, auction.settings)}</p>
+        <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-800">Your sealed bid: {money(mine, auction.settings)}</p>
       )}
       {open && userId && !isHost && (
         <form onSubmit={submit} className="flex gap-2">
@@ -325,7 +325,7 @@ function OfferBody({ auction, lot, userId, isHost, open }: Props & { open: boole
       {userId && shown.length > 0 && (
         <div>
           <h3 className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">{isHost ? "Offers" : "Your offers"}</h3>
-          <ul className="max-h-72 divide-y divide-stone-100 overflow-y-auto text-sm">
+          <ul className="max-h-72 divide-y divide-stone-900/[0.06] overflow-y-auto text-sm">
             {shown.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center gap-2 py-2">
                 <span className="min-w-0 flex-1">

@@ -58,7 +58,7 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
   return (
     <section className="card space-y-4 p-5">
       <div>
-        <h2 className="font-semibold">Who can see this auction</h2>
+        <h2 className="section-title">Who can see this auction</h2>
         <p className="text-sm text-stone-500">You can change this at any time.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-3">
@@ -67,7 +67,8 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
             key={o.key}
             type="button"
             onClick={() => void choose(o.key)}
-            className={`rounded-xl border p-3 text-left transition ${auction.visibility === o.key ? "border-stone-900 bg-stone-50 ring-2 ring-stone-900/10" : "border-stone-200 hover:border-stone-300"}`}
+            aria-pressed={auction.visibility === o.key}
+            className={`choice ${auction.visibility === o.key ? "choice-on" : ""}`}
           >
             <span className="block text-sm font-semibold">{o.title}</span>
             <span className="block text-xs text-stone-500">{o.desc}</span>
@@ -76,13 +77,13 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
       </div>
 
       {auction.visibility === "unlisted" && (
-        <p className="rounded-xl bg-stone-50 px-3 py-2 text-sm">
+        <p className="rounded-2xl bg-stone-900/[0.04] px-3.5 py-2.5 text-sm">
           Share this link: <span className="font-mono text-xs break-all">{`${window.location.origin}/a/${auction.id}`}</span>
         </p>
       )}
 
       {isPrivate && code && (
-        <div className="space-y-3 rounded-xl border border-stone-200 p-4">
+        <div className="space-y-3 rounded-2xl bg-stone-900/[0.04] p-4">
           <div className="flex flex-wrap items-center gap-3">
             <div>
               <p className="label">Invite code</p>
@@ -117,7 +118,7 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
             {members.length === 0 ? (
               <p className="text-sm text-stone-500">Nobody has joined yet.</p>
             ) : (
-              <ul className="divide-y divide-stone-100 text-sm">
+              <ul className="divide-y divide-stone-900/[0.06] text-sm">
                 {members.map((m) => (
                   <li key={m.user_id} className="flex items-center justify-between py-1.5">
                     <span>{names.get(m.user_id) ?? "..."}</span>

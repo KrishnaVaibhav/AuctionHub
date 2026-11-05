@@ -1,3 +1,4 @@
+import { CaretLeftIcon } from "@phosphor-icons/react";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useAuth } from "../../lib/auth";
@@ -79,8 +80,9 @@ function AuctionEditorInner() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
-        <Link to="/host" className="text-sm text-stone-500 hover:text-stone-900">
-          &larr; Dashboard
+        <Link to="/host" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+          <CaretLeftIcon size={16} weight="bold" aria-hidden="true" />
+          Dashboard
         </Link>
         <AuctionBadge status={auction.status} />
         <div className="ml-auto flex flex-wrap gap-2">
@@ -117,8 +119,9 @@ function AuctionEditorInner() {
           )}
         </div>
       </div>
-      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
+      <h1 className="page-title -mt-4">{auction.title}</h1>
+      {error && <p className="rounded-2xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">{error}</p>}
+      {notice && <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">{notice}</p>}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <VisibilityPanel auction={auction} onChanged={reload} />
@@ -132,7 +135,7 @@ function AuctionEditorInner() {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">{auction.mode === "league" ? "Players" : "Lots"} ({lots.length})</h2>
+          <h2 className="section-title">{auction.mode === "league" ? "Players" : "Lots"} ({lots.length})</h2>
           {!editable && <p className="text-xs text-stone-500">Lot details lock once the auction starts. You can still add photos.</p>}
         </div>
         {lots.map((lot, i) => (
@@ -366,7 +369,8 @@ function AuctionForm({
                 type="button"
                 disabled={auction.status !== "draft"}
                 onClick={() => chooseMode(key)}
-                className={`rounded-xl border p-3 text-left transition disabled:opacity-60 ${mode === key ? "border-stone-900 bg-stone-50 ring-2 ring-stone-900/10" : "border-stone-200 hover:border-stone-300"}`}
+                aria-pressed={mode === key}
+                className={`choice ${mode === key ? "choice-on" : ""}`}
               >
                 <span className="block text-sm font-semibold">{title}</span>
                 <span className="block text-xs text-stone-500">{desc}</span>
@@ -376,8 +380,8 @@ function AuctionForm({
         </div>
 
         {mode === "league" && (
-          <fieldset className="grid gap-4 rounded-xl border border-violet-200 bg-violet-50/50 p-4 sm:grid-cols-3">
-            <legend className="px-1 text-sm font-semibold">League rules</legend>
+          <fieldset className="grid gap-4 rounded-2xl bg-violet-50 p-4 sm:grid-cols-3 sm:p-5">
+            <legend className="section-title float-left w-full text-base sm:col-span-3">League rules</legend>
             <div>
               <label className="label">Purse per team</label>
               <input type="number" min={1} className="input" value={purse} onChange={(e) => setPurse(e.target.value)} />
@@ -409,9 +413,9 @@ function AuctionForm({
               <label className="label">Keep back per empty min slot</label>
               <input type="number" min={0} className="input" value={minBase} onChange={(e) => setMinBase(e.target.value)} />
             </div>
-            <label className="flex items-center gap-2 text-sm sm:col-span-2">
-              <input type="checkbox" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
+            <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium sm:col-span-2">
               Host can also own a team
+              <input type="checkbox" className="switch" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
             </label>
             <div>
               <label className="label">Retentions per team</label>
@@ -430,9 +434,9 @@ function AuctionForm({
               <input className="input" placeholder="Overseas: 8, Wicket-keeper: 2" value={categoryMax} onChange={(e) => setCategoryMax(e.target.value)} />
               <p className="mt-1 text-xs text-stone-500">Give players a "Category: Overseas" line in their details.</p>
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
+            <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
               Allow trades
+              <input type="checkbox" className="switch" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
             </label>
             <p className="text-xs text-stone-500 sm:col-span-3">
               Add players below as lots (their start price is the base price). Schedule the league so teams can join, then go live. Purses
@@ -441,8 +445,8 @@ function AuctionForm({
           </fieldset>
         )}
 
-        <fieldset className="grid gap-4 rounded-xl bg-stone-50 p-4 sm:grid-cols-3">
-          <legend className="px-1 text-sm font-semibold">Bidding rules</legend>
+        <fieldset className="grid gap-4 rounded-2xl bg-stone-900/[0.035] p-4 sm:grid-cols-3 sm:p-5">
+          <legend className="section-title float-left w-full text-base sm:col-span-3">Bidding rules</legend>
           <div>
             <label className="label" htmlFor="cur">
               Currency
@@ -477,17 +481,17 @@ function AuctionForm({
             </label>
             <input id="inc" className="input font-mono" value={increments} onChange={(e) => setIncrements(e.target.value)} />
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             Short amounts (e.g. 1.5Cr)
+            <input type="checkbox" className="switch" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             Chat enabled
+            <input type="checkbox" className="switch" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={allowLinks} onChange={(e) => setAllowLinks(e.target.checked)} />
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             Allow links in chat
+            <input type="checkbox" className="switch" checked={allowLinks} onChange={(e) => setAllowLinks(e.target.checked)} />
           </label>
           <div>
             <label className="label" htmlFor="sm">
@@ -507,7 +511,7 @@ function AuctionForm({
 
       <div>
         <p className="label">Cover image</p>
-        <div className="aspect-[16/9] overflow-hidden rounded-xl bg-stone-100">
+        <div className="aspect-[16/9] overflow-hidden rounded-2xl bg-stone-900/[0.05]">
           {auction.cover_url && <img src={auction.cover_url} alt="" className="h-full w-full object-cover" />}
         </div>
         <label className="btn-ghost mt-3 w-full cursor-pointer">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useAuth } from "../lib/auth";
 import { useAuctionRoom } from "../lib/useAuctionRoom";
@@ -97,8 +98,8 @@ function AuctionRoomInner() {
   return (
     <div className="space-y-5 pb-24 lg:pb-0">
       {/* Header */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
+      <div className="aurora flex flex-col gap-4 rounded-[32px] border border-white/60 p-5 sm:p-7 lg:flex-row lg:items-start lg:justify-between dark:border-snow/[0.06]">
+        <div className="enter min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <AuctionBadge status={auction.status} />
             {auction.mode === "league" && <span className="chip bg-violet-100 text-violet-800">Team league</span>}
@@ -110,7 +111,7 @@ function AuctionRoomInner() {
               </span>
             )}
           </div>
-          <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{auction.title}</h1>
+          <h1 className="page-title mt-3">{auction.title}</h1>
           <HostLine hostId={auction.host_id} category={auction.category} />
           {auction.description && <p className="mt-2 line-clamp-3 max-w-3xl whitespace-pre-line text-sm text-stone-600 sm:text-base">{auction.description}</p>}
         </div>
@@ -128,8 +129,8 @@ function AuctionRoomInner() {
             {auction.stream_url && !finished && <StreamEmbed url={auction.stream_url} />}
 
             {/* Tabs */}
-            <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-              <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
+            <div className="sticky top-[4.75rem] z-20 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="glass segmented scrollbar-none max-w-full overflow-x-auto">
                 {tabs.map((t) => (
                   <button key={t.key} className={`tab ${tab === t.key ? "tab-active" : ""} ${t.mobileOnly ? "lg:hidden" : ""}`} onClick={() => setTab(t.key)}>
                     {t.label}
@@ -144,22 +145,22 @@ function AuctionRoomInner() {
                   <div className="min-w-0">
                     <LotGallery items={media.get(selected.id) ?? []} title={selected.title} />
                     <div className="mt-4 flex items-start justify-between gap-3">
-                      <h2 className="font-display text-xl font-bold">
-                        <span className="mr-2 text-stone-500">#{selected.position + 1}</span>
+                      <h2 className="font-display text-2xl font-extrabold tracking-tight">
+                        <span className="mr-2 text-stone-400 tabular-nums">#{selected.position + 1}</span>
                         {selected.title}
                       </h2>
                       <div className="flex shrink-0 gap-1">
                         <WatchButton lotId={selected.id} userId={userId} />
-                        <button className="btn-ghost px-2.5" disabled={selectedIndex <= 0} onClick={() => setSelectedId(lots[selectedIndex - 1]?.id ?? null)} aria-label="Previous lot">
-                          &larr;
+                        <button className="btn-ghost h-10 w-10 p-0" disabled={selectedIndex <= 0} onClick={() => setSelectedId(lots[selectedIndex - 1]?.id ?? null)} aria-label="Previous lot">
+                          <CaretLeftIcon size={16} weight="bold" aria-hidden="true" />
                         </button>
                         <button
-                          className="btn-ghost px-2.5"
+                          className="btn-ghost h-10 w-10 p-0"
                           disabled={selectedIndex >= lots.length - 1}
                           onClick={() => setSelectedId(lots[selectedIndex + 1]?.id ?? null)}
                           aria-label="Next lot"
                         >
-                          &rarr;
+                          <CaretRightIcon size={16} weight="bold" aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -167,7 +168,7 @@ function AuctionRoomInner() {
                     {Object.keys(selected.custom_fields ?? {}).length > 0 && (
                       <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
                         {Object.entries(selected.custom_fields).map(([k, v]) => (
-                          <div key={k} className="rounded-xl bg-stone-100 px-3 py-2">
+                          <div key={k} className="rounded-2xl bg-stone-900/[0.04] px-3.5 py-2.5 dark:bg-snow/[0.05]">
                             <dt className="text-[11px] font-semibold tracking-wider text-stone-500 uppercase">{k}</dt>
                             <dd className="font-medium">{v}</dd>
                           </div>
@@ -265,7 +266,7 @@ function AuctionRoomInner() {
 function HostBar({ auction, onAction }: { auction: Auction; onAction: (fn: string, args: Record<string, string>, confirm?: ConfirmOptions) => Promise<void> }) {
   const args = { p_auction_id: auction.id };
   return (
-    <div className="card flex flex-wrap items-center gap-2 p-2.5">
+    <div className="glass enter flex flex-wrap items-center gap-2 rounded-[26px] p-2" style={{ ["--i" as string]: 1 }}>
       <span className="chip bg-brand-100 text-brand-700">Host controls</span>
       <Link to={`/host/a/${auction.id}`} className="btn-ghost py-1.5">
         Edit
@@ -320,11 +321,11 @@ function LotGrid({
           <button
             key={l.id}
             onClick={() => onOpen(l.id)}
-            className={`card group flex gap-3 p-3 text-left transition hover:shadow-md ${selectedId === l.id ? "ring-2 ring-stone-900" : ""}`}
+            className={`card group flex gap-3 p-3 text-left card-hover ${selectedId === l.id ? "ring-2 ring-brand-500" : ""}`}
           >
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100">
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-stone-100">
               {cover ? (
-                <img src={publicUrl("lot-media", cover.path)} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+                <img src={publicUrl("lot-media", cover.path)} alt="" className="h-full w-full object-cover transition duration-700 ease-[var(--ease-spring)] group-hover:scale-110" loading="lazy" />
               ) : (
                 <div className="flex h-full items-center justify-center font-mono text-xs text-stone-500">#{l.position + 1}</div>
               )}
@@ -334,7 +335,7 @@ function LotGrid({
                 <span className="mr-1 text-stone-500">#{l.position + 1}</span>
                 {l.title}
               </p>
-              <p className="font-bold tabular-nums">{money(l.current_bid ?? l.start_price, auction.settings)}</p>
+              <p className="font-display text-lg font-extrabold tabular-nums">{money(l.current_bid ?? l.start_price, auction.settings)}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-stone-500">
                 <LotBadge status={l.status} />
                 {l.status === "open" && auction.status === "live" && <Countdown endsAt={l.ends_at} />}

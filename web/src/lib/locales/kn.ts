@@ -162,5 +162,7 @@ const d: Dict = {
   "{n} live now": "{n} ಈಗ ನೇರ",
   "{n} lots": "{n} ಲಾಟ್‌ಗಳು",
   "{n} starting soon": "{n} ಶೀಘ್ರದಲ್ಲೇ ಆರಂಭ",
+  "Main": "ಮುಖ್ಯ",
+  "More": "ಇನ್ನಷ್ಟು",
 };
 export default d;

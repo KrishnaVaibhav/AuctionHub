@@ -48,8 +48,8 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
       <div className="min-w-0 space-y-5">
         <JoinOrMyTeam auction={auction} myTeam={myTeam} teams={teams} isHost={isHost} league={league} />
 
-        <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
+        <div className="sticky top-[4.75rem] z-20 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="glass segmented scrollbar-none max-w-full overflow-x-auto">
             {tabs.map((t) => (
               <button key={t.key} className={`tab ${tab === t.key ? "tab-active" : ""} ${t.mobileOnly ? "lg:hidden" : ""}`} onClick={() => setTab(t.key)}>
                 {t.label}
@@ -179,7 +179,7 @@ function JoinOrMyTeam({
     <div className="card space-y-4 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg font-bold">Join the league</h2>
+          <h2 className="section-title">Join the league</h2>
           <p className="text-sm text-stone-500">
             {teams.length}/{league.max_teams} teams · purse {money(league.purse, auction.settings)} · squad up to {league.squad_max}
             {auction.starts_at && <> · starts {dateTime(auction.starts_at)}</>}
@@ -328,14 +328,14 @@ function OnTheBlock({
   return (
     <div className="space-y-4">
       {lastClosed && (
-        <div className="flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-2 text-sm text-white">
+        <div className="glass flex animate-rise items-center gap-2 rounded-full px-4 py-2 text-sm">
           <span className="text-stone-500">Last:</span>
           <span className="truncate font-semibold">{lastClosed.title}</span>
           {lastClosed.status === "sold" && lastClosed.winner_team_id && teamById.get(lastClosed.winner_team_id) ? (
             <>
               <span className="text-stone-500">sold to</span>
               <TeamChip team={teamById.get(lastClosed.winner_team_id)!} />
-              <span className="ml-auto font-bold tabular-nums text-brand-300">{money(lastClosed.current_bid, s)}</span>
+              <span className="ml-auto font-bold tabular-nums text-brand-700">{money(lastClosed.current_bid, s)}</span>
             </>
           ) : (
             <span className="ml-auto text-stone-500">unsold</span>
@@ -344,7 +344,7 @@ function OnTheBlock({
       )}
 
       <div
-        className="relative overflow-hidden rounded-3xl p-5 text-snow sm:p-7"
+        className="relative overflow-hidden rounded-[32px] p-5 text-snow shadow-[0_30px_60px_-30px_rgb(0_0_0/0.6)] sm:p-7"
         style={{ background: leader ? `linear-gradient(135deg, #0c0a09 40%, ${leader.color})` : "linear-gradient(135deg, #0c0a09 50%, #44403c)" }}
       >
         <div className="flex flex-col gap-5 sm:flex-row">
@@ -394,7 +394,7 @@ function OnTheBlock({
       </div>
 
       {myTeam && auction.status === "live" && (
-        <div className="card space-y-3 p-4">
+        <div className="glass space-y-3 rounded-[28px] p-4 sm:p-5">
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <TeamChip team={myTeam} />
             <span>
@@ -406,7 +406,7 @@ function OnTheBlock({
             {reserveNeed > 0 && <span className="text-stone-500">Max bid {money(maxAllowed, s)}</span>}
           </div>
           {iLead ? (
-            <p className="rounded-xl bg-emerald-50 px-3 py-3 text-center font-semibold text-emerald-800">Your team has the highest bid</p>
+            <p className="rounded-2xl bg-emerald-50 px-3 py-3 text-center font-semibold text-emerald-800">Your team has the highest bid</p>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {options.map((amt, i) => (
@@ -496,7 +496,7 @@ function TeamsPanel({
                 <p className="truncate text-xs opacity-80">{t.owner_id === userId ? "You" : (owners.get(t.owner_id) ?? "...")}</p>
               </div>
               {isHost && auction.status === "scheduled" && (
-                <button className="rounded-lg bg-black/20 px-2 py-1 text-xs" onClick={() => void remove(t)}>
+                <button className="rounded-full bg-ink/20 px-2.5 py-1 text-xs" onClick={() => void remove(t)}>
                   Remove
                 </button>
               )}
@@ -522,7 +522,7 @@ function TeamsPanel({
                 <div className="h-full rounded-full" style={{ width: `${pct}%`, background: t.color }} />
               </div>
               {roster.length > 0 ? (
-                <ul className="divide-y divide-stone-100 text-sm">
+                <ul className="divide-y divide-stone-900/[0.06] text-sm">
                   {roster.map((l) => (
                     <li key={l.id} className="flex items-center justify-between gap-2 py-1.5">
                       <span className="truncate">{l.title}</span>
@@ -583,10 +583,10 @@ function PlayersPanel({ auction, lots, teamById, isHost }: { auction: Auction; l
         .filter((g) => g.rows.length > 0)
         .map((g) => (
           <div key={g.title} className="card overflow-hidden">
-            <p className="border-b border-stone-100 px-4 py-2.5 text-xs font-semibold tracking-wider text-stone-500 uppercase">
+            <p className="border-b border-stone-900/[0.06] px-4 py-2.5 text-xs font-semibold tracking-wider text-stone-500 uppercase">
               {g.title} ({g.rows.length})
             </p>
-            <ul className="divide-y divide-stone-100">
+            <ul className="divide-y divide-stone-900/[0.06]">
               {g.rows.map((l) => {
                 const team = l.winner_team_id ? teamById.get(l.winner_team_id) : undefined;
                 return (
@@ -647,7 +647,7 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
 
   return (
     <div className="card animate-rise overflow-hidden">
-      <div className="grid grid-cols-[2.5rem_1fr_4rem_5rem] gap-2 border-b border-stone-100 px-4 py-2.5 text-[11px] font-semibold tracking-wider text-stone-500 uppercase sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]">
+      <div className="grid grid-cols-[2.5rem_1fr_4rem_5rem] gap-2 border-b border-stone-900/[0.06] px-4 py-2.5 text-[11px] font-semibold tracking-wider text-stone-500 uppercase sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]">
         <span>#</span>
         <span>Team</span>
         <span className="text-right">Squad</span>
@@ -658,7 +658,7 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
       {rows.map((r, i) => (
         <div
           key={r.team.id}
-          className="grid grid-cols-[2.5rem_1fr_4rem_5rem] items-center gap-2 border-b border-stone-100 px-4 py-3 last:border-0 sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]"
+          className="grid grid-cols-[2.5rem_1fr_4rem_5rem] items-center gap-2 border-b border-stone-900/[0.06] px-4 py-3 last:border-0 sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]"
         >
           <span className={`flex h-8 w-8 items-center justify-center rounded-full font-display text-sm font-extrabold ${medals[i] ?? "text-stone-500"}`}>{i + 1}</span>
           <span className="flex min-w-0 items-center gap-2">

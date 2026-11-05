@@ -42,7 +42,7 @@ export function ModeratorsPanel({ auction }: { auction: Auction }) {
   return (
     <section className="card space-y-4 p-5">
       <div>
-        <h2 className="font-semibold">Moderators</h2>
+        <h2 className="section-title">Moderators</h2>
         <p className="text-sm text-stone-500">Moderators can pin, delete and mute in chat, and can see this auction even when it's private.</p>
       </div>
       <form onSubmit={add} className="flex gap-2">
@@ -55,7 +55,7 @@ export function ModeratorsPanel({ auction }: { auction: Auction }) {
       {ids.length === 0 ? (
         <p className="text-sm text-stone-500">No moderators yet.</p>
       ) : (
-        <ul className="divide-y divide-stone-100 text-sm">
+        <ul className="divide-y divide-stone-900/[0.06] text-sm">
           {ids.map((id) => (
             <li key={id} className="flex items-center justify-between py-1.5">
               <span>{names.get(id) ?? "..."}</span>

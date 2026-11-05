@@ -90,7 +90,7 @@ export function SafetyTab() {
 
       <section className="card space-y-3 p-5">
         <div>
-          <h2 className="font-semibold">Chat filter</h2>
+          <h2 className="section-title">Chat filter</h2>
           <p className="text-sm text-stone-500">
             Blocked words are replaced with *** in every auction chat. Links are always blocked for non-staff unless a host allows them.
           </p>
@@ -119,13 +119,13 @@ export function SafetyTab() {
           const rows = signals[s.key] ?? [];
           return (
             <section key={s.key} className="card overflow-hidden">
-              <div className="border-b border-stone-100 px-4 py-3">
+              <div className="border-b border-stone-900/[0.06] px-4 py-3">
                 <p className="font-semibold">
                   {s.title} <span className={`chip ml-1 ${rows.length ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-800"}`}>{rows.length}</span>
                 </p>
                 <p className="text-xs text-stone-500">{s.help}</p>
               </div>
-              <ul className="divide-y divide-stone-100 text-sm">
+              <ul className="divide-y divide-stone-900/[0.06] text-sm">
                 {rows.length === 0 && <li className="px-4 py-3 text-stone-500">Nothing found.</li>}
                 {rows.map((r, i) => {
                   const href = s.link?.(r);

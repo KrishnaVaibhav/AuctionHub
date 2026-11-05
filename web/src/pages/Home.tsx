@@ -83,7 +83,7 @@ export function Home() {
   return (
     <div className="space-y-10">
       {/* Hero: follows the page theme; the warm aurora gives the glass board something to refract. */}
-      <section className="aurora rounded-[28px] border border-stone-200/70 bg-white px-6 py-10 sm:px-10 sm:py-14 lg:py-16">
+      <section className="aurora rounded-[32px] border border-white/70 bg-white/70 px-6 py-10 sm:px-10 sm:py-14 lg:py-16">
         <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
           <div className="max-w-2xl">
             <span className="glass enter chip px-3 py-1 text-stone-700" style={{ ["--i" as string]: 0 }}>
@@ -146,7 +146,7 @@ export function Home() {
             className={`chip min-h-11 shrink-0 border px-4 py-1.5 transition duration-300 sm:min-h-9 ${
               cat === k
                 ? "border-stone-900 bg-stone-900 text-white shadow-sm"
-                : "border-stone-200 bg-white text-stone-700 hover:-translate-y-px hover:border-stone-300 hover:shadow-sm"
+                : "border-stone-900/[0.08] bg-white/70 text-stone-700 hover:-translate-y-px hover:bg-white hover:shadow-sm"
             }`}
           >
             <CategoryIcon name={k || "all"} className="h-3.5 w-3.5" /> {t(label)}
@@ -343,7 +343,7 @@ function HeroBoard() {
       <ul>
         {lots.map((l, i) => (
           <li key={l.id} className="enter" style={{ ["--i" as string]: i + 5 }}>
-            <Link to={`/a/${l.auction_id}`} className="flex items-center gap-3 rounded-[20px] px-3 py-2.5 transition hover:bg-white/60 dark:hover:bg-white/5">
+            <Link to={`/a/${l.auction_id}`} className="flex items-center gap-3 rounded-[20px] px-3 py-2.5 transition hover:bg-white/60 dark:hover:bg-snow/5">
               <Cover a={l.auctions} className="h-12 w-12 shrink-0 rounded-2xl" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-stone-900">{l.title}</span>
@@ -369,7 +369,7 @@ function HeroBoard() {
         {lots.length === 0 &&
           upcoming.map((a, i) => (
             <li key={a.id} className="enter" style={{ ["--i" as string]: i + 5 }}>
-              <Link to={`/a/${a.id}`} className="flex items-center gap-3 rounded-[20px] px-3 py-2.5 transition hover:bg-white/60 dark:hover:bg-white/5">
+              <Link to={`/a/${a.id}`} className="flex items-center gap-3 rounded-[20px] px-3 py-2.5 transition hover:bg-white/60 dark:hover:bg-snow/5">
                 <Cover a={a} className="h-12 w-12 shrink-0 rounded-2xl" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-stone-900">{a.title}</span>

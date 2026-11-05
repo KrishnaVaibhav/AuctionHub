@@ -96,7 +96,7 @@ export function WebhooksPanel() {
       </div>
 
       {hooks.length > 0 && (
-        <ul className="divide-y divide-stone-100 text-sm">
+        <ul className="divide-y divide-stone-900/[0.06] text-sm">
           {hooks.map((h) => (
             <li key={h.id} className="space-y-1.5 py-3">
               <div className="flex flex-wrap items-center gap-2">

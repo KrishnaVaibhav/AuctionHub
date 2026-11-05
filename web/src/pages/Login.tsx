@@ -57,13 +57,17 @@ export function Login() {
   }
 
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="text-2xl font-bold">{t(mode === "signup" ? "Create account" : "Sign in")}</h1>
-      <div className="mt-4 flex gap-1 rounded-lg bg-stone-100 p-1 text-sm">
+    <div className="aurora -mx-4 -my-6 flex min-h-[calc(100dvh-10rem)] items-center justify-center px-4 py-10 sm:-mx-6 sm:-my-8 sm:rounded-[36px]">
+    <div className="glass enter w-full max-w-sm rounded-[32px] p-6 sm:p-8">
+      <img src="/favicon.svg" alt="" className="mx-auto h-12 w-12" />
+      <h1 className="mt-4 text-center font-display text-2xl font-extrabold tracking-tight">{t(mode === "signup" ? "Create account" : "Sign in")}</h1>
+      <div className="segmented mt-5 flex w-full" role="tablist">
         {(["signin", "signup", "magic"] as Mode[]).map((m) => (
           <button
             key={m}
-            className={`flex-1 rounded-md py-1.5 font-medium ${mode === m ? "bg-white shadow-sm" : "text-stone-500"}`}
+            role="tab"
+            aria-selected={mode === m}
+            className={`tab flex-1 justify-center px-2 ${mode === m ? "tab-active" : ""}`}
             onClick={() => setMode(m)}
             type="button"
           >
@@ -106,17 +110,18 @@ export function Login() {
         )}
         {error && <p className="text-sm text-red-600">{error}</p>}
         {message && <p className="text-sm text-emerald-700">{message}</p>}
-        <button className="btn-primary w-full" disabled={busy}>
+        <button className="btn-accent w-full py-3" disabled={busy}>
           {t(busy ? "Please wait..." : mode === "signup" ? "Create account" : mode === "magic" ? "Send link" : "Sign in")}
         </button>
       </form>
 
       <div className="my-5 flex items-center gap-3 text-xs text-stone-500">
-        <span className="h-px flex-1 bg-stone-200" /> {t("or")} <span className="h-px flex-1 bg-stone-200" />
+        <span className="h-px flex-1 bg-stone-900/10 dark:bg-snow/10" /> {t("or")} <span className="h-px flex-1 bg-stone-900/10 dark:bg-snow/10" />
       </div>
-      <button className="btn-ghost w-full" onClick={() => void google()}>
+      <button className="btn-ghost w-full py-3" onClick={() => void google()}>
         {t("Continue with Google")}
       </button>
+    </div>
     </div>
   );
 }

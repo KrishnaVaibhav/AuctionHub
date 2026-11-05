@@ -61,7 +61,7 @@ export function PrivateGate({ auctionId, onJoined }: { auctionId: string; onJoin
   const next = `/a/${auctionId}${params.get("code") ? `?code=${params.get("code")}` : ""}`;
 
   return (
-    <div className="card mx-auto max-w-md overflow-hidden">
+    <div className="glass-thick enter mx-auto max-w-md overflow-hidden rounded-[32px]">
       {preview.cover_url && <img src={preview.cover_url} alt="" className="aspect-[16/9] w-full object-cover" />}
       <form
         className="space-y-4 p-6"
@@ -72,7 +72,7 @@ export function PrivateGate({ auctionId, onJoined }: { auctionId: string; onJoin
       >
         <span className="chip bg-stone-900 text-white">Private auction</span>
         <div>
-          <h1 className="font-display text-2xl font-bold">{preview.title}</h1>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight">{preview.title}</h1>
           <p className="text-sm text-stone-500">Hosted by {preview.host_name}</p>
         </div>
         {!session ? (

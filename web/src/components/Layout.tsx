@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { ListIcon, XIcon } from "@phosphor-icons/react";
+import { DotsThreeCircleIcon, GavelIcon, HandCoinsIcon, SignInIcon, StorefrontIcon, UserCircleIcon, XIcon } from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
 import { useAuth } from "../lib/auth";
 import { supabaseConfigured } from "../lib/supabase";
 import { Avatar } from "./Avatar";
@@ -18,6 +19,19 @@ export function Layout() {
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
+  // Phone tab bar: top-level places only. Hidden where a page brings its own bottom bar.
+  const tabs: { to: string; label: string; icon: Icon; end?: boolean }[] = [
+    { to: "/", label: t("Auctions"), icon: GavelIcon, end: true },
+    ...(session
+      ? [
+          { to: "/me", label: t("My bids"), icon: HandCoinsIcon },
+          { to: "/host", label: t("Host"), icon: StorefrontIcon },
+          { to: "/account", label: t("Account"), icon: UserCircleIcon },
+        ]
+      : [{ to: "/login", label: t("Sign in"), icon: SignInIcon }]),
+  ];
+  const showTabBar = !/^\/(a|host\/a)\//.test(location.pathname);
+
   const links = [
     { to: "/", label: t("Auctions"), end: true },
     ...(session
@@ -31,7 +45,9 @@ export function Layout() {
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
     `rounded-full px-3.5 py-2 text-sm font-medium transition duration-300 ${
-      isActive ? "bg-stone-900 text-white shadow-sm" : "text-stone-600 hover:bg-stone-900/5 hover:text-stone-900 dark:hover:bg-white/5"
+      isActive
+        ? "bg-white/90 text-stone-900 shadow-[0_1px_3px_rgb(41_37_36/0.14)] dark:bg-snow/10"
+        : "text-stone-600 hover:bg-stone-900/5 hover:text-stone-900 dark:hover:bg-snow/5"
     }`;
 
   return (
@@ -60,7 +76,7 @@ export function Layout() {
             <ThemeToggle />
             {session ? (
               <>
-                <Link to="/account" className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 transition hover:bg-stone-900/5 dark:hover:bg-white/5">
+                <Link to="/account" className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 transition hover:bg-stone-900/5 dark:hover:bg-snow/5">
                   <Avatar name={profile?.display_name} url={profile?.avatar_url} size={32} />
                   <span className="max-w-32 truncate text-sm font-medium">{profile?.display_name ?? t("Account")}</span>
                 </Link>
@@ -78,36 +94,26 @@ export function Layout() {
           <div className="ml-auto flex items-center md:hidden">
             <NotificationBell />
             <ThemeToggle />
-            <button
-              className="flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-stone-900/5"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-label={t("Menu")}
-              aria-expanded={menuOpen}
-            >
-              {menuOpen ? <XIcon size={22} weight="bold" aria-hidden="true" /> : <ListIcon size={22} weight="bold" aria-hidden="true" />}
+            <button className="btn-icon" onClick={() => setMenuOpen((o) => !o)} aria-label={t("Menu")} aria-expanded={menuOpen}>
+              {menuOpen ? <XIcon size={22} weight="bold" aria-hidden="true" /> : <DotsThreeCircleIcon size={24} aria-hidden="true" />}
             </button>
           </div>
         </div>
 
         {menuOpen && (
           <div className="glass mx-auto mt-2 max-w-7xl animate-rise rounded-[28px] p-3 md:hidden">
-            <nav className="flex flex-col gap-1">
-              {links.map((l) => (
-                <NavLink key={l.to} to={l.to} end={l.end} className={navClass}>
-                  {l.label}
+            {isAdmin && (
+              <nav className="mb-3 flex flex-col gap-1 border-b border-stone-900/5 pb-3 dark:border-snow/5">
+                <NavLink to="/admin" className={navClass}>
+                  {t("Admin")}
                 </NavLink>
-              ))}
-              {session && (
-                <NavLink to="/account" className={navClass}>
-                  {t("Account")}
-                </NavLink>
-              )}
-            </nav>
-            <div className="mt-3 space-y-2 border-t border-stone-900/5 pt-3 dark:border-white/5">
+              </nav>
+            )}
+            <div className="space-y-2">
               <ThemeSegmented />
               <LanguagePicker full />
             </div>
-            <div className="mt-3 border-t border-stone-900/5 pt-3 dark:border-white/5">
+            <div className="mt-3 border-t border-stone-900/5 pt-3 dark:border-snow/5">
               {session ? (
                 <button className="btn-ghost w-full" onClick={() => void signOut()}>
                   {t("Sign out")}
@@ -128,11 +134,41 @@ export function Layout() {
         </div>
       )}
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <main className={`mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8`}>
         <Outlet />
       </main>
 
-      <footer className="border-t border-stone-200/70 py-8">
+      {showTabBar && (
+        <nav
+          aria-label={t("Main")}
+          className="fixed inset-x-0 bottom-0 z-30 px-3 md:hidden"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="glass mx-auto flex max-w-md items-stretch justify-around gap-1 rounded-full p-1.5">
+            {tabs.map(({ to, label, icon: TabIcon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  `flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-2 text-[11px] font-semibold transition duration-300 active:scale-95 ${
+                    isActive ? "bg-white/80 text-brand-700 shadow-[0_1px_3px_rgb(41_37_36/0.12)] dark:bg-snow/10" : "text-stone-600"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <TabIcon size={22} weight={isActive ? "fill" : "regular"} aria-hidden="true" />
+                    <span className="max-w-full truncate">{label}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      <footer className={`border-t border-stone-900/[0.06] py-8 dark:border-snow/[0.06] ${showTabBar ? "pb-28 md:pb-8" : ""}`}>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-xs text-stone-500 sm:flex-row sm:px-6">
           <span>
             <span className="font-semibold text-stone-700">AuctionHub</span> · {t("Live auctions, real-time bidding")}

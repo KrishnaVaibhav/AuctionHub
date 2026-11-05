@@ -55,7 +55,7 @@ export function BidLog({ auction, lots, userId }: { auction: Auction; lots: Lot[
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 p-4">
+      <div className="flex flex-wrap items-center gap-2 border-b border-stone-900/[0.06] p-4">
         <h2 className="mr-auto font-semibold">
           Bid log <span className="text-sm font-normal text-stone-500">· {totalBids} bids</span>
         </h2>
@@ -67,16 +67,16 @@ export function BidLog({ auction, lots, userId }: { auction: Auction; lots: Lot[
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-sm text-stone-600">
-          <input type="checkbox" checked={showAuto} onChange={(e) => setShowAuto(e.target.checked)} />
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-stone-600">
           Auto-bids
+          <input type="checkbox" className="switch" checked={showAuto} onChange={(e) => setShowAuto(e.target.checked)} />
         </label>
       </div>
 
       {bids.length === 0 && !loading ? (
         <p className="p-6 text-center text-sm text-stone-500">No bids yet.</p>
       ) : (
-        <ul className="divide-y divide-stone-100">
+        <ul className="divide-y divide-stone-900/[0.06]">
           {bids.map((b) => {
             const name = b.bidder_id === userId ? "You" : (names.get(b.bidder_id) ?? "Bidder");
             const isTop = winners.get(b.lot_id) === b.bidder_id && bids.find((x) => x.lot_id === b.lot_id)?.id === b.id;
@@ -100,7 +100,7 @@ export function BidLog({ auction, lots, userId }: { auction: Auction; lots: Lot[
         </ul>
       )}
       {hasMore && (
-        <div className="border-t border-stone-100 p-3 text-center">
+        <div className="border-t border-stone-900/[0.06] p-3 text-center">
           <button className="btn-ghost" onClick={() => void more()}>
             Load older bids
           </button>

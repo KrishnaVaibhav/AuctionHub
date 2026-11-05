@@ -65,12 +65,13 @@ export function DealChat({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="scrim flex items-end justify-center p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="flex h-[85dvh] w-full max-w-lg animate-rise flex-col rounded-t-3xl bg-white shadow-2xl sm:h-[36rem] sm:rounded-3xl"
+        className="sheet flex h-[85dvh] w-full max-w-lg animate-rise flex-col sm:h-[36rem]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-stone-100 p-4">
+        <div className="grabber" aria-hidden="true" />
+        <div className="flex items-start justify-between gap-3 border-b border-stone-900/[0.06] p-4">
           <div className="min-w-0">
             <p className="text-xs text-stone-500">Private deal chat · only you and {otherName}</p>
             <p className="truncate font-semibold">{lotTitle}</p>
@@ -81,7 +82,7 @@ export function DealChat({
         </div>
         <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto p-4">
           {messages.length === 0 && (
-            <p className="rounded-xl bg-stone-50 p-3 text-sm text-stone-500">
+            <p className="rounded-2xl bg-stone-900/[0.04] p-3 text-sm text-stone-500">
               Agree on payment and delivery here. Your email and phone stay private unless you choose to share them.
             </p>
           )}
@@ -101,7 +102,7 @@ export function DealChat({
             );
           })}
         </div>
-        <form onSubmit={send} className="border-t border-stone-100 p-3" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
+        <form onSubmit={send} className="border-t border-stone-900/[0.06] p-3" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
           {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
           <div className="flex gap-2">
             <input className="input" placeholder="Write a message..." maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} />

@@ -106,8 +106,9 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
 
   return (
     <div className="card flex h-[70dvh] flex-col lg:h-[calc(100dvh-8rem)] lg:max-h-[44rem]">
-      <div className="border-b border-stone-200 px-4 py-3">
-        <h2 className="font-semibold">{t("Live chat")}</h2>
+      <div className="flex items-center gap-2 border-b border-stone-900/[0.06] px-4 py-3">
+        <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+        <h2 className="section-title text-base">{t("Live chat")}</h2>
       </div>
 
       {pinned.length > 0 && (
@@ -163,7 +164,7 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
           ) : (
             <p
               key={m.id}
-              className={`rounded-md px-2 py-1 text-xs ${m.kind === "bid" ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-stone-600"}`}
+              className={`rounded-full px-3 py-1 text-xs ${m.kind === "bid" ? "bg-emerald-50 text-emerald-800" : "bg-stone-900/[0.05] text-stone-600"}`}
             >
               {m.body}
             </p>
@@ -171,18 +172,18 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
         )}
       </div>
 
-      <form onSubmit={send} className="border-t border-stone-200 p-3">
+      <form onSubmit={send} className="border-t border-stone-900/[0.06] p-3">
         {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
         {userId && chatOpen ? (
           <div className="flex gap-2">
             <input
-              className="input"
+              className="input rounded-full px-4"
               placeholder={t("Say something...")}
               maxLength={500}
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
-            <button className="btn-primary" disabled={sending || !text.trim()}>
+            <button className="btn-accent" disabled={sending || !text.trim()}>
               {t("Send")}
             </button>
           </div>

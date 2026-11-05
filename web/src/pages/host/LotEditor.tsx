@@ -212,7 +212,7 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
 
   return (
     <form onSubmit={create} className="card space-y-4 border-dashed p-5">
-      <h3 className="font-semibold">Add a lot</h3>
+      <h3 className="section-title text-base">Add a lot</h3>
       <LotFieldInputs v={v} set={setV} league={auction.mode === "league"} />
       {auction.mode !== "league" && <PriceHint category={auction.category} title={v.title} settings={auction.settings} />}
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -335,7 +335,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
   return (
     <div className="card p-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="w-8 text-center font-mono text-sm text-stone-500">#{index + 1}</span>
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-stone-900/[0.05] font-mono text-xs font-semibold text-stone-600 tabular-nums">{index + 1}</span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{lot.title}</p>
           <p className="text-sm text-stone-500">
@@ -366,7 +366,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {media.map((m) => (
-          <div key={m.id} className="group relative h-20 w-20 overflow-hidden rounded-lg bg-stone-100">
+          <div key={m.id} className="group relative h-20 w-20 overflow-hidden rounded-2xl bg-stone-100">
             {m.kind === "video" ? (
               <div className="flex h-full items-center justify-center bg-stone-800 text-xs text-white">Video</div>
             ) : (
@@ -381,7 +381,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
             </button>
           </div>
         ))}
-        <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-stone-300 text-xs text-stone-500 hover:border-stone-500">
+        <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-stone-300 text-xs font-medium text-stone-500 transition hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700">
           {busy ? "..." : "+ Media"}
           <input
             type="file"
@@ -398,7 +398,7 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
       </div>
 
       {open && editable && (
-        <form onSubmit={save} className="mt-4 space-y-3 border-t border-stone-100 pt-4">
+        <form onSubmit={save} className="mt-4 space-y-3 border-t border-stone-900/[0.06] pt-4">
           <LotFieldInputs v={v} set={setV} disabled={busy} league={auction.mode === "league"} />
           <button className="btn-primary" disabled={busy}>
             Save lot
