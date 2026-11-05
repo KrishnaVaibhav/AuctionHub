@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { LinkSimpleIcon, TrophyIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../lib/supabase";
 import { TeamChip } from "../components/league/TeamChip";
+import { shareCard } from "../lib/shareCard";
 
 interface SeasonRow {
   auction_id: string;
@@ -79,6 +80,17 @@ export function SeasonTable() {
           </button>
         </div>
       </header>
+
+      {data.teams[0] && (
+        <button
+          className="btn-ghost"
+          onClick={() =>
+            void shareCard({ eyebrow: "Leading the table", headline: data.teams[0].name, big: `${data.teams[0].total} pts`, footer: series, accent: data.teams[0].color }, "auctionhub-season.png")
+          }
+        >
+          Share the leader card
+        </button>
+      )}
 
       {data.teams.length === 0 ? (
         <div className="card py-14 text-center text-sm text-stone-500">No teams yet.</div>

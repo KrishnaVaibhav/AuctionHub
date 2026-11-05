@@ -20,6 +20,7 @@ export interface LeagueSettings {
   trades?: boolean;
   season?: number;
   scoring?: Record<string, number>;
+  trade_deadline?: string;
   captain_x?: number;
   vice_x?: number;
 }
@@ -59,6 +60,9 @@ export interface Auction {
   settings: AuctionSettings;
   cover_url: string | null;
   stream_url: string | null;
+  announcement?: string | null;
+  spotlight_lot_id?: string | null;
+  series_id?: string | null;
   created_at: string;
 }
 

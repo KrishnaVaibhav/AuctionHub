@@ -6,6 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { ThemeSegmented } from "../components/ThemeToggle";
 import { LanguagePicker } from "../components/LanguagePicker";
 import { Link } from "react-router";
+import { AccountProgress } from "./AccountProgress";
 
 export function Account() {
   const { session, profile, refreshProfile, signOut } = useAuth();
@@ -132,6 +133,9 @@ export function Account() {
         </div>
         <p className="px-4 text-xs text-stone-500">System follows your device's light or dark setting.</p>
       </section>
+
+      <h2 className="label px-4 pt-2">Progress</h2>
+      <AccountProgress userId={profile.id} />
 
       <ContactPrivacy userId={profile.id} email={session.user.email ?? ""} />
 

@@ -2,6 +2,9 @@ import { t } from "../lib/i18n";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase, errorMessage, channelName } from "../lib/supabase";
 import { useProfileNames } from "../lib/profiles";
+import { useProfileMeta } from "../lib/progress";
+import { CHAT_COLORS } from "../lib/fun";
+import { LevelChip } from "./Progress";
 import type { Auction, ChatMessage } from "../lib/types";
 
 interface Props {
@@ -20,6 +23,7 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
   const names = useProfileNames(messages.map((m) => m.user_id));
+  const meta = useProfileMeta(messages.map((m) => m.user_id));
 
   const chatOpen =
     ["scheduled", "live", "paused"].includes(auction.status) && auction.settings.chat?.enabled !== false;
@@ -139,8 +143,13 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
           m.kind === "text" ? (
             <div key={m.id} className="group flex items-start gap-2">
               <p className="min-w-0 flex-1 break-words">
-                <span className={`mr-1.5 font-semibold ${m.user_id === auction.host_id ? "text-brand-700" : ""}`}>
+                <span
+                  className={`mr-1.5 font-semibold ${
+                    m.user_id === auction.host_id ? "text-brand-700" : (CHAT_COLORS[(meta.get(m.user_id ?? "")?.chat_color ?? "") as keyof typeof CHAT_COLORS] ?? "")
+                  }`}
+                >
                   {m.user_id ? (names.get(m.user_id) ?? "...") : "Unknown"}
+                  {m.user_id && <LevelChip xp={meta.get(m.user_id)?.xp} className="ml-1 align-middle" />}
                   {m.user_id === auction.host_id && <span className="ml-1 text-[11px] uppercase">host</span>}
                 </span>
                 {m.body}

@@ -283,6 +283,9 @@ begin
     if a.mode <> 'league' or not exists (select 1 from public.league_teams t where t.id = p_team_id and t.auction_id = a.id) then
       raise exception 'Pick a team in this league' using errcode = 'P0001';
     end if;
+    if exists (select 1 from public.league_teams t where t.auction_id = a.id and t.owner_id = auth.uid()) then
+      raise exception 'Team owners can''t play pick''em' using errcode = 'P0001';
+    end if;
   elsif p_kind = 'price' then
     if p_amount is null or p_amount <= 0 or p_amount > 1e10 then raise exception 'Enter a price' using errcode = 'P0001'; end if;
   else

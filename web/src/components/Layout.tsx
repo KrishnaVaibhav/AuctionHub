@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { DotsThreeCircleIcon, GavelIcon, HandCoinsIcon, SignInIcon, StorefrontIcon, UserCircleIcon, XIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { useAuth } from "../lib/auth";
-import { supabaseConfigured } from "../lib/supabase";
+import { supabase, supabaseConfigured } from "../lib/supabase";
 import { Avatar } from "./Avatar";
 import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
 import { useIsAdmin } from "../lib/admin";
@@ -18,6 +18,14 @@ export function Layout() {
   const location = useLocation();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
+
+  // Claim a pending invite once signed in (the server ignores it for older accounts).
+  useEffect(() => {
+    const ref = localStorage.getItem("ref");
+    if (!session || !ref) return;
+    localStorage.removeItem("ref");
+    void supabase.rpc("claim_referral", { p_username: ref });
+  }, [session]);
 
   // Phone tab bar: top-level places only. Hidden where a page brings its own bottom bar.
   const tabs: { to: string; label: string; icon: Icon; end?: boolean }[] = [

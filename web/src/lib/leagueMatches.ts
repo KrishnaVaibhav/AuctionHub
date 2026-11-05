@@ -7,6 +7,7 @@ export interface LeagueMatch {
   auction_id: string;
   label: string;
   played_on: string;
+  week: number | null;
   created_at: string;
 }
 export interface PlayerStat {

@@ -10,6 +10,10 @@ import { Avatar } from "../components/Avatar";
 import { AuctionBadge } from "../components/StatusBadge";
 import { FollowButton } from "../components/FollowButton";
 import { NotFound } from "./NotFound";
+import { TrophyShelf } from "../components/TrophyShelf";
+import { BadgeGrid } from "../components/Progress";
+import { useBadges, useEventTitles } from "../lib/progress";
+import { TIER_STYLE, useHostTiers } from "../lib/hostTiers";
 
 interface PublicProfile {
   id: string;
@@ -83,6 +87,7 @@ export function HostProfile() {
         <Avatar name={profile.display_name} url={profile.avatar_url} size={88} />
         <div className="min-w-0 flex-1">
           <h1 className="page-title">{profile.display_name}</h1>
+          <TierChip hostId={profile.id} />
           <p className="text-sm text-stone-500">
             @{profile.username} · joined {new Date(profile.joined).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
           </p>
@@ -101,6 +106,8 @@ export function HostProfile() {
           <StarRow label="As a buyer" avg={profile.buyer_rating.avg} count={profile.buyer_rating.count} />
         </div>
       </div>
+
+      <ProfileExtras userId={profile.id} />
 
       <AuctionList title="Live and upcoming" rows={active} empty="Nothing live or scheduled right now." />
       <AuctionList title="Past auctions" rows={past} empty="No past auctions." />
@@ -162,5 +169,26 @@ function AuctionList({ title, rows, empty }: { title: string; rows: Auction[]; e
         </div>
       )}
     </section>
+  );
+}
+
+function TierChip({ hostId }: { hostId: string }) {
+  const tier = useHostTiers([hostId]).get(hostId);
+  return tier ? <span className={`chip mt-1 ${TIER_STYLE[tier].cls}`}>{TIER_STYLE[tier].label}</span> : null;
+}
+
+function ProfileExtras({ userId }: { userId: string }) {
+  const badges = useBadges(userId);
+  const events = useEventTitles();
+  return (
+    <>
+      {badges.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="section-title">Badges</h2>
+          <BadgeGrid badges={badges} events={events} />
+        </section>
+      )}
+      <TrophyShelf userId={userId} />
+    </>
   );
 }

@@ -45,6 +45,27 @@
     100% { transform: translate3d(-3%, 3%, 0) rotate(-6deg) scale(1); }
   }
 
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.12); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.07); }
+  }
+  @keyframes float-up {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+    12% { opacity: 1; transform: translate(var(--dx, 0px), -30px) scale(1.15); }
+    100% { opacity: 0; transform: translate(calc(var(--dx, 0px) * 2), -260px) scale(1); }
+  }
+  @keyframes confetti {
+    0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+  }
+  @keyframes gavel {
+    0% { transform: rotate(-50deg) translateY(-20px); }
+    55% { transform: rotate(12deg); }
+    70% { transform: rotate(-4deg); }
+    100% { transform: rotate(0deg); }
+  }
   @keyframes flash {
     0% { background-color: rgb(251 191 36 / 0.45); }
     100% { background-color: transparent; }

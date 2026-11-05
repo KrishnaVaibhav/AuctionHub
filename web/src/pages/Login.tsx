@@ -10,6 +10,9 @@ export function Login() {
   const { session } = useAuth();
   const [params] = useSearchParams();
   const next = params.get("next") || "/";
+  // Invite links: remember who sent you; claimed once you are signed in.
+  const ref = params.get("ref");
+  if (ref && /^[a-zA-Z0-9_]{3,24}$/.test(ref)) localStorage.setItem("ref", ref);
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
