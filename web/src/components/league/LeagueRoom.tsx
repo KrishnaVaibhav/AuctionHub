@@ -15,10 +15,18 @@ import { TeamChip, textOn } from "./TeamChip";
 import { confirmDialog } from "../../lib/confirm";
 import { LeagueSetupPanel, NextSeasonButton, RtmBanner, TradesPanel } from "./LeagueExtras";
 import { MatchesPanel } from "./MatchesPanel";
+import { MockDraft } from "./MockDraft";
+import { useLivePulse } from "../../lib/useLivePulse";
+import { funOn } from "../../lib/fun";
+import { SoldMoment } from "../live/SoldMoment";
+import { Reactions } from "../live/Reactions";
+import { BingoCard } from "../live/BingoCard";
+import { GuessLeaderboard, PickemPanel } from "../live/Predictions";
+import { WatchParty } from "../live/WatchParty";
 import { BidReplay } from "../BidReplay";
 import { teamTotals, useLeagueMatches } from "../../lib/leagueMatches";
 
-type Tab = "block" | "teams" | "players" | "board" | "matches" | "trades" | "replay" | "bids" | "chat";
+type Tab = "block" | "teams" | "players" | "board" | "matches" | "trades" | "games" | "party" | "replay" | "bids" | "chat";
 
 interface Props {
   auction: Auction;
@@ -36,6 +44,9 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
   const league = { ...LEAGUE_DEFAULTS, ...auction.settings.league };
   const myTeam = teams.find((t) => t.owner_id === userId) ?? null;
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams]);
+  const events = useLivePulse(lots);
+  const onBlock = lots.find((l) => l.status === "open") ?? [...lots].filter((l) => l.status === "pending").sort((a, b) => a.position - b.position)[0];
+  const isTeamStaff = isHost || isOwner;
 
   const tabs: { key: Tab; label: string; mobileOnly?: boolean }[] = [
     { key: "block", label: "Auction" },
@@ -44,6 +55,8 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
     { key: "board", label: "Leaderboard" },
     ...(auction.status !== "draft" && auction.status !== "scheduled" ? [{ key: "matches" as Tab, label: "Matches" }] : []),
     ...(auction.status === "paused" || auction.status === "ended" ? [{ key: "trades" as Tab, label: "Trades" }] : []),
+    ...(funOn(auction.settings, "pickem") || funOn(auction.settings, "bingo") ? [{ key: "games" as Tab, label: "Games" }] : []),
+    ...(funOn(auction.settings, "parties") && auction.status !== "ended" ? [{ key: "party" as Tab, label: "Party" }] : []),
     ...(auction.status === "ended" ? [{ key: "replay" as Tab, label: "Replay" }] : []),
     { key: "bids", label: "Bid log" },
     { key: "chat", label: "Chat", mobileOnly: true },
@@ -52,7 +65,9 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="min-w-0 space-y-5">
+        <SoldMoment auction={auction} lots={lots} events={events} userId={userId} teamName={(id) => teamById.get(id)?.name} />
         <JoinOrMyTeam auction={auction} myTeam={myTeam} teams={teams} isHost={isHost} league={league} />
+        {auction.status === "live" && funOn(auction.settings, "reactions") && <Reactions auctionId={auction.id} showHeat={isHost} />}
 
         <div className="sticky top-[4.75rem] z-20 -mx-4 px-4 sm:mx-0 sm:px-0">
           <div className="glass segmented scrollbar-none max-w-full overflow-x-auto">
@@ -67,6 +82,26 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
         {tab === "block" && <RtmBanner auction={auction} lots={lots} teamById={teamById} myTeam={myTeam} />}
         {tab === "block" && <OnTheBlock auction={auction} lots={lots} media={media} myTeam={myTeam} teamById={teamById} league={league} isHost={isHost} />}
         {tab === "block" && isOwner && auction.status === "ended" && <NextSeasonButton auction={auction} />}
+        {tab === "block" && onBlock && auction.status !== "ended" && (
+          <PickemPanel auction={auction} lot={onBlock} teams={teams} userId={userId} isTeam={isTeamStaff || myTeam != null} />
+        )}
+        {tab === "block" && (auction.status === "draft" || auction.status === "scheduled") && (
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="text-sm text-stone-600">Warm up before the real thing: draft against three bots with this player pool.</p>
+            <MockDraft auction={auction} lots={lots} />
+          </div>
+        )}
+        {tab === "games" && (
+          <div className="grid animate-rise gap-4 md:grid-cols-2">
+            {onBlock && <PickemPanel auction={auction} lot={onBlock} teams={teams} userId={userId} isTeam={isTeamStaff || myTeam != null} />}
+            <BingoCard auction={auction} lots={lots} events={events} userId={userId} />
+            <div className="card space-y-3 p-4 md:col-span-2">
+              <p className="font-semibold">Top pickers in this league</p>
+              <GuessLeaderboard auctionId={auction.id} />
+            </div>
+          </div>
+        )}
+        {tab === "party" && <WatchParty auction={auction} userId={userId} />}
         {tab === "players" && isHost && (auction.status === "draft" || auction.status === "scheduled") && <LeagueSetupPanel auction={auction} lots={lots} teams={teams} />}
         {tab === "trades" && <TradesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
         {tab === "teams" && <TeamsPanel auction={auction} lots={lots} teams={teams} league={league} isHost={isHost} userId={userId} />}

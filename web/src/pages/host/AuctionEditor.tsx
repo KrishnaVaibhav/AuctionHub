@@ -205,6 +205,7 @@ function AuctionForm({
   const [rtmCards, setRtmCards] = useState(String(s.league?.rtm_cards ?? 0));
   const [rtmSeconds, setRtmSeconds] = useState(String(s.league?.rtm_seconds ?? 20));
   const [trades, setTrades] = useState(s.league?.trades ?? true);
+  const [tradeDeadline, setTradeDeadline] = useState(toLocalInput(s.league?.trade_deadline ?? null));
   const [categoryMax, setCategoryMax] = useState(
     Object.entries(s.league?.category_max ?? {})
       .map(([k, v]) => `${k}: ${v}`)
@@ -238,6 +239,8 @@ function AuctionForm({
       chat: { enabled: chatEnabled, slow_mode_s: Math.max(0, Number(slowMode) || 0), allow_links: allowLinks },
       compact,
       league: {
+        // Keep settings edited elsewhere (scoring rules, captain multipliers).
+        ...auction.settings.league,
         purse: Math.max(1, Number(purse) || LEAGUE_DEFAULTS.purse),
         squad_min: Math.max(0, Number(squadMin) || 0),
         squad_max: Math.max(1, Number(squadMax) || LEAGUE_DEFAULTS.squad_max),
@@ -251,6 +254,7 @@ function AuctionForm({
         rtm_cards: Math.max(0, Number(rtmCards) || 0),
         rtm_seconds: Math.min(120, Math.max(5, Number(rtmSeconds) || 20)),
         trades,
+        trade_deadline: fromLocalInput(tradeDeadline) ?? undefined,
         category_max: Object.fromEntries(
           categoryMax
             .split(",")
@@ -444,6 +448,10 @@ function AuctionForm({
               Allow trades
               <input type="checkbox" className="switch" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
             </label>
+            <div>
+              <label className="label" htmlFor="tdl">Trade deadline (optional)</label>
+              <input id="tdl" type="datetime-local" className="input" value={tradeDeadline} onChange={(e) => setTradeDeadline(e.target.value)} />
+            </div>
             <p className="text-xs text-stone-500 sm:col-span-3">
               Add players below as lots (their start price is the base price). Schedule the league so teams can join, then go live. Purses
               are virtual points, not real money.

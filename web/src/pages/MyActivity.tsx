@@ -1,3 +1,5 @@
+import { ShareNetworkIcon } from "@phosphor-icons/react";
+import { shareCard } from "../lib/shareCard";
 import { t } from "../lib/i18n";
 
 const tr = t;
@@ -148,8 +150,14 @@ export function MyActivity() {
                 </div>
               )}
               {r.status === "sold" && r.is_leader && session && (
-                <div className="mt-2">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <RateTrade lotId={r.lot_id} userId={session.user.id} label="seller" />
+                  <button
+                    className="btn-ghost px-3 py-1.5 text-xs"
+                    onClick={() => void shareCard({ eyebrow: "I won", headline: r.title, big: money(r.current_bid, cur), footer: r.auction_title }, "auctionhub-win.png")}
+                  >
+                    <ShareNetworkIcon size={14} weight="bold" aria-hidden="true" /> {t("Share")}
+                  </button>
                 </div>
               )}
             </div>

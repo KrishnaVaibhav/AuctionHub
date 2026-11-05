@@ -242,6 +242,7 @@ export function TradesPanel({
 
   return (
     <div className="space-y-4">
+      <TradeDeadline deadline={auction.settings.league?.trade_deadline} />
       {!open && <p className="card p-5 text-sm text-stone-500">Trades open while the league is paused or after the auction ends.</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -362,6 +363,19 @@ export function NextSeasonButton({ auction }: { auction: Auction }) {
       <button className="btn-accent" onClick={() => void start()}>
         Next season
       </button>
+    </div>
+  );
+}
+
+/** Live countdown to the trade deadline; turns red in the last day. */
+function TradeDeadline({ deadline }: { deadline?: string }) {
+  const now = useServerNow(1000);
+  if (!deadline) return null;
+  const ms = new Date(deadline).getTime() - now;
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-[22px] px-4 py-3 ${ms <= 0 ? "bg-stone-900/[0.05] text-stone-600" : ms < 86_400_000 ? "bg-red-600 text-snow" : "glass"}`}>
+      <span className="text-sm font-semibold">{ms > 0 ? "Trade deadline" : "Trade deadline passed"}</span>
+      {ms > 0 && <span className="font-mono text-xl font-bold tabular-nums">{remaining(ms)}</span>}
     </div>
   );
 }

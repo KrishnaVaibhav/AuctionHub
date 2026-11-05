@@ -6,6 +6,7 @@ import { confirmDialog } from "../../lib/confirm";
 import { formatScoring, parseScoring, parseStatsSheet, teamTotals, useLeagueMatches } from "../../lib/leagueMatches";
 import type { Auction, LeagueTeam, Lot } from "../../lib/types";
 import { TeamChip } from "./TeamChip";
+import { FixturesPanel, SeasonAwards } from "./FixturesPanel";
 
 const SAMPLE = "player,runs,wickets,catches\nVirat Kohli,82,0,1\nJasprit Bumrah,4,3,0";
 
@@ -48,6 +49,8 @@ export function MatchesPanel({ auction, lots, teams, myTeam, isHost }: { auction
       {myTeam && <CaptainPicker team={myTeam} lots={lots} />}
       {isHost && <RecordMatch auction={auction} lots={lots} onDone={reload} />}
 
+      <FixturesPanel auction={auction} teams={teams} matches={matches} scores={scores} isHost={isHost} />
+
       {loading ? (
         <div className="h-40 animate-pulse rounded-[22px] bg-stone-900/[0.05]" />
       ) : matches.length === 0 ? (
@@ -70,6 +73,8 @@ export function MatchesPanel({ auction, lots, teams, myTeam, isHost }: { auction
                 ))}
             </div>
           </section>
+
+          <SeasonAwards auction={auction} lots={lots} stats={stats} teams={teams} />
 
           <section className="space-y-2">
             <h3 className="section-title px-1">Matches</h3>

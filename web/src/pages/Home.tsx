@@ -9,6 +9,9 @@ import { dateTime, money } from "../lib/format";
 import { CATEGORIES, categoryLabel } from "../lib/categories";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { t } from "../lib/i18n";
+import { useAuth } from "../lib/auth";
+import { TIER_STYLE, tierRank, useHostTiers, type Tier } from "../lib/hostTiers";
+import { EventBanner, MysteryDrop, RemindButton, TopGuessers, useActiveEvent, useMyReminders } from "../components/HomeExtras";
 
 const tr = t;
 
@@ -31,6 +34,10 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [eventTag, setEventTag] = useState<string | null>(null);
+  const activeEvent = useActiveEvent();
+  const { session } = useAuth();
+  const [reminders, setReminders] = useMyReminders(Boolean(session));
 
   // Tab counts (cheap HEAD requests).
   useEffect(() => {
@@ -59,6 +66,7 @@ export function Home() {
     if (query.trim()) q = q.ilike("title", `%${query.trim().replace(/[%_]/g, "")}%`);
     if (cat === "league") q = q.eq("mode", "league");
     else if (cat) q = q.eq("category", cat);
+    if (eventTag) q = q.contains("tags", [eventTag]);
     const { data, error } = await q;
     if (error) setError(errorMessage(error));
     const page = (data as Row[] | null) ?? [];
@@ -70,10 +78,16 @@ export function Home() {
   useEffect(() => {
     const t = setTimeout(() => void load(true), query ? 250 : 0);
     return () => clearTimeout(t);
-  }, [tab, query, cat]);
+  }, [tab, query, cat, eventTag]);
 
-  const featured = useMemo(() => (tab === "live" && !query && !cat ? rows[0] : undefined), [rows, tab, query, cat]);
-  const rest = featured ? rows.slice(1) : rows;
+  // Better-rated, busier hosts float up among live auctions.
+  const tiers = useHostTiers(rows.map((r) => r.host_id));
+  const ordered = useMemo(
+    () => (tab === "live" ? [...rows].sort((a, b) => tierRank(tiers.get(b.host_id)) - tierRank(tiers.get(a.host_id))) : rows),
+    [rows, tiers, tab],
+  );
+  const featured = useMemo(() => (tab === "live" && !query && !cat && !eventTag ? ordered[0] : undefined), [ordered, tab, query, cat, eventTag]);
+  const rest = featured ? ordered.slice(1) : ordered;
 
   function browse() {
     setTab(counts.live === 0 && counts.upcoming > 0 ? "upcoming" : "live");
@@ -114,6 +128,13 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      {activeEvent && <EventBanner ev={activeEvent} active={eventTag === activeEvent.tag} onToggle={() => setEventTag((t) => (t ? null : activeEvent.tag))} />}
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <MysteryDrop />
+        <TopGuessers />
+      </div>
 
       <div id="browse" className="flex scroll-mt-24 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="segmented scrollbar-none overflow-x-auto" role="tablist" aria-label={t("Auction status")}>
@@ -163,7 +184,13 @@ export function Home() {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {rest.map((a, i) => (
-            <AuctionCard key={a.id} a={a} i={i} />
+            <AuctionCard
+              key={a.id}
+              a={a}
+              i={i}
+              tier={tiers.get(a.host_id)}
+              remind={session && a.status === "scheduled" ? { on: reminders.has(a.id), set: (on) => setReminders((s) => { const n = new Set(s); if (on) n.add(a.id); else n.delete(a.id); return n; }) } : undefined}
+            />
           ))}
           {loading && Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-[20px] bg-stone-200/60" />)}
         </div>
@@ -252,10 +279,11 @@ function FeaturedCard({ a }: { a: Row }) {
   );
 }
 
-function AuctionCard({ a, i }: { a: Row; i: number }) {
+function AuctionCard({ a, i, tier, remind }: { a: Row; i: number; tier?: Tier; remind?: { on: boolean; set: (on: boolean) => void } }) {
   // Reveal lives on the wrapper so the hover lift on the card is not overridden by the animation.
   return (
-    <div className="reveal" style={{ ["--i" as string]: i % 4 }}>
+    <div className="reveal relative" style={{ ["--i" as string]: i % 4 }}>
+    {remind && <RemindButton auctionId={a.id} on={remind.on} onChange={remind.set} />}
     <Link
       to={`/a/${a.id}`}
       className="card group h-full flex flex-col overflow-hidden transition duration-500 hover:-translate-y-1 hover:shadow-[0_20px_48px_-20px_rgb(41_37_36/0.35)]"
@@ -267,6 +295,7 @@ function AuctionCard({ a, i }: { a: Row; i: number }) {
         <div className="flex flex-wrap items-center gap-1.5">
           <AuctionBadge status={a.status} />
           {a.mode === "league" && <span className="chip bg-stone-900 text-white">{t("League")}</span>}
+          {tier && <span className={`chip ${TIER_STYLE[tier].cls}`}>{t(TIER_STYLE[tier].label)}</span>}
           {a.category && (
             <span className="flex items-center gap-1 text-xs text-stone-500">
               <CategoryIcon name={a.category} className="h-3.5 w-3.5" /> {categoryLabel(a.category)}
