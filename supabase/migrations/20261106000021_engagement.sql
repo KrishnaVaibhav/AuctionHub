@@ -12,7 +12,7 @@ alter table public.notifications add constraint notifications_kind_check
 -- ===========================================================================
 alter table public.auctions
   add column announcement     text check (announcement is null or char_length(announcement) <= 200),
-  add column spotlight_lot_id uuid references public.lots (id) on delete set null;
+  add column spotlight_lot_id uuid;  -- no FK: a second auctions<->lots link would make API embeds ambiguous
 
 create or replace function public.host_set_announcement(p_auction_id uuid, p_text text)
 returns void language plpgsql security definer set search_path = '' as $$
