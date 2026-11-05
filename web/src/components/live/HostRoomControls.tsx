@@ -11,10 +11,14 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
   const [text, setText] = useState(auction.announcement ?? "");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [minutes, setMinutes] = useState("5");
+  // Switches flip at once; the realtime auction update confirms them.
+  const [pending, setPending] = useState<Partial<Record<FeatureKey, boolean>>>({});
   const done = (error: unknown, ok: string) => setMsg(error ? { ok: false, text: errorMessage(error) } : { ok: true, text: ok });
 
   async function feature(key: FeatureKey, value: boolean) {
+    setPending((p) => ({ ...p, [key]: value }));
     const { error } = await supabase.rpc("host_set_features", { p_auction_id: auction.id, p_features: { [key]: value } });
+    if (error) setPending((p) => ({ ...p, [key]: !value }));
     done(error, value ? "Turned on" : "Turned off");
   }
   async function announce(value: string) {
@@ -145,7 +149,7 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
                         <span className="block text-sm font-medium">{f.label}</span>
                         <span className="block text-xs text-stone-500">{f.hint}</span>
                       </span>
-                      <input type="checkbox" className="switch" checked={funOn(auction.settings, f.key)} onChange={(e) => void feature(f.key, e.target.checked)} />
+                      <input type="checkbox" className="switch" checked={pending[f.key] ?? funOn(auction.settings, f.key)} onChange={(e) => void feature(f.key, e.target.checked)} />
                     </label>
                   ))}
                 </div>
