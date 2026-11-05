@@ -202,3 +202,46 @@ Images are converted to WebP in the browser, because the free tier has no image 
 - Supabase: 500 MB DB, 1 GB storage, about 5 GB egress per month, about 200 concurrent realtime connections. Projects pause after 7 idle days, which the Worker cron prevents.
 - Supabase built-in email sends only a few emails per hour. Add custom SMTP (for example, Resend free) before launch.
 - Cloudflare Workers: 100k requests per day. Static asset requests are free and unlimited.
+
+## Co-hosts
+
+`auction_moderators` rows carry `can_edit` and `can_run`. Everyone on the list moderates chat and sees private auctions; the flags make them co-hosts.
+
+- `can_edit`: auction fields, lots, reserves and media (`auction_perm(id, 'edit')`, used by RLS and the storage path check).
+- `can_run`: every function that calls `_assert_host` (go live, pause, close lots, offers, league controls, match scoring).
+- Owner only (`_assert_owner` wrappers): add people, cancel, delete, duplicate, next season. Only the owner can change the flags.
+- `guard_cohost_bid` blocks co-hosts from bids, sealed bids, auto-bids and offers in that auction.
+
+## Bulk photos
+
+`web/src/lib/bulkPhotos.ts` matches files to lots by a leading lot number (`12.jpg`, `12-2.jpg`) or by title, and groups the rest into new lots. Uploads run three at a time through `uploadMedia`.
+
+## Bid replay
+
+Ended auctions get a Replay tab (`BidReplay`). It reads the public `bids` history in pages of 1,000 (up to 20,000) and steps through it client-side: spotlight, top-lot race and feed. No new tables.
+
+## League fantasy and season table
+
+- `league_matches`, `league_player_stats`, `league_team_scores`: written only by `league_record_match` / `league_delete_match` (run permission).
+- Points per stat come from `settings.league.scoring`; a `points` value on a row overrides it. Captain and vice-captain (`league_set_captain`, owner of the team) multiply by `captain_x` (2) and `vice_x` (1.5), snapshotted per match.
+- `lots.points` mirrors each player's total across matches.
+- Seasons share `auctions.series_id`; teams share `league_teams.franchise_id` across seasons. `league_season_table` (callable by anyone who can see the league) powers the public `/league/:id/season` page.
+
+## Engagement layer
+
+Design rule: XP, levels and badges reward watching, chatting, guessing and rating, never spending.
+
+- **Host room controls** (`_assert_host`, so co-hosts with Run too): `host_set_announcement`, `host_spotlight` (opens a lot on every screen), `host_set_features` (whitelisted booleans in `settings.fun`: reactions, hype, celebrate, sounds, guesses, pickem, bingo, parties; all default on), `set_lot_end`, `reopen_lot`.
+- **Live room moments** are client-side, derived from realtime lot row changes (`useLivePulse`): hype meter, showdown banner, "Extended!" toast, Sold! moment with confetti, synthesised sounds and vibration. Reactions travel over Realtime broadcast and are never stored.
+- **Live stage** (`LiveStage`): the room's first read, sized by priority: price, then time left, then the viewer's status (the only saturated block). The header compacts while live.
+- **Predictions** (`predictions`): price guesses and league pick'em via `make_prediction`; locked at the first bid; hidden until the lot closes; scored by `engagement_on_close` (price: 100/75/50/25/5 by error; pick'em: 50). Hosts, co-hosts and team owners can't play. `prediction_leaderboard` for weekly and per-auction tables.
+- **Badges** (`user_badges`) awarded by triggers: first_win, collector, sniper, bargain, night_owl, bullseye, seller, top_seller, recruiter/welcome (referral), bingo (honor-system claim), and `event:<id>` for wins in a running themed event.
+- **XP** (`profiles.xp`, daily caps in `xp_daily`): watch heartbeat, chat, guesses, ratings, bingo. Level = floor(sqrt(xp/50)) + 1. Cosmetics (chat colour at 3, frames at 5/10/15) via `set_cosmetics`.
+- **Host tiers** (`host_tiers`): bronze/silver/gold from sales and seller rating; live auctions sort by tier on the home page.
+- **Trophy shelf** (`trophy_shelf`): opt-in via `profiles.show_shelf`.
+- **Referrals**: `/login?ref=username` stored locally, then `claim_referral` (accounts under 14 days old).
+- **Watch parties**: `watch_parties`, `watch_party_members`, `watch_party_messages` (members-only RLS, realtime, 20 members, 3 parties per user per auction).
+- **Reminders and alerts** (`send_reminders`, every minute): auctions starting in 10 minutes, league weeks starting tomorrow, saved searches (every 15 minutes).
+- **Themed events and the daily mystery lot**: `site_events` and `mystery_drops`, managed by platform admins (Admin > Events); `mystery_today()` hides the lot until its reveal time.
+- **League**: `league_fixtures` (round robin by `league_generate_fixtures`), matches join the week that has started by their date, head-to-head W-L-D computed client-side; `settings.league.trade_deadline` enforced by trigger; season awards client-side; practice draft against bots runs entirely in the browser.
+- No foreign keys from `auctions.spotlight_lot_id` or `league_teams.captain_lot_id/vice_lot_id` to `lots`: a second link between those tables makes PostgREST embeds such as `lots(count)` ambiguous.

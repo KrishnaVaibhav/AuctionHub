@@ -164,5 +164,15 @@ const d: Dict = {
   "{n} starting soon": "{n} விரைவில் தொடங்கும்",
   "Main": "முதன்மை",
   "More": "மேலும்",
+  "Replay": "மறுஒளிபரப்பு",
+  "No bids to replay.": "மறுஒளிபரப்ப ஏலங்கள் இல்லை.",
+  "Bid {n} of {total}": "ஏலம் {n} / {total}",
+  "Pause replay": "மறுஒளிபரப்பை நிறுத்து",
+  "Play replay": "மறுஒளிபரப்பை இயக்கு",
+  "Restart replay": "மீண்டும் தொடங்கு",
+  "Replay position": "மறுஒளிபரப்பு நிலை",
+  "Replay speed": "மறுஒளிபரப்பு வேகம்",
+  "Top lots so far": "இதுவரை முன்னணி பொருட்கள்",
+  "Latest bids": "சமீபத்திய ஏலங்கள்",
 };
 export default d;

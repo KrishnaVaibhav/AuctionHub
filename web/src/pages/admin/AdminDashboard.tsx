@@ -1,3 +1,4 @@
+import { EventsTab } from "./EventsTab";
 import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -12,7 +13,7 @@ import { SafetyTab } from "./SafetyTab";
 import type { AuctionStatus } from "../../lib/types";
 import { confirmDialog } from "../../lib/confirm";
 
-type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit";
+type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit" | "events";
 
 export function AdminDashboard() {
   const { isAdmin, checked } = useIsAdmin();
@@ -27,6 +28,7 @@ export function AdminDashboard() {
     ["auctions", "Auctions"],
     ["activity", "Live activity"],
     ["safety", "Safety"],
+    ["events", "Events"],
     ["support", "Support"],
     ["audit", "Audit log"],
   ];
@@ -56,6 +58,7 @@ export function AdminDashboard() {
       {tab === "safety" && <SafetyTab />}
       {tab === "support" && <SupportInbox />}
       {tab === "audit" && <Audit />}
+      {tab === "events" && <EventsTab />}
     </div>
   );
 }

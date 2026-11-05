@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useAuth } from "../lib/auth";
-import { useAuctionRoom } from "../lib/useAuctionRoom";
+import { auctionRole, useAuctionRoom } from "../lib/useAuctionRoom";
+import { BidReplay } from "../components/BidReplay";
 import { supabase, errorMessage } from "../lib/supabase";
 import { dateTime, money } from "../lib/format";
 import { minNextBid } from "../lib/bidding";
@@ -26,8 +27,17 @@ import { HostLine } from "../components/HostLine";
 import { PriceHint } from "../components/PriceHint";
 import { t } from "../lib/i18n";
 import { confirmDialog, type ConfirmOptions } from "../lib/confirm";
+import { useLivePulse } from "../lib/useLivePulse";
+import { funOn, sounds } from "../lib/fun";
+import { LiveStage } from "../components/live/LiveStage";
+import { SoldMoment } from "../components/live/SoldMoment";
+import { Reactions } from "../components/live/Reactions";
+import { GuessLeaderboard, GuessPanel } from "../components/live/Predictions";
+import { BingoCard } from "../components/live/BingoCard";
+import { WatchParty } from "../components/live/WatchParty";
+import { HostRoomControls } from "../components/live/HostRoomControls";
 
-type Tab = "lot" | "lots" | "bids" | "results" | "chat";
+type Tab = "lot" | "lots" | "bids" | "results" | "games" | "party" | "replay" | "chat";
 
 /** Remount per auction so no state (form fields, selection, tabs) leaks between auctions. */
 export function AuctionRoom() {
@@ -39,22 +49,52 @@ function AuctionRoomInner() {
   const { id } = useParams();
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
-  const { auction, lots, media, moderatorIds, loading, error, reload } = useAuctionRoom(id);
+  const { auction, lots, media, moderatorIds, staff, loading, error, reload } = useAuctionRoom(id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
+  const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "games", "party", "replay", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
   const [hostError, setHostError] = useState<string | null>(null);
   const { isAdmin } = useIsAdmin();
   const [barBusy, setBarBusy] = useState(false);
   const [barMsg, setBarMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const events = useLivePulse(lots);
+  const live = auction?.status === "live";
+
+  // The host's spotlight opens that lot on every screen.
+  const spotlight = auction?.spotlight_lot_id ?? null;
+  useEffect(() => {
+    if (spotlight) {
+      setSelectedId(spotlight);
+      setTab((t) => (t === "lots" || t === "bids" ? "lot" : t));
+    }
+  }, [spotlight]);
+
+  // Watching a live room earns a little XP (capped per day on the server).
+  useEffect(() => {
+    if (!live || !userId || !id) return;
+    const tick = () => document.visibilityState === "visible" && void supabase.rpc("xp_watch", { p_auction_id: id });
+    const t = setInterval(tick, 120_000);
+    return () => clearInterval(t);
+  }, [live, userId, id]);
+
+  // Browsers only allow sound after a tap.
+  useEffect(() => {
+    const unlock = () => sounds.unlock();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, []);
 
   if (loading) return <RoomSkeleton />;
   if (!auction) return id ? <PrivateGate auctionId={id} onJoined={reload} /> : null;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
 
-  const isHost = userId === auction.host_id;
+  const role = auctionRole(auction, staff, userId);
+  // "Host" in the room means anyone allowed to run it: the owner or a co-host with Run.
+  const isHost = role.canRun;
+  const isTeam = role.canRun || role.canEdit;
   const isStaff = isHost || isAdmin || (userId != null && moderatorIds.includes(userId));
-  const selected: Lot | undefined = lots.find((l) => l.id === selectedId) ?? lots.find((l) => l.status === "open") ?? lots[0];
+  const selected: Lot | undefined =
+    lots.find((l) => l.id === selectedId) ?? lots.find((l) => l.id === auction.spotlight_lot_id) ?? lots.find((l) => l.status === "open") ?? lots[0];
   const selectedIndex = selected ? lots.indexOf(selected) : -1;
   const finished = auction.status === "ended" || auction.status === "cancelled";
 
@@ -86,6 +126,9 @@ function AuctionRoomInner() {
     { key: "lots", label: t("All lots ({n})", { n: lots.length }) },
     { key: "bids", label: t("Bid log") },
     { key: "results", label: t(finished ? "Results" : "Standings") },
+    ...(funOn(auction.settings, "guesses") || funOn(auction.settings, "bingo") ? [{ key: "games" as Tab, label: t("Games") }] : []),
+    ...(funOn(auction.settings, "parties") && !finished ? [{ key: "party" as Tab, label: t("Party") }] : []),
+    ...(auction.status === "ended" ? [{ key: "replay" as Tab, label: t("Replay") }] : []),
     { key: "chat", label: t("Chat"), mobileOnly: true },
   ];
 
@@ -98,7 +141,12 @@ function AuctionRoomInner() {
   return (
     <div className="space-y-5 pb-24 lg:pb-0">
       {/* Header */}
-      <div className="aurora flex flex-col gap-4 rounded-[32px] border border-white/60 p-5 sm:p-7 lg:flex-row lg:items-start lg:justify-between dark:border-snow/[0.06]">
+      {/* While live, the header steps back so the live stage below leads. */}
+      <div
+        className={`aurora flex flex-col gap-4 rounded-[32px] border border-white/60 lg:flex-row lg:items-start lg:justify-between dark:border-snow/[0.06] ${
+          live ? "p-4 sm:p-5" : "p-5 sm:p-7"
+        }`}
+      >
         <div className="enter min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <AuctionBadge status={auction.status} />
@@ -111,17 +159,29 @@ function AuctionRoomInner() {
               </span>
             )}
           </div>
-          <h1 className="page-title mt-3">{auction.title}</h1>
+          <h1 className={live ? "mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl" : "page-title mt-3"}>{auction.title}</h1>
           <HostLine hostId={auction.host_id} category={auction.category} />
-          {auction.description && <p className="mt-2 line-clamp-3 max-w-3xl whitespace-pre-line text-sm text-stone-600 sm:text-base">{auction.description}</p>}
+          {auction.description && (
+            <p className={`mt-2 max-w-3xl whitespace-pre-line text-sm text-stone-600 ${live ? "hidden sm:line-clamp-1" : "line-clamp-3 sm:text-base"}`}>{auction.description}</p>
+          )}
         </div>
 
-        {isHost && <HostBar auction={auction} onAction={hostAction} />}
+        {isHost && <HostBar auction={auction} onAction={hostAction} canEdit={role.canEdit} cohost={role.cohost} lots={lots} selected={selected} />}
       </div>
       {hostError && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{hostError}</p>}
 
+      <SoldMoment auction={auction} lots={lots} events={events} userId={userId} />
+      {auction.mode !== "league" && selected && (auction.status === "live" || auction.status === "paused") && (
+        <LiveStage auction={auction} lot={selected} userId={userId} events={events} isTeam={isTeam} />
+      )}
+      {live && funOn(auction.settings, "reactions") && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Reactions auctionId={auction.id} showHeat={isHost} />
+        </div>
+      )}
+
       {auction.mode === "league" ? (
-        <LeagueRoom auction={auction} lots={lots} media={media} userId={userId} isHost={isHost} isStaff={isStaff} />
+        <LeagueRoom auction={auction} lots={lots} media={media} userId={userId} isHost={isHost} isOwner={role.owner} isStaff={isStaff} />
       ) : (
         <>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -187,8 +247,9 @@ function AuctionRoomInner() {
                       </div>
                     )}
                   </div>
-                  <div id="bid" className="scroll-mt-20">
-                    <BidPanel auction={auction} lot={selected} userId={userId} isHost={isHost} />
+                  <div id="bid" className="scroll-mt-20 space-y-4">
+                    <BidPanel auction={auction} lot={selected} userId={userId} isHost={isTeam} />
+                    {selected.bid_count === 0 && selected.status !== "sold" && <GuessPanel auction={auction} lot={selected} userId={userId} isTeam={isTeam} />}
                   </div>
                 </div>
               ) : (
@@ -197,7 +258,19 @@ function AuctionRoomInner() {
 
             {tab === "lots" && <LotGrid auction={auction} lots={lots} media={media} userId={userId} selectedId={selected?.id} onOpen={openLot} />}
             {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
-            {tab === "results" && <Results auction={auction} lots={lots} isHost={isHost} userId={userId} />}
+            {tab === "replay" && <BidReplay auction={auction} lots={lots} />}
+            {tab === "games" && (
+              <div className="grid animate-rise gap-4 md:grid-cols-2">
+                {selected && <GuessPanel auction={auction} lot={selected} userId={userId} isTeam={isTeam} />}
+                <BingoCard auction={auction} lots={lots} events={events} userId={userId} />
+                <div className="card space-y-3 p-4 md:col-span-2">
+                  <p className="font-semibold">{t("Top guessers in this auction")}</p>
+                  <GuessLeaderboard auctionId={auction.id} />
+                </div>
+              </div>
+            )}
+            {tab === "party" && <WatchParty auction={auction} userId={userId} />}
+            {tab === "results" && <Results auction={auction} lots={lots} isHost={role.owner} userId={userId} />}
             {tab === "chat" && (
               <div className="lg:hidden">
                 <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
@@ -224,7 +297,7 @@ function AuctionRoomInner() {
                   <Countdown endsAt={selected.ends_at} className="text-sm" />
                 </p>
               </div>
-              {!isHost && (
+              {!isTeam && (
                 <button
                   className="btn-ghost h-11 px-3"
                   aria-label={t("More bid options")}
@@ -239,7 +312,7 @@ function AuctionRoomInner() {
               {userId && selected.current_winner_id === userId ? (
                 <span className="chip min-h-11 bg-emerald-100 px-4 text-emerald-800">{t("Winning")}</span>
               ) : (
-                !isHost &&
+                !isTeam &&
                 (userId && selected.sale_type === "english" ? (
                   <button className="btn-accent min-h-11 px-5" disabled={barBusy} onClick={() => void quickBid(selected)}>
                     {barBusy ? t("Bidding...") : t("Bid {amount}", { amount: money(minNextBid(selected, auction.settings), auction.settings) })}
@@ -263,14 +336,31 @@ function AuctionRoomInner() {
   );
 }
 
-function HostBar({ auction, onAction }: { auction: Auction; onAction: (fn: string, args: Record<string, string>, confirm?: ConfirmOptions) => Promise<void> }) {
+function HostBar({
+  auction,
+  onAction,
+  canEdit,
+  cohost,
+  lots,
+  selected,
+}: {
+  auction: Auction;
+  onAction: (fn: string, args: Record<string, string>, confirm?: ConfirmOptions) => Promise<void>;
+  canEdit: boolean;
+  cohost: boolean;
+  lots: Lot[];
+  selected?: Lot;
+}) {
   const args = { p_auction_id: auction.id };
   return (
     <div className="glass enter flex flex-wrap items-center gap-2 rounded-[26px] p-2" style={{ ["--i" as string]: 1 }}>
-      <span className="chip bg-brand-100 text-brand-700">Host controls</span>
-      <Link to={`/host/a/${auction.id}`} className="btn-ghost py-1.5">
-        Edit
-      </Link>
+      <span className="chip bg-brand-100 text-brand-700">{cohost ? "Co-host controls" : "Host controls"}</span>
+      {canEdit && (
+        <Link to={`/host/a/${auction.id}`} className="btn-ghost py-1.5">
+          Edit
+        </Link>
+      )}
+      {auction.status !== "draft" && <HostRoomControls auction={auction} lots={lots} selected={selected} />}
       {(auction.status === "draft" || auction.status === "scheduled") && (
         <button className="btn-accent py-1.5" onClick={() => void onAction("start_auction", args, { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" })}>
           Go live
