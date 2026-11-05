@@ -87,6 +87,7 @@ set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000e101","
 insert into public.auctions (id, host_id, title, mode, starts_at, settings) values
   ('e3000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000e101', 'Deadline League', 'league', now() + interval '1 day',
    '{"league":{"purse":1000,"trades":true,"trade_deadline":"2020-01-01T00:00:00Z"}}');
+insert into public.lots (auction_id, position, title, start_price) values ('e3000000-0000-0000-0000-000000000001', 0, 'Player', 10);
 select public.schedule_auction('e3000000-0000-0000-0000-000000000001');
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000e102","role":"authenticated"}';
 create temporary table _ta as select public.join_league('e3000000-0000-0000-0000-000000000001', 'Alpha', 'AL') as id;
