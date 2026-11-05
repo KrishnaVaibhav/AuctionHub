@@ -4,6 +4,7 @@ import { useServerNow } from "../../lib/clock";
 import { money, remaining } from "../../lib/format";
 import { funOn, hypeLevel, showdown, sounds, vibrate, type PulseEvent } from "../../lib/fun";
 import { useProfileNames } from "../../lib/profiles";
+import { supabase } from "../../lib/supabase";
 import { t } from "../../lib/i18n";
 import type { Auction, Lot } from "../../lib/types";
 
@@ -23,7 +24,8 @@ export function LiveStage({ auction, lot, userId, events, isTeam }: { auction: A
   const duel = funOn(auction.settings, "hype") ? showdown(events, lot.id) : null;
   const names = useProfileNames(duel ?? []);
   const winning = userId != null && lot.current_winner_id === userId;
-  const outbid = !winning && userId != null && lot.bid_count > 0 && events.some((e) => e.lotId === lot.id && e.kind === "bid" && e.winner === userId);
+  const hasBid = useHasBid(lot.id, userId, winning);
+  const outbid = !winning && userId != null && lot.bid_count > 0 && (hasBid || events.some((e) => e.lotId === lot.id && e.kind === "bid" && e.winner === userId));
 
   // "Extended!" toast when anti-snipe or the host adds time.
   const [extended, setExtended] = useState(false);
@@ -127,4 +129,32 @@ export function LiveStage({ auction, lot, userId, events, isTeam }: { auction: A
       )}
     </section>
   );
+}
+
+/**
+ * Whether this user has ever bid on the lot. Asked once per lot from the
+ * server (so "Outbid" survives a reload), then remembered once they lead.
+ */
+function useHasBid(lotId: string, userId: string | null, winning: boolean): boolean {
+  const [known, setKnown] = useState<{ lotId: string; has: boolean } | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    void supabase
+      .from("bids")
+      .select("id")
+      .eq("lot_id", lotId)
+      .eq("bidder_id", userId)
+      .limit(1)
+      .then(({ data }) => {
+        if (alive) setKnown((k) => (k?.lotId === lotId && k.has ? k : { lotId, has: (data?.length ?? 0) > 0 }));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [lotId, userId]);
+  useEffect(() => {
+    if (winning) setKnown({ lotId, has: true });
+  }, [winning, lotId]);
+  return known?.lotId === lotId && known.has;
 }
