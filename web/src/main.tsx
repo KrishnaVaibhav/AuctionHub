@@ -28,6 +28,7 @@ const Privacy = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Pri
 const HostProfile = lazy(() => import("./pages/HostProfile").then((m) => ({ default: m.HostProfile })));
 const Support = lazy(() => import("./pages/Support").then((m) => ({ default: m.Support })));
 const Terms = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Terms })));
+const SeasonTable = lazy(() => import("./pages/SeasonTable").then((m) => ({ default: m.SeasonTable })));
 
 const page = (el: ReactNode) => (
   <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-stone-100" />}>{el}</Suspense>
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: "/terms", element: page(<Terms />) },
       { path: "/support", element: page(<Support />) },
       { path: "/u/:username", element: page(<HostProfile />) },
+      { path: "/league/:id/season", element: page(<SeasonTable />) },
       {
         element: <RequireAuth />,
         children: [

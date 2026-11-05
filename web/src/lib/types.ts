@@ -19,6 +19,9 @@ export interface LeagueSettings {
   category_max?: Record<string, number>;
   trades?: boolean;
   season?: number;
+  scoring?: Record<string, number>;
+  captain_x?: number;
+  vice_x?: number;
 }
 
 export interface AuctionSettings {
@@ -111,6 +114,9 @@ export interface LeagueTeam {
   color: string;
   purse_left: number;
   rtm_used: number;
+  franchise_id?: string | null;
+  captain_lot_id?: string | null;
+  vice_lot_id?: string | null;
   created_at: string;
 }
 

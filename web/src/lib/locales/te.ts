@@ -164,5 +164,15 @@ const d: Dict = {
   "{n} starting soon": "{n} త్వరలో ప్రారంభం",
   "Main": "ప్రధాన",
   "More": "మరిన్ని",
+  "Replay": "రీప్లే",
+  "No bids to replay.": "రీప్లే చేయడానికి బిడ్‌లు లేవు.",
+  "Bid {n} of {total}": "బిడ్ {n} / {total}",
+  "Pause replay": "రీప్లే ఆపు",
+  "Play replay": "రీప్లే ప్లే చేయి",
+  "Restart replay": "రీప్లే మళ్లీ ప్రారంభించు",
+  "Replay position": "రీప్లే స్థానం",
+  "Replay speed": "రీప్లే వేగం",
+  "Top lots so far": "ఇప్పటివరకు టాప్ లాట్లు",
+  "Latest bids": "తాజా బిడ్‌లు",
 };
 export default d;

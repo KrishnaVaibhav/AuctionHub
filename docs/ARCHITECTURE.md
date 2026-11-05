@@ -202,3 +202,27 @@ Images are converted to WebP in the browser, because the free tier has no image 
 - Supabase: 500 MB DB, 1 GB storage, about 5 GB egress per month, about 200 concurrent realtime connections. Projects pause after 7 idle days, which the Worker cron prevents.
 - Supabase built-in email sends only a few emails per hour. Add custom SMTP (for example, Resend free) before launch.
 - Cloudflare Workers: 100k requests per day. Static asset requests are free and unlimited.
+
+## Co-hosts
+
+`auction_moderators` rows carry `can_edit` and `can_run`. Everyone on the list moderates chat and sees private auctions; the flags make them co-hosts.
+
+- `can_edit`: auction fields, lots, reserves and media (`auction_perm(id, 'edit')`, used by RLS and the storage path check).
+- `can_run`: every function that calls `_assert_host` (go live, pause, close lots, offers, league controls, match scoring).
+- Owner only (`_assert_owner` wrappers): add people, cancel, delete, duplicate, next season. Only the owner can change the flags.
+- `guard_cohost_bid` blocks co-hosts from bids, sealed bids, auto-bids and offers in that auction.
+
+## Bulk photos
+
+`web/src/lib/bulkPhotos.ts` matches files to lots by a leading lot number (`12.jpg`, `12-2.jpg`) or by title, and groups the rest into new lots. Uploads run three at a time through `uploadMedia`.
+
+## Bid replay
+
+Ended auctions get a Replay tab (`BidReplay`). It reads the public `bids` history in pages of 1,000 (up to 20,000) and steps through it client-side: spotlight, top-lot race and feed. No new tables.
+
+## League fantasy and season table
+
+- `league_matches`, `league_player_stats`, `league_team_scores`: written only by `league_record_match` / `league_delete_match` (run permission).
+- Points per stat come from `settings.league.scoring`; a `points` value on a row overrides it. Captain and vice-captain (`league_set_captain`, owner of the team) multiply by `captain_x` (2) and `vice_x` (1.5), snapshotted per match.
+- `lots.points` mirrors each player's total across matches.
+- Seasons share `auctions.series_id`; teams share `league_teams.franchise_id` across seasons. `league_season_table` (callable by anyone who can see the league) powers the public `/league/:id/season` page.

@@ -19,6 +19,7 @@ export function HostDashboard() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
+  const [cohosted, setCohosted] = useState<Auction[]>([]);
   const [title, setTitle] = useState("");
   const [mode, setMode] = useState<"standard" | "league">("standard");
   const [busy, setBusy] = useState(false);
@@ -35,6 +36,7 @@ export function HostDashboard() {
         if (error) setError(errorMessage(error));
         setRows((data as Row[] | null) ?? []);
       });
+    void supabase.rpc("my_cohosted_auctions").then(({ data }) => setCohosted((data as Auction[] | null) ?? []));
   }, [userId]);
 
   async function duplicate(a: Row) {
@@ -156,6 +158,34 @@ export function HostDashboard() {
         ))}
       </div>
       </section>
+
+      {cohosted.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="section-title px-1">Co-hosting</h2>
+          <div className="group-list">
+            {cohosted.map((a) => (
+              <div key={a.id} className="group-row flex-wrap gap-4 py-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <AuctionBadge status={a.status} />
+                    <span className="chip bg-sky-100 text-sky-800">Co-host</span>
+                  </div>
+                  <p className="mt-1 font-semibold">{a.title}</p>
+                  <p className="text-xs text-stone-500">Starts {dateTime(a.starts_at)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link to={`/host/a/${a.id}`} className="btn-ghost">
+                    Manage
+                  </Link>
+                  <Link to={`/a/${a.id}`} className="btn-primary">
+                    Open room
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <WebhooksPanel />
     </div>

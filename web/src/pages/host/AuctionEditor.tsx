@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { supabase, errorMessage } from "../../lib/supabase";
-import { useAuctionRoom } from "../../lib/useAuctionRoom";
+import { auctionRole, useAuctionRoom } from "../../lib/useAuctionRoom";
 import { formatIncrements, fromLocalInput, parseIncrements, toLocalInput } from "../../lib/format";
 import { uploadMedia } from "../../lib/media";
 import { DEFAULT_INCREMENTS } from "../../lib/bidding";
@@ -16,6 +16,7 @@ import { ModeratorsPanel } from "./ModeratorsPanel";
 import { ImportLots } from "./ImportLots";
 import { AnalyticsPanel } from "./AnalyticsPanel";
 import { EmbedPanel } from "./EmbedPanel";
+import { BulkPhotos } from "./BulkPhotos";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 import { CATEGORIES, parseTags } from "../../lib/categories";
 import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
@@ -33,15 +34,16 @@ function AuctionEditorInner() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const room = useAuctionRoom(id);
-  const { auction, lots, media, reload } = room;
+  const { auction, lots, media, staff, reload } = room;
+  const role = auctionRole(auction, staff, session?.user.id ?? null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   if (room.loading) return <p className="text-sm text-stone-500">Loading...</p>;
   if (!auction) return <p className="text-sm text-red-600">{room.error ?? "Auction not found"}</p>;
-  if (auction.host_id !== session?.user.id) return <p className="text-sm text-red-600">Only the host can edit this auction.</p>;
+  if (!role.canEdit && !role.canRun) return <p className="text-sm text-red-600">Only the host and co-hosts can edit this auction.</p>;
 
-  const editable = auction.status === "draft" || auction.status === "scheduled";
+  const editable = role.canEdit && (auction.status === "draft" || auction.status === "scheduled");
 
   async function rpc(fn: string, confirm?: ConfirmOptions) {
     if (confirm && !(await confirmDialog(confirm))) return;
@@ -85,34 +87,37 @@ function AuctionEditorInner() {
           Dashboard
         </Link>
         <AuctionBadge status={auction.status} />
+        {role.cohost && <span className="chip bg-sky-100 text-sky-800">Co-host</span>}
         <div className="ml-auto flex flex-wrap gap-2">
-          <button className="btn-ghost" onClick={() => void duplicate()}>
-            Duplicate
-          </button>
+          {role.owner && (
+            <button className="btn-ghost" onClick={() => void duplicate()}>
+              Duplicate
+            </button>
+          )}
           <Link to={`/a/${auction.id}`} className="btn-ghost">
             Open room
           </Link>
-          {auction.status === "draft" && (
+          {role.canRun && auction.status === "draft" && (
             <button className="btn-ghost" onClick={() => void rpc("schedule_auction")}>
               Schedule
             </button>
           )}
-          {auction.status === "scheduled" && (
+          {role.canRun && auction.status === "scheduled" && (
             <button className="btn-ghost" onClick={() => void rpc("unschedule_auction")}>
               Back to draft
             </button>
           )}
-          {editable && (
+          {role.canRun && (auction.status === "draft" || auction.status === "scheduled") && (
             <button className="btn-accent" onClick={() => void rpc("start_auction", { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" })}>
               Go live now
             </button>
           )}
-          {canDelete(auction.status) && (
+          {role.owner && canDelete(auction.status) && (
             <button className="btn-danger" onClick={() => void remove()}>
               Delete
             </button>
           )}
-          {!["draft", "ended", "cancelled"].includes(auction.status) && (
+          {role.owner && !["draft", "ended", "cancelled"].includes(auction.status) && (
             <button className="btn-danger" onClick={() => void rpc("cancel_auction", { title: "Cancel this auction?", body: "All open lots are withdrawn.", confirmLabel: "Cancel auction", cancelLabel: "Keep", danger: true })}>
               Cancel auction
             </button>
@@ -124,14 +129,14 @@ function AuctionEditorInner() {
       {notice && <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">{notice}</p>}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <VisibilityPanel auction={auction} onChanged={reload} />
-        <ModeratorsPanel auction={auction} />
+        {role.owner && <VisibilityPanel auction={auction} onChanged={reload} />}
+        {role.owner && <ModeratorsPanel auction={auction} onChanged={reload} />}
         <EmbedPanel auction={auction} />
       </div>
 
-      <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />
+      {role.canEdit && <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />}
 
-      {auction.status !== "draft" && <AnalyticsPanel auction={auction} />}
+      {role.owner && auction.status !== "draft" && <AnalyticsPanel auction={auction} />}
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
@@ -153,6 +158,7 @@ function AuctionEditorInner() {
         ))}
         {editable && <NewLotForm auction={auction} nextPosition={lots.length} onCreated={reload} />}
         {editable && <ImportLots auction={auction} nextPosition={lots.length} onDone={reload} />}
+        {role.canEdit && <BulkPhotos auction={auction} lots={lots} media={media} editable={editable} onDone={reload} />}
       </section>
     </div>
   );

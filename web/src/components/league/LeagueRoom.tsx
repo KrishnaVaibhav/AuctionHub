@@ -14,8 +14,11 @@ import { LotBadge } from "../StatusBadge";
 import { TeamChip, textOn } from "./TeamChip";
 import { confirmDialog } from "../../lib/confirm";
 import { LeagueSetupPanel, NextSeasonButton, RtmBanner, TradesPanel } from "./LeagueExtras";
+import { MatchesPanel } from "./MatchesPanel";
+import { BidReplay } from "../BidReplay";
+import { teamTotals, useLeagueMatches } from "../../lib/leagueMatches";
 
-type Tab = "block" | "teams" | "players" | "board" | "trades" | "bids" | "chat";
+type Tab = "block" | "teams" | "players" | "board" | "matches" | "trades" | "replay" | "bids" | "chat";
 
 interface Props {
   auction: Auction;
@@ -23,10 +26,11 @@ interface Props {
   media: Map<string, LotMedia[]>;
   userId: string | null;
   isHost: boolean;
+  isOwner: boolean;
   isStaff: boolean;
 }
 
-export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Props) {
+export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isStaff }: Props) {
   const { teams } = useLeagueTeams(auction.id, true);
   const [tab, setTab] = useState<Tab>("block");
   const league = { ...LEAGUE_DEFAULTS, ...auction.settings.league };
@@ -38,7 +42,9 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
     { key: "teams", label: `Teams (${teams.length})` },
     { key: "players", label: `Players (${lots.length})` },
     { key: "board", label: "Leaderboard" },
+    ...(auction.status !== "draft" && auction.status !== "scheduled" ? [{ key: "matches" as Tab, label: "Matches" }] : []),
     ...(auction.status === "paused" || auction.status === "ended" ? [{ key: "trades" as Tab, label: "Trades" }] : []),
+    ...(auction.status === "ended" ? [{ key: "replay" as Tab, label: "Replay" }] : []),
     { key: "bids", label: "Bid log" },
     { key: "chat", label: "Chat", mobileOnly: true },
   ];
@@ -60,12 +66,14 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
 
         {tab === "block" && <RtmBanner auction={auction} lots={lots} teamById={teamById} myTeam={myTeam} />}
         {tab === "block" && <OnTheBlock auction={auction} lots={lots} media={media} myTeam={myTeam} teamById={teamById} league={league} isHost={isHost} />}
-        {tab === "block" && isHost && auction.status === "ended" && <NextSeasonButton auction={auction} />}
+        {tab === "block" && isOwner && auction.status === "ended" && <NextSeasonButton auction={auction} />}
         {tab === "players" && isHost && (auction.status === "draft" || auction.status === "scheduled") && <LeagueSetupPanel auction={auction} lots={lots} teams={teams} />}
         {tab === "trades" && <TradesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
         {tab === "teams" && <TeamsPanel auction={auction} lots={lots} teams={teams} league={league} isHost={isHost} userId={userId} />}
         {tab === "players" && <PlayersPanel auction={auction} lots={lots} teamById={teamById} isHost={isHost} />}
         {tab === "board" && <Leaderboard auction={auction} lots={lots} teams={teams} />}
+        {tab === "matches" && <MatchesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
+        {tab === "replay" && <BidReplay auction={auction} lots={lots} />}
         {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
         {tab === "chat" && (
           <div className="lg:hidden">
@@ -630,13 +638,16 @@ function PlayersPanel({ auction, lots, teamById, isHost }: { auction: Auction; l
 // ---------------------------------------------------------------------------
 function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; teams: LeagueTeam[] }) {
   const s = auction.settings;
+  // With recorded matches, rank by fantasy team scores (captain multipliers included).
+  const { matches, scores } = useLeagueMatches(auction.id);
+  const fantasy = matches.length > 0 ? teamTotals(scores) : null;
   const rows = teams
     .map((t) => {
       const roster = lots.filter((l) => l.winner_team_id === t.id && l.status === "sold");
       return {
         team: t,
         players: roster.length,
-        points: roster.reduce((n, l) => n + Number(l.points ?? 0), 0),
+        points: fantasy ? (fantasy.get(t.id)?.points ?? 0) : roster.reduce((n, l) => n + Number(l.points ?? 0), 0),
         spent: roster.reduce((n, l) => n + Number(l.current_bid ?? 0), 0),
       };
     })
@@ -672,7 +683,11 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
         </div>
       ))}
       <p className="px-4 py-3 text-xs text-stone-500">
-        Ranked by total player points (set by the host), then purse left.{" "}
+        {fantasy ? "Ranked by match points, captains and vice-captains included" : "Ranked by total player points (set by the host)"}, then purse left.{" "}
+        <Link to={`/league/${auction.id}/season`} className="font-medium text-brand-700 hover:underline">
+          Season table
+        </Link>
+        {" · "}
         <Link to="/terms" className="underline">
           Virtual points only, no real money.
         </Link>

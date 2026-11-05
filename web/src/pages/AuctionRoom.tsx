@@ -2,7 +2,8 @@ import { useState } from "react";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useAuth } from "../lib/auth";
-import { useAuctionRoom } from "../lib/useAuctionRoom";
+import { auctionRole, useAuctionRoom } from "../lib/useAuctionRoom";
+import { BidReplay } from "../components/BidReplay";
 import { supabase, errorMessage } from "../lib/supabase";
 import { dateTime, money } from "../lib/format";
 import { minNextBid } from "../lib/bidding";
@@ -27,7 +28,7 @@ import { PriceHint } from "../components/PriceHint";
 import { t } from "../lib/i18n";
 import { confirmDialog, type ConfirmOptions } from "../lib/confirm";
 
-type Tab = "lot" | "lots" | "bids" | "results" | "chat";
+type Tab = "lot" | "lots" | "bids" | "results" | "replay" | "chat";
 
 /** Remount per auction so no state (form fields, selection, tabs) leaks between auctions. */
 export function AuctionRoom() {
@@ -39,10 +40,10 @@ function AuctionRoomInner() {
   const { id } = useParams();
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
-  const { auction, lots, media, moderatorIds, loading, error, reload } = useAuctionRoom(id);
+  const { auction, lots, media, moderatorIds, staff, loading, error, reload } = useAuctionRoom(id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
+  const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "replay", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
   const [hostError, setHostError] = useState<string | null>(null);
   const { isAdmin } = useIsAdmin();
   const [barBusy, setBarBusy] = useState(false);
@@ -52,7 +53,10 @@ function AuctionRoomInner() {
   if (!auction) return id ? <PrivateGate auctionId={id} onJoined={reload} /> : null;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
 
-  const isHost = userId === auction.host_id;
+  const role = auctionRole(auction, staff, userId);
+  // "Host" in the room means anyone allowed to run it: the owner or a co-host with Run.
+  const isHost = role.canRun;
+  const isTeam = role.canRun || role.canEdit;
   const isStaff = isHost || isAdmin || (userId != null && moderatorIds.includes(userId));
   const selected: Lot | undefined = lots.find((l) => l.id === selectedId) ?? lots.find((l) => l.status === "open") ?? lots[0];
   const selectedIndex = selected ? lots.indexOf(selected) : -1;
@@ -86,6 +90,7 @@ function AuctionRoomInner() {
     { key: "lots", label: t("All lots ({n})", { n: lots.length }) },
     { key: "bids", label: t("Bid log") },
     { key: "results", label: t(finished ? "Results" : "Standings") },
+    ...(auction.status === "ended" ? [{ key: "replay" as Tab, label: t("Replay") }] : []),
     { key: "chat", label: t("Chat"), mobileOnly: true },
   ];
 
@@ -116,12 +121,12 @@ function AuctionRoomInner() {
           {auction.description && <p className="mt-2 line-clamp-3 max-w-3xl whitespace-pre-line text-sm text-stone-600 sm:text-base">{auction.description}</p>}
         </div>
 
-        {isHost && <HostBar auction={auction} onAction={hostAction} />}
+        {isHost && <HostBar auction={auction} onAction={hostAction} canEdit={role.canEdit} cohost={role.cohost} />}
       </div>
       {hostError && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{hostError}</p>}
 
       {auction.mode === "league" ? (
-        <LeagueRoom auction={auction} lots={lots} media={media} userId={userId} isHost={isHost} isStaff={isStaff} />
+        <LeagueRoom auction={auction} lots={lots} media={media} userId={userId} isHost={isHost} isOwner={role.owner} isStaff={isStaff} />
       ) : (
         <>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -188,7 +193,7 @@ function AuctionRoomInner() {
                     )}
                   </div>
                   <div id="bid" className="scroll-mt-20">
-                    <BidPanel auction={auction} lot={selected} userId={userId} isHost={isHost} />
+                    <BidPanel auction={auction} lot={selected} userId={userId} isHost={isTeam} />
                   </div>
                 </div>
               ) : (
@@ -197,7 +202,8 @@ function AuctionRoomInner() {
 
             {tab === "lots" && <LotGrid auction={auction} lots={lots} media={media} userId={userId} selectedId={selected?.id} onOpen={openLot} />}
             {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
-            {tab === "results" && <Results auction={auction} lots={lots} isHost={isHost} userId={userId} />}
+            {tab === "replay" && <BidReplay auction={auction} lots={lots} />}
+            {tab === "results" && <Results auction={auction} lots={lots} isHost={role.owner} userId={userId} />}
             {tab === "chat" && (
               <div className="lg:hidden">
                 <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
@@ -224,7 +230,7 @@ function AuctionRoomInner() {
                   <Countdown endsAt={selected.ends_at} className="text-sm" />
                 </p>
               </div>
-              {!isHost && (
+              {!isTeam && (
                 <button
                   className="btn-ghost h-11 px-3"
                   aria-label={t("More bid options")}
@@ -239,7 +245,7 @@ function AuctionRoomInner() {
               {userId && selected.current_winner_id === userId ? (
                 <span className="chip min-h-11 bg-emerald-100 px-4 text-emerald-800">{t("Winning")}</span>
               ) : (
-                !isHost &&
+                !isTeam &&
                 (userId && selected.sale_type === "english" ? (
                   <button className="btn-accent min-h-11 px-5" disabled={barBusy} onClick={() => void quickBid(selected)}>
                     {barBusy ? t("Bidding...") : t("Bid {amount}", { amount: money(minNextBid(selected, auction.settings), auction.settings) })}
@@ -263,14 +269,26 @@ function AuctionRoomInner() {
   );
 }
 
-function HostBar({ auction, onAction }: { auction: Auction; onAction: (fn: string, args: Record<string, string>, confirm?: ConfirmOptions) => Promise<void> }) {
+function HostBar({
+  auction,
+  onAction,
+  canEdit,
+  cohost,
+}: {
+  auction: Auction;
+  onAction: (fn: string, args: Record<string, string>, confirm?: ConfirmOptions) => Promise<void>;
+  canEdit: boolean;
+  cohost: boolean;
+}) {
   const args = { p_auction_id: auction.id };
   return (
     <div className="glass enter flex flex-wrap items-center gap-2 rounded-[26px] p-2" style={{ ["--i" as string]: 1 }}>
-      <span className="chip bg-brand-100 text-brand-700">Host controls</span>
-      <Link to={`/host/a/${auction.id}`} className="btn-ghost py-1.5">
-        Edit
-      </Link>
+      <span className="chip bg-brand-100 text-brand-700">{cohost ? "Co-host controls" : "Host controls"}</span>
+      {canEdit && (
+        <Link to={`/host/a/${auction.id}`} className="btn-ghost py-1.5">
+          Edit
+        </Link>
+      )}
       {(auction.status === "draft" || auction.status === "scheduled") && (
         <button className="btn-accent py-1.5" onClick={() => void onAction("start_auction", args, { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" })}>
           Go live
