@@ -5,8 +5,8 @@ const UPDATED = "3 November 2026";
 
 function Doc({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <article className="mx-auto max-w-2xl space-y-4 text-sm leading-6 text-stone-700 [&_h2]:mt-6 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-stone-900 [&_li]:ml-5 [&_li]:list-disc">
-      <h1 className="text-2xl font-bold text-stone-900">{title}</h1>
+    <article className="card enter mx-auto max-w-2xl space-y-4 p-6 text-[15px] leading-7 text-stone-700 sm:p-10 [&_a]:font-medium [&_a]:text-brand-700 [&_a]:underline-offset-2 hover:[&_a]:underline [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-lg [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-stone-900 [&_li]:ml-5 [&_li]:list-disc [&_li]:marker:text-stone-400">
+      <h1 className="page-title text-stone-900">{title}</h1>
       <p className="text-xs text-stone-500">Last updated {UPDATED}</p>
       {children}
     </article>

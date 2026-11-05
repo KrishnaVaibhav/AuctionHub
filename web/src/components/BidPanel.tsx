@@ -137,7 +137,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
   if (lot.sale_type && lot.sale_type !== "english") return <SaleTypePanel auction={auction} lot={lot} userId={userId} isHost={isHost} />;
 
   return (
-    <div className="card space-y-4 p-5">
+    <div className="glass space-y-4 rounded-[28px] p-5 sm:p-6">
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {announce.urgent ? "" : announce.text}
       </p>
@@ -170,7 +170,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
       </div>
 
       {leading && lot.status === "open" && (
-        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+        <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-800">
           {t("You're winning")}
           {myMax ? ` · ${t("auto-bid up to {amount}", { amount: money(myMax, settings) })}` : ""}
         </p>
@@ -187,7 +187,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
           {!leading && (
             <div className="grid grid-cols-3 gap-2">
               {quick.map((q) => (
-                <button key={q} type="button" className="btn-ghost px-2" disabled={busy} onClick={() => void placeBid(undefined, q)}>
+                <button key={q} type="button" className="btn-ghost px-2 tabular-nums" disabled={busy} onClick={() => void placeBid(undefined, q)}>
                   {money(q, settings)}
                 </button>
               ))}
@@ -240,12 +240,12 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
         {bids.length === 0 ? (
           <p className="text-sm text-stone-500">{t("No bids yet.")}</p>
         ) : (
-          <ul className="max-h-56 divide-y divide-stone-100 overflow-y-auto text-sm">
+          <ul className="max-h-56 divide-y divide-stone-900/[0.06] overflow-y-auto text-sm dark:divide-snow/[0.06]">
             {bids.map((b) => (
               <li key={b.id} className="flex items-center justify-between py-1.5">
                 <span>
                   {b.bidder_id === userId ? t("You") : (names.get(b.bidder_id) ?? t("Bidder"))}
-                  {b.is_auto && <span className="ml-1.5 rounded bg-stone-100 px-1 text-xs text-stone-600">AUTO</span>}
+                  {b.is_auto && <span className="chip ml-1.5 bg-stone-900/[0.06] px-1.5 text-[10px] tracking-wide text-stone-600 dark:bg-snow/10">AUTO</span>}
                 </span>
                 <span className="font-medium tabular-nums">{money(b.amount, settings)}</span>
               </li>

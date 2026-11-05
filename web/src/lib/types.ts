@@ -19,6 +19,10 @@ export interface LeagueSettings {
   category_max?: Record<string, number>;
   trades?: boolean;
   season?: number;
+  scoring?: Record<string, number>;
+  trade_deadline?: string;
+  captain_x?: number;
+  vice_x?: number;
 }
 
 export interface AuctionSettings {
@@ -56,6 +60,9 @@ export interface Auction {
   settings: AuctionSettings;
   cover_url: string | null;
   stream_url: string | null;
+  announcement?: string | null;
+  spotlight_lot_id?: string | null;
+  series_id?: string | null;
   created_at: string;
 }
 
@@ -111,6 +118,9 @@ export interface LeagueTeam {
   color: string;
   purse_left: number;
   rtm_used: number;
+  franchise_id?: string | null;
+  captain_lot_id?: string | null;
+  vice_lot_id?: string | null;
   created_at: string;
 }
 

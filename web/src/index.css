@@ -45,6 +45,27 @@
     100% { transform: translate3d(-3%, 3%, 0) rotate(-6deg) scale(1); }
   }
 
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.12); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.07); }
+  }
+  @keyframes float-up {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+    12% { opacity: 1; transform: translate(var(--dx, 0px), -30px) scale(1.15); }
+    100% { opacity: 0; transform: translate(calc(var(--dx, 0px) * 2), -260px) scale(1); }
+  }
+  @keyframes confetti {
+    0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+  }
+  @keyframes gavel {
+    0% { transform: rotate(-50deg) translateY(-20px); }
+    55% { transform: rotate(12deg); }
+    70% { transform: rotate(-4deg); }
+    100% { transform: rotate(0deg); }
+  }
   @keyframes flash {
     0% { background-color: rgb(251 191 36 / 0.45); }
     100% { background-color: transparent; }
@@ -85,6 +106,92 @@
   }
 }
 
+/*
+ * Glass: a web approximation of Apple's Liquid Glass (Apple ships it for its
+ * own platforms only; there is no official web CSS). Used on the floating
+ * layer: the nav, tab bar, toolbars, menus, sheets, dialogs, the mobile bid
+ * bar and the hero board. A top specular sheen and a lit rim give it depth.
+ * Defined as utilities so other classes can @apply them.
+ */
+@utility glass {
+  background-color: rgb(255 255 255 / 0.58);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0) 42%);
+  border: 1px solid rgb(255 255 255 / 0.72);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  backdrop-filter: blur(28px) saturate(190%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    inset 0 -1px 0 rgb(255 255 255 / 0.25),
+    inset 0 0 0 0.5px rgb(255 255 255 / 0.35),
+    0 1px 2px rgb(41 37 36 / 0.06),
+    0 14px 44px -16px rgb(41 37 36 / 0.32);
+  &:where(.dark, .dark *) {
+    background-color: rgb(30 27 25 / 0.55);
+    background-image: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0) 42%);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.1),
+      inset 0 0 0 0.5px rgb(255 255 255 / 0.04),
+      0 18px 50px -16px rgb(0 0 0 / 0.65);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: var(--color-white);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-white);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (prefers-contrast: more) {
+    border-color: var(--color-stone-400);
+  }
+}
+
+/* Thick glass: denser fill for sheets and drawers that hold a lot of text. */
+@utility glass-thick {
+  @apply glass;
+  background-color: rgb(255 255 255 / 0.84);
+  &:where(.dark, .dark *) {
+    background-color: rgb(26 24 22 / 0.86);
+  }
+}
+
+/* Clear glass: more see-through, for controls sitting on photos. */
+@utility glass-clear {
+  @apply glass;
+  background-color: rgb(255 255 255 / 0.32);
+  &:where(.dark, .dark *) {
+    background-color: rgb(20 18 16 / 0.38);
+  }
+}
+
+/*
+ * Content card: a thin translucent material over the page's ambient wash.
+ * No backdrop-filter (costly across long grids); the wash behind is already
+ * soft, so plain translucency reads as frosted.
+ */
+@utility card {
+  border-radius: 22px;
+  border: 1px solid rgb(41 37 36 / 0.06);
+  background-color: color-mix(in srgb, var(--color-white) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.8),
+    0 1px 2px rgb(41 37 36 / 0.04),
+    0 14px 36px -20px rgb(41 37 36 / 0.22);
+  &:where(.dark, .dark *) {
+    border-color: rgb(255 255 255 / 0.07);
+    background-color: color-mix(in srgb, var(--color-white) 78%, transparent);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-white);
+  }
+  @media (prefers-contrast: more) {
+    border-color: var(--color-stone-400);
+  }
+}
+
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
@@ -98,6 +205,32 @@
   body {
     background: var(--color-stone-50);
     transition: background-color 200ms, color 200ms;
+  }
+  /* Ambient wash behind every page, so translucent cards and glass pick up colour. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 100% 0%, rgb(251 191 36 / 0.16), transparent 70%),
+      radial-gradient(45% 40% at 0% 30%, rgb(20 184 166 / 0.07), transparent 70%),
+      radial-gradient(50% 45% at 85% 100%, rgb(244 63 94 / 0.07), transparent 70%);
+  }
+  .dark body::before {
+    opacity: 0.55;
+  }
+  ::selection {
+    background: rgb(251 191 36 / 0.35);
+  }
+  input[type="checkbox"]:not(.switch),
+  input[type="radio"] {
+    accent-color: var(--color-brand-500);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(120 113 108 / 0.35) transparent;
   }
 
   /* Visible keyboard focus everywhere (brand-600: 3.2:1 on white, 5.6:1 on dark cards). */
@@ -186,71 +319,160 @@
 
 @layer components {
   .btn-primary {
-    @apply btn bg-stone-900 text-white shadow-sm hover:bg-stone-700;
+    @apply btn bg-stone-900 text-white shadow-[0_8px_20px_-10px_rgb(41_37_36/0.6)] hover:bg-stone-700;
   }
   .btn-accent {
     @apply btn bg-brand-400 text-ink shadow-[0_6px_20px_-6px_rgb(245_158_11/0.6)] hover:bg-brand-300 hover:shadow-[0_10px_28px_-8px_rgb(245_158_11/0.7)];
+    background-image: linear-gradient(180deg, rgb(255 255 255 / 0.28), transparent 55%);
   }
   .btn-ghost {
-    @apply btn border border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50;
+    @apply btn border border-stone-900/10 bg-white/70 text-stone-800 hover:bg-white dark:border-snow/10;
+  }
+  /* Glass capsule for secondary actions on floating layers and over imagery. */
+  .btn-glass {
+    @apply btn glass text-stone-900 hover:bg-white/80;
   }
   .btn-danger {
     @apply btn bg-red-600 text-snow hover:bg-red-500;
   }
+  /* Square icon button with a 44pt hit target. */
+  .btn-icon {
+    @apply btn h-11 w-11 p-0 text-stone-700 hover:bg-stone-900/5 dark:hover:bg-snow/10;
+  }
+
+  /* iOS filled text field: no hard border until focus. */
   .input {
-    @apply w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-stone-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/40;
+    @apply w-full rounded-xl border border-transparent bg-stone-900/[0.05] px-3.5 py-2.5 text-sm outline-none transition duration-200 placeholder:text-stone-400 hover:bg-stone-900/[0.07] focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/20 dark:border-snow/[0.08] dark:bg-snow/[0.08] dark:hover:bg-snow/[0.11] dark:focus:border-brand-500 dark:focus:bg-snow/[0.1];
+  }
+  select.input {
+    appearance: none;
+    padding-right: 2.25rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-stone-500) 50%), linear-gradient(135deg, var(--color-stone-500) 50%, transparent 50%);
+    background-position: right 1.05rem center, right 0.75rem center;
+    background-size: 0.3rem 0.3rem;
+    background-repeat: no-repeat;
+  }
+  textarea.input {
+    @apply leading-relaxed;
   }
   .label {
     @apply mb-1.5 block text-[11px] font-semibold tracking-wider text-stone-500 uppercase;
   }
-  .card {
-    @apply rounded-[20px] border border-stone-200/70 bg-white shadow-[0_1px_2px_rgb(41_37_36/0.04),0_12px_32px_-18px_rgb(41_37_36/0.18)] dark:shadow-none;
+
+  /* iOS switch: add class="switch" to a checkbox. */
+  .switch {
+    appearance: none;
+    position: relative;
+    flex: none;
+    width: 2.75rem;
+    height: 1.625rem;
+    border-radius: 9999px;
+    background: var(--color-stone-300);
+    cursor: pointer;
+    transition: background-color 250ms var(--ease-spring);
+  }
+  .switch::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.2), 0 0 0 0.5px rgb(0 0 0 / 0.04);
+    transition: transform 350ms var(--ease-spring), width 200ms var(--ease-spring);
+  }
+  .switch:active:not(:disabled)::before {
+    width: 1.7rem;
+  }
+  .switch:checked {
+    background: var(--color-emerald-500);
+  }
+  .switch:checked::before {
+    transform: translateX(1.125rem);
+  }
+  .switch:checked:active:not(:disabled)::before {
+    transform: translateX(0.8rem);
+  }
+  .switch:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Interactive card: lifts on hover. */
+  .card-hover {
+    @apply transition duration-500 ease-[var(--ease-spring)] hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.8),0_24px_48px_-24px_rgb(41_37_36/0.35)];
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
   }
+
+  /* Large title, as on iOS: one per page. */
+  .page-title {
+    @apply font-display text-3xl font-extrabold tracking-tight text-balance sm:text-4xl;
+  }
+  .page-sub {
+    @apply mt-1.5 max-w-[60ch] text-sm leading-relaxed text-stone-500;
+  }
+  .section-title {
+    @apply font-display text-lg font-bold tracking-tight;
+  }
+
+  /* Inset grouped list (iOS Settings): rows separated by hairlines. */
+  .group-list {
+    @apply card divide-y divide-stone-900/[0.06] overflow-hidden dark:divide-snow/[0.06];
+  }
+  .group-row {
+    @apply flex min-h-12 items-center gap-3 px-4 py-3;
+  }
+
   .tab {
-    @apply inline-flex min-h-11 items-center rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap text-stone-600 transition duration-300 hover:text-stone-900 sm:min-h-9;
+    @apply inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap text-stone-600 transition duration-300 hover:text-stone-900 sm:min-h-9;
   }
   .tab-active {
-    @apply bg-white text-stone-900 shadow-[0_1px_3px_rgb(41_37_36/0.12),0_1px_1px_rgb(41_37_36/0.04)];
+    @apply bg-white text-stone-900 shadow-[0_1px_3px_rgb(41_37_36/0.12),0_1px_1px_rgb(41_37_36/0.04)] dark:bg-stone-300;
   }
   /* iOS-style segmented control track. */
   .segmented {
-    @apply flex gap-1 rounded-full bg-stone-200/60 p-1;
+    @apply inline-flex gap-1 rounded-full bg-stone-900/[0.06] p-1 dark:bg-snow/[0.07];
+  }
+  /* Floating glass toolbar that pins under the nav (tabs on long pages). */
+  .toolbar {
+    @apply sticky top-[4.75rem] z-20 -mx-1 w-fit max-w-full rounded-full p-1;
   }
 
-  /*
-   * Glass: a web approximation of Apple's Liquid Glass (Apple ships it for its
-   * own platforms only; there is no official web CSS). Used only on floating
-   * layers: the nav, menus, dialogs, the mobile bid bar and the hero board.
-   */
-  .glass {
-    background: rgb(255 255 255 / 0.62);
-    border: 1px solid rgb(255 255 255 / 0.7);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.75),
-      inset 0 -1px 0 rgb(255 255 255 / 0.2),
-      0 12px 40px -14px rgb(41 37 36 / 0.28);
+  /* Selectable option tile (radio-like). Add choice-on when selected. */
+  .choice {
+    @apply rounded-2xl border border-stone-900/[0.08] bg-white/60 p-3.5 text-left transition duration-300 hover:border-stone-900/20 hover:bg-white disabled:opacity-60;
   }
-  .dark .glass {
-    background: rgb(28 25 23 / 0.6);
-    border-color: rgb(255 255 255 / 0.09);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.08),
-      0 16px 48px -16px rgb(0 0 0 / 0.6);
+  .choice-on {
+    @apply border-brand-500 bg-brand-50 shadow-[0_0_0_3px_rgb(245_158_11/0.18)] hover:border-brand-500 hover:bg-brand-50;
   }
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .glass { background: var(--color-white); }
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    .glass {
-      background: var(--color-white);
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
+
+  /* Tables: tinted header band, hairline rows (use divide-y on tbody), soft row hover. */
+  .table {
+    & thead {
+      @apply bg-stone-900/[0.035];
     }
+    & th {
+      @apply whitespace-nowrap;
+    }
+    & tbody tr {
+      @apply transition-colors hover:bg-stone-900/[0.03];
+    }
+  }
+
+  /* Modal sheet and its dimmed, blurred backdrop. */
+  .scrim {
+    @apply fixed inset-0 z-50 bg-ink/30 backdrop-blur-[6px];
+  }
+  .sheet {
+    @apply glass-thick rounded-t-[32px] sm:rounded-[32px];
+  }
+  /* Grabber on sheets that rise from the bottom on phones. */
+  .grabber {
+    @apply mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-900/20 sm:hidden dark:bg-snow/25;
   }
 
   /* Vibrant warm backdrop for the hero; drifts slowly so the glass above it shimmers. */

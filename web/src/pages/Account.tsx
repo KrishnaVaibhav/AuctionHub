@@ -4,9 +4,12 @@ import { supabase, errorMessage } from "../lib/supabase";
 import { uploadMedia } from "../lib/media";
 import { Avatar } from "../components/Avatar";
 import { ThemeSegmented } from "../components/ThemeToggle";
+import { LanguagePicker } from "../components/LanguagePicker";
+import { Link } from "react-router";
+import { AccountProgress } from "./AccountProgress";
 
 export function Account() {
-  const { session, profile, refreshProfile } = useAuth();
+  const { session, profile, refreshProfile, signOut } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,18 +55,28 @@ export function Account() {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">Account</h1>
-        <p className="mt-1 text-sm text-stone-500">Signed in as {session.user.email} (only you can see this)</p>
-      </div>
+      <h1 className="page-title enter">Account</h1>
 
-      <section className="card space-y-5 p-5">
+      <section className="card enter space-y-5 p-5 sm:p-6" style={{ ["--i" as string]: 1 }}>
+        <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
+          <Avatar name={profile.display_name} url={profile.avatar_url} size={80} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-xl font-extrabold tracking-tight">{profile.display_name}</p>
+            <p className="truncate text-sm text-stone-500">
+              {profile.username && (
+                <Link to={`/u/${profile.username}`} className="font-medium text-brand-700 hover:underline">
+                  @{profile.username}
+                </Link>
+              )}{" "}
+              · {session.user.email} <span className="text-xs">(only you see this)</span>
+            </p>
+          </div>
+        </div>
         <div>
-          <h2 className="font-semibold">Public profile</h2>
+          <h2 className="section-title">Public profile</h2>
           <p className="text-sm text-stone-500">Everyone in an auction can see this. Don't use your real name if you prefer not to.</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Avatar name={profile.display_name} url={profile.avatar_url} size={64} />
+        <div className="flex items-center gap-3">
           <label className="btn-ghost cursor-pointer">
             Upload photo
             <input type="file" accept="image/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && void avatar(e.target.files[0])} />
@@ -104,15 +117,33 @@ export function Account() {
         </form>
       </section>
 
-      <section className="card space-y-3 p-5">
-        <div>
-          <h2 className="font-semibold">Appearance</h2>
-          <p className="text-sm text-stone-500">System follows your device's light or dark setting.</p>
+      <section className="enter space-y-2" style={{ ["--i" as string]: 2 }}>
+        <h2 className="label px-4">Appearance &amp; language</h2>
+        <div className="group-list">
+          <div className="group-row flex-wrap justify-between">
+            <span className="text-sm font-medium">Theme</span>
+            <ThemeSegmented />
+          </div>
+          <div className="group-row flex-wrap justify-between">
+            <span className="text-sm font-medium">Language</span>
+            <div className="w-48">
+              <LanguagePicker full />
+            </div>
+          </div>
         </div>
-        <ThemeSegmented />
+        <p className="px-4 text-xs text-stone-500">System follows your device's light or dark setting.</p>
       </section>
 
+      <h2 className="label px-4 pt-2">Progress</h2>
+      <AccountProgress userId={profile.id} />
+
       <ContactPrivacy userId={profile.id} email={session.user.email ?? ""} />
+
+      <div className="group-list">
+        <button className="group-row w-full justify-center text-sm font-semibold text-red-600 transition hover:bg-red-50" onClick={() => void signOut()}>
+          Sign out
+        </button>
+      </div>
     </div>
   );
 }
@@ -150,17 +181,16 @@ function ContactPrivacy({ userId, email }: { userId: string; email: string }) {
   }
 
   return (
-    <section className="card space-y-4 p-5">
+    <section className="card space-y-4 p-5 sm:p-6">
       <div>
-        <h2 className="font-semibold">Privacy & contact</h2>
+        <h2 className="section-title">Privacy &amp; contact</h2>
         <p className="text-sm text-stone-500">
           Your email and phone are <strong>private by default</strong>. After a sale, hosts and winners can always talk in the private deal
           chat without sharing them.
         </p>
       </div>
       <form onSubmit={save} className="space-y-4">
-        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 p-4 has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50">
-          <input type="checkbox" className="mt-1" checked={share} onChange={(e) => setShare(e.target.checked)} />
+        <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl bg-stone-900/[0.04] p-4 dark:bg-snow/[0.05]">
           <span>
             <span className="block text-sm font-semibold">Share my contact details after a sale</span>
             <span className="block text-xs text-stone-500">
@@ -169,6 +199,7 @@ function ContactPrivacy({ userId, email }: { userId: string; email: string }) {
               {phone ? `, phone` : ""} and note. Nobody else ever sees them.
             </span>
           </span>
+          <input type="checkbox" className="switch mt-0.5" checked={share} onChange={(e) => setShare(e.target.checked)} />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

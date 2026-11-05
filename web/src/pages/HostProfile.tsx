@@ -10,6 +10,10 @@ import { Avatar } from "../components/Avatar";
 import { AuctionBadge } from "../components/StatusBadge";
 import { FollowButton } from "../components/FollowButton";
 import { NotFound } from "./NotFound";
+import { TrophyShelf } from "../components/TrophyShelf";
+import { BadgeGrid } from "../components/Progress";
+import { useBadges, useEventTitles } from "../lib/progress";
+import { TIER_STYLE, useHostTiers } from "../lib/hostTiers";
 
 interface PublicProfile {
   id: string;
@@ -79,10 +83,11 @@ export function HostProfile() {
 
   return (
     <div className="space-y-6">
-      <div className="card flex flex-wrap items-center gap-4 p-6">
-        <Avatar name={profile.display_name} url={profile.avatar_url} size={72} />
+      <div className="aurora flex flex-wrap items-center gap-5 rounded-[32px] border border-white/60 p-6 sm:p-8 dark:border-snow/[0.06]">
+        <Avatar name={profile.display_name} url={profile.avatar_url} size={88} />
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-extrabold tracking-tight">{profile.display_name}</h1>
+          <h1 className="page-title">{profile.display_name}</h1>
+          <TierChip hostId={profile.id} />
           <p className="text-sm text-stone-500">
             @{profile.username} · joined {new Date(profile.joined).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
           </p>
@@ -102,13 +107,15 @@ export function HostProfile() {
         </div>
       </div>
 
+      <ProfileExtras userId={profile.id} />
+
       <AuctionList title="Live and upcoming" rows={active} empty="Nothing live or scheduled right now." />
       <AuctionList title="Past auctions" rows={past} empty="No past auctions." />
 
       {reviews.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-bold">Recent reviews</h2>
-          <div className="card divide-y divide-stone-100">
+          <h2 className="section-title mb-3">Recent reviews</h2>
+          <div className="card divide-y divide-stone-900/[0.06]">
             {reviews.map((r) => (
               <div key={r.id} className="px-4 py-3 text-sm">
                 <p>
@@ -132,14 +139,14 @@ export function HostProfile() {
 function AuctionList({ title, rows, empty }: { title: string; rows: Auction[]; empty: string }) {
   return (
     <section>
-      <h2 className="mb-3 text-lg font-bold">{title}</h2>
+      <h2 className="section-title mb-3">{title}</h2>
       {rows.length === 0 ? (
         <p className="text-sm text-stone-500">{empty}</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((a) => (
-            <Link key={a.id} to={`/a/${a.id}`} className="card flex gap-3 overflow-hidden p-3 transition hover:shadow-md">
-              <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-stone-100">
+            <Link key={a.id} to={`/a/${a.id}`} className="card flex gap-3 overflow-hidden p-3 card-hover">
+              <div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100">
                 {a.cover_url && <img src={a.cover_url} alt="" className="h-full w-full object-cover" loading="lazy" />}
               </div>
               <div className="min-w-0">
@@ -162,5 +169,26 @@ function AuctionList({ title, rows, empty }: { title: string; rows: Auction[]; e
         </div>
       )}
     </section>
+  );
+}
+
+function TierChip({ hostId }: { hostId: string }) {
+  const tier = useHostTiers([hostId]).get(hostId);
+  return tier ? <span className={`chip mt-1 ${TIER_STYLE[tier].cls}`}>{TIER_STYLE[tier].label}</span> : null;
+}
+
+function ProfileExtras({ userId }: { userId: string }) {
+  const badges = useBadges(userId);
+  const events = useEventTitles();
+  return (
+    <>
+      {badges.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="section-title">Badges</h2>
+          <BadgeGrid badges={badges} events={events} />
+        </section>
+      )}
+      <TrophyShelf userId={userId} />
+    </>
   );
 }

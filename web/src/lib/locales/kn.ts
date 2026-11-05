@@ -162,5 +162,17 @@ const d: Dict = {
   "{n} live now": "{n} ಈಗ ನೇರ",
   "{n} lots": "{n} ಲಾಟ್‌ಗಳು",
   "{n} starting soon": "{n} ಶೀಘ್ರದಲ್ಲೇ ಆರಂಭ",
+  "Main": "ಮುಖ್ಯ",
+  "More": "ಇನ್ನಷ್ಟು",
+  "Replay": "ಮರುಪ್ರಸಾರ",
+  "No bids to replay.": "ಮರುಪ್ರಸಾರಕ್ಕೆ ಬಿಡ್‌ಗಳಿಲ್ಲ.",
+  "Bid {n} of {total}": "ಬಿಡ್ {n} / {total}",
+  "Pause replay": "ಮರುಪ್ರಸಾರ ನಿಲ್ಲಿಸಿ",
+  "Play replay": "ಮರುಪ್ರಸಾರ ಪ್ಲೇ ಮಾಡಿ",
+  "Restart replay": "ಮರುಪ್ರಸಾರ ಮರುಪ್ರಾರಂಭಿಸಿ",
+  "Replay position": "ಮರುಪ್ರಸಾರ ಸ್ಥಾನ",
+  "Replay speed": "ಮರುಪ್ರಸಾರ ವೇಗ",
+  "Top lots so far": "ಇದುವರೆಗಿನ ಉನ್ನತ ಲಾಟ್‌ಗಳು",
+  "Latest bids": "ಇತ್ತೀಚಿನ ಬಿಡ್‌ಗಳು",
 };
 export default d;

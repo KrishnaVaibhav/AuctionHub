@@ -7,9 +7,23 @@ export interface AuctionRoomData {
   lots: Lot[];
   media: Map<string, LotMedia[]>;
   moderatorIds: string[];
+  staff: StaffRow[];
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
+}
+
+export interface StaffRow {
+  user_id: string;
+  can_edit: boolean;
+  can_run: boolean;
+}
+
+/** What the signed-in user may do: the owner can do everything; co-hosts get edit and/or run. */
+export function auctionRole(auction: Auction | null, staff: StaffRow[], userId: string | null) {
+  const owner = Boolean(auction && userId && auction.host_id === userId);
+  const row = userId ? staff.find((s) => s.user_id === userId) : undefined;
+  return { owner, canEdit: owner || Boolean(row?.can_edit), canRun: owner || Boolean(row?.can_run), cohost: !owner && Boolean(row?.can_edit || row?.can_run) };
 }
 
 /** Loads an auction with lots + media and keeps auction/lot rows live via Realtime. */
@@ -17,7 +31,7 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
   const [auction, setAuction] = useState<Auction | null>(null);
   const [lots, setLots] = useState<Lot[]>([]);
   const [media, setMedia] = useState<Map<string, LotMedia[]>>(new Map());
-  const [moderatorIds, setModeratorIds] = useState<string[]>([]);
+  const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +40,7 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
     const [a, l, m] = await Promise.all([
       supabase.from("auctions").select("*").eq("id", auctionId).maybeSingle(),
       supabase.from("lots").select("*").eq("auction_id", auctionId).order("position").order("created_at"),
-      supabase.from("auction_moderators").select("user_id").eq("auction_id", auctionId),
+      supabase.from("auction_moderators").select("user_id, can_edit, can_run").eq("auction_id", auctionId),
     ]);
     if (a.error || l.error) {
       setError(errorMessage(a.error ?? l.error));
@@ -36,7 +50,7 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
     setAuction((a.data as Auction | null) ?? null);
     const lotRows = (l.data as Lot[] | null) ?? [];
     setLots(lotRows);
-    setModeratorIds((m.data ?? []).map((r) => r.user_id as string));
+    setStaff((m.data as StaffRow[] | null) ?? []);
 
     if (lotRows.length) {
       const { data } = await supabase
@@ -93,5 +107,5 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
     };
   }, [auctionId, reload]);
 
-  return { auction, lots, media, moderatorIds, loading, error, reload };
+  return { auction, lots, media, moderatorIds: staff.map((s) => s.user_id), staff, loading, error, reload };
 }

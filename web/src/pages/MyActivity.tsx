@@ -1,3 +1,5 @@
+import { ShareNetworkIcon } from "@phosphor-icons/react";
+import { shareCard } from "../lib/shareCard";
 import { t } from "../lib/i18n";
 
 const tr = t;
@@ -63,7 +65,7 @@ export function MyActivity() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("My bids & wins")}</h1>
+        <h1 className="page-title">{t("My bids & wins")}</h1>
         <p className="mt-1 text-sm text-stone-500">{t("Everything you've bid on, what you're winning, and what you've won.")}</p>
       </div>
 
@@ -73,7 +75,7 @@ export function MyActivity() {
         <Stat label={t("Won total")} value={won.length ? money(spent, { currency: won[0].currency }) : "-"} />
       </div>
 
-      <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
+      <div className="glass segmented scrollbar-none sticky top-[4.75rem] z-20 max-w-full overflow-x-auto">
         {(["active", "won", "lost", "watching"] as Tab[]).map((t) => (
           <button key={t} className={`tab ${tab === t ? "tab-active" : ""}`} onClick={() => setTab(t)}>
             {tr(t === "active" ? "Active" : t === "won" ? "Won" : t === "lost" ? "Not won" : "Watching")}
@@ -100,7 +102,7 @@ export function MyActivity() {
         {lists[tab].map((r) => {
           const cur = { currency: r.currency };
           return (
-            <div key={r.lot_id} className="card animate-rise p-4 transition hover:shadow-md">
+            <div key={r.lot_id} className="card animate-rise p-4 card-hover">
               <Link to={`/a/${r.auction_id}`} className="block">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -148,8 +150,14 @@ export function MyActivity() {
                 </div>
               )}
               {r.status === "sold" && r.is_leader && session && (
-                <div className="mt-2">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <RateTrade lotId={r.lot_id} userId={session.user.id} label="seller" />
+                  <button
+                    className="btn-ghost px-3 py-1.5 text-xs"
+                    onClick={() => void shareCard({ eyebrow: "I won", headline: r.title, big: money(r.current_bid, cur), footer: r.auction_title }, "auctionhub-win.png")}
+                  >
+                    <ShareNetworkIcon size={14} weight="bold" aria-hidden="true" /> {t("Share")}
+                  </button>
                 </div>
               )}
             </div>

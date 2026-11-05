@@ -1,8 +1,9 @@
+import { CaretLeftIcon } from "@phosphor-icons/react";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { supabase, errorMessage } from "../../lib/supabase";
-import { useAuctionRoom } from "../../lib/useAuctionRoom";
+import { auctionRole, useAuctionRoom } from "../../lib/useAuctionRoom";
 import { formatIncrements, fromLocalInput, parseIncrements, toLocalInput } from "../../lib/format";
 import { uploadMedia } from "../../lib/media";
 import { DEFAULT_INCREMENTS } from "../../lib/bidding";
@@ -15,6 +16,7 @@ import { ModeratorsPanel } from "./ModeratorsPanel";
 import { ImportLots } from "./ImportLots";
 import { AnalyticsPanel } from "./AnalyticsPanel";
 import { EmbedPanel } from "./EmbedPanel";
+import { BulkPhotos } from "./BulkPhotos";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 import { CATEGORIES, parseTags } from "../../lib/categories";
 import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
@@ -32,15 +34,16 @@ function AuctionEditorInner() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const room = useAuctionRoom(id);
-  const { auction, lots, media, reload } = room;
+  const { auction, lots, media, staff, reload } = room;
+  const role = auctionRole(auction, staff, session?.user.id ?? null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   if (room.loading) return <p className="text-sm text-stone-500">Loading...</p>;
   if (!auction) return <p className="text-sm text-red-600">{room.error ?? "Auction not found"}</p>;
-  if (auction.host_id !== session?.user.id) return <p className="text-sm text-red-600">Only the host can edit this auction.</p>;
+  if (!role.canEdit && !role.canRun) return <p className="text-sm text-red-600">Only the host and co-hosts can edit this auction.</p>;
 
-  const editable = auction.status === "draft" || auction.status === "scheduled";
+  const editable = role.canEdit && (auction.status === "draft" || auction.status === "scheduled");
 
   async function rpc(fn: string, confirm?: ConfirmOptions) {
     if (confirm && !(await confirmDialog(confirm))) return;
@@ -79,60 +82,65 @@ function AuctionEditorInner() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
-        <Link to="/host" className="text-sm text-stone-500 hover:text-stone-900">
-          &larr; Dashboard
+        <Link to="/host" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+          <CaretLeftIcon size={16} weight="bold" aria-hidden="true" />
+          Dashboard
         </Link>
         <AuctionBadge status={auction.status} />
+        {role.cohost && <span className="chip bg-sky-100 text-sky-800">Co-host</span>}
         <div className="ml-auto flex flex-wrap gap-2">
-          <button className="btn-ghost" onClick={() => void duplicate()}>
-            Duplicate
-          </button>
+          {role.owner && (
+            <button className="btn-ghost" onClick={() => void duplicate()}>
+              Duplicate
+            </button>
+          )}
           <Link to={`/a/${auction.id}`} className="btn-ghost">
             Open room
           </Link>
-          {auction.status === "draft" && (
+          {role.canRun && auction.status === "draft" && (
             <button className="btn-ghost" onClick={() => void rpc("schedule_auction")}>
               Schedule
             </button>
           )}
-          {auction.status === "scheduled" && (
+          {role.canRun && auction.status === "scheduled" && (
             <button className="btn-ghost" onClick={() => void rpc("unschedule_auction")}>
               Back to draft
             </button>
           )}
-          {editable && (
+          {role.canRun && (auction.status === "draft" || auction.status === "scheduled") && (
             <button className="btn-accent" onClick={() => void rpc("start_auction", { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" })}>
               Go live now
             </button>
           )}
-          {canDelete(auction.status) && (
+          {role.owner && canDelete(auction.status) && (
             <button className="btn-danger" onClick={() => void remove()}>
               Delete
             </button>
           )}
-          {!["draft", "ended", "cancelled"].includes(auction.status) && (
+          {role.owner && !["draft", "ended", "cancelled"].includes(auction.status) && (
             <button className="btn-danger" onClick={() => void rpc("cancel_auction", { title: "Cancel this auction?", body: "All open lots are withdrawn.", confirmLabel: "Cancel auction", cancelLabel: "Keep", danger: true })}>
               Cancel auction
             </button>
           )}
         </div>
       </div>
-      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
+      <h1 className="page-title -mt-4">{auction.title}</h1>
+      {error && <p className="rounded-2xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">{error}</p>}
+      {notice && <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">{notice}</p>}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <VisibilityPanel auction={auction} onChanged={reload} />
-        <ModeratorsPanel auction={auction} />
+        {role.owner && <VisibilityPanel auction={auction} onChanged={reload} />}
+        {role.owner && <ModeratorsPanel auction={auction} onChanged={reload} />}
         <EmbedPanel auction={auction} />
       </div>
 
-      <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />
+      {role.canEdit && <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />}
 
-      {auction.status !== "draft" && <AnalyticsPanel auction={auction} />}
+      {role.owner && auction.status !== "draft" && <AnalyticsPanel auction={auction} />}
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">{auction.mode === "league" ? "Players" : "Lots"} ({lots.length})</h2>
+          <h2 className="section-title">{auction.mode === "league" ? "Players" : "Lots"} ({lots.length})</h2>
           {!editable && <p className="text-xs text-stone-500">Lot details lock once the auction starts. You can still add photos.</p>}
         </div>
         {lots.map((lot, i) => (
@@ -150,6 +158,7 @@ function AuctionEditorInner() {
         ))}
         {editable && <NewLotForm auction={auction} nextPosition={lots.length} onCreated={reload} />}
         {editable && <ImportLots auction={auction} nextPosition={lots.length} onDone={reload} />}
+        {role.canEdit && <BulkPhotos auction={auction} lots={lots} media={media} editable={editable} onDone={reload} />}
       </section>
     </div>
   );
@@ -196,6 +205,7 @@ function AuctionForm({
   const [rtmCards, setRtmCards] = useState(String(s.league?.rtm_cards ?? 0));
   const [rtmSeconds, setRtmSeconds] = useState(String(s.league?.rtm_seconds ?? 20));
   const [trades, setTrades] = useState(s.league?.trades ?? true);
+  const [tradeDeadline, setTradeDeadline] = useState(toLocalInput(s.league?.trade_deadline ?? null));
   const [categoryMax, setCategoryMax] = useState(
     Object.entries(s.league?.category_max ?? {})
       .map(([k, v]) => `${k}: ${v}`)
@@ -229,6 +239,8 @@ function AuctionForm({
       chat: { enabled: chatEnabled, slow_mode_s: Math.max(0, Number(slowMode) || 0), allow_links: allowLinks },
       compact,
       league: {
+        // Keep settings edited elsewhere (scoring rules, captain multipliers).
+        ...auction.settings.league,
         purse: Math.max(1, Number(purse) || LEAGUE_DEFAULTS.purse),
         squad_min: Math.max(0, Number(squadMin) || 0),
         squad_max: Math.max(1, Number(squadMax) || LEAGUE_DEFAULTS.squad_max),
@@ -242,6 +254,7 @@ function AuctionForm({
         rtm_cards: Math.max(0, Number(rtmCards) || 0),
         rtm_seconds: Math.min(120, Math.max(5, Number(rtmSeconds) || 20)),
         trades,
+        trade_deadline: fromLocalInput(tradeDeadline) ?? undefined,
         category_max: Object.fromEntries(
           categoryMax
             .split(",")
@@ -366,7 +379,8 @@ function AuctionForm({
                 type="button"
                 disabled={auction.status !== "draft"}
                 onClick={() => chooseMode(key)}
-                className={`rounded-xl border p-3 text-left transition disabled:opacity-60 ${mode === key ? "border-stone-900 bg-stone-50 ring-2 ring-stone-900/10" : "border-stone-200 hover:border-stone-300"}`}
+                aria-pressed={mode === key}
+                className={`choice ${mode === key ? "choice-on" : ""}`}
               >
                 <span className="block text-sm font-semibold">{title}</span>
                 <span className="block text-xs text-stone-500">{desc}</span>
@@ -376,8 +390,8 @@ function AuctionForm({
         </div>
 
         {mode === "league" && (
-          <fieldset className="grid gap-4 rounded-xl border border-violet-200 bg-violet-50/50 p-4 sm:grid-cols-3">
-            <legend className="px-1 text-sm font-semibold">League rules</legend>
+          <fieldset className="grid gap-4 rounded-2xl bg-violet-50 p-4 sm:grid-cols-3 sm:p-5">
+            <legend className="section-title float-left w-full text-base sm:col-span-3">League rules</legend>
             <div>
               <label className="label">Purse per team</label>
               <input type="number" min={1} className="input" value={purse} onChange={(e) => setPurse(e.target.value)} />
@@ -409,9 +423,9 @@ function AuctionForm({
               <label className="label">Keep back per empty min slot</label>
               <input type="number" min={0} className="input" value={minBase} onChange={(e) => setMinBase(e.target.value)} />
             </div>
-            <label className="flex items-center gap-2 text-sm sm:col-span-2">
-              <input type="checkbox" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
+            <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium sm:col-span-2">
               Host can also own a team
+              <input type="checkbox" className="switch" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
             </label>
             <div>
               <label className="label">Retentions per team</label>
@@ -430,10 +444,14 @@ function AuctionForm({
               <input className="input" placeholder="Overseas: 8, Wicket-keeper: 2" value={categoryMax} onChange={(e) => setCategoryMax(e.target.value)} />
               <p className="mt-1 text-xs text-stone-500">Give players a "Category: Overseas" line in their details.</p>
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
+            <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
               Allow trades
+              <input type="checkbox" className="switch" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
             </label>
+            <div>
+              <label className="label" htmlFor="tdl">Trade deadline (optional)</label>
+              <input id="tdl" type="datetime-local" className="input" value={tradeDeadline} onChange={(e) => setTradeDeadline(e.target.value)} />
+            </div>
             <p className="text-xs text-stone-500 sm:col-span-3">
               Add players below as lots (their start price is the base price). Schedule the league so teams can join, then go live. Purses
               are virtual points, not real money.
@@ -441,8 +459,8 @@ function AuctionForm({
           </fieldset>
         )}
 
-        <fieldset className="grid gap-4 rounded-xl bg-stone-50 p-4 sm:grid-cols-3">
-          <legend className="px-1 text-sm font-semibold">Bidding rules</legend>
+        <fieldset className="grid gap-4 rounded-2xl bg-stone-900/[0.035] p-4 sm:grid-cols-3 sm:p-5">
+          <legend className="section-title float-left w-full text-base sm:col-span-3">Bidding rules</legend>
           <div>
             <label className="label" htmlFor="cur">
               Currency
@@ -477,17 +495,17 @@ function AuctionForm({
             </label>
             <input id="inc" className="input font-mono" value={increments} onChange={(e) => setIncrements(e.target.value)} />
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             Short amounts (e.g. 1.5Cr)
+            <input type="checkbox" className="switch" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             Chat enabled
+            <input type="checkbox" className="switch" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={allowLinks} onChange={(e) => setAllowLinks(e.target.checked)} />
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             Allow links in chat
+            <input type="checkbox" className="switch" checked={allowLinks} onChange={(e) => setAllowLinks(e.target.checked)} />
           </label>
           <div>
             <label className="label" htmlFor="sm">
@@ -507,7 +525,7 @@ function AuctionForm({
 
       <div>
         <p className="label">Cover image</p>
-        <div className="aspect-[16/9] overflow-hidden rounded-xl bg-stone-100">
+        <div className="aspect-[16/9] overflow-hidden rounded-2xl bg-stone-900/[0.05]">
           {auction.cover_url && <img src={auction.cover_url} alt="" className="h-full w-full object-cover" />}
         </div>
         <label className="btn-ghost mt-3 w-full cursor-pointer">

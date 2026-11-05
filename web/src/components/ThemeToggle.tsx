@@ -19,7 +19,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(next)}
-      className="flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition md:h-10 md:w-10 hover:bg-stone-100 hover:text-stone-900"
+      className="flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition md:h-10 md:w-10 hover:bg-stone-900/5 hover:text-stone-900"
       title={`Theme: ${labels[theme]} (switch to ${labels[next]})`}
       aria-label={`Theme: ${labels[theme]}. Switch to ${labels[next]}`}
     >
@@ -32,7 +32,7 @@ export function ThemeToggle() {
 export function ThemeSegmented() {
   const [theme, setTheme] = useTheme();
   return (
-    <div className="flex gap-1 rounded-full bg-stone-200/60 p-1" role="radiogroup" aria-label="Theme">
+    <div className="segmented" role="radiogroup" aria-label="Theme">
       {order.map((t) => (
         <button
           key={t}

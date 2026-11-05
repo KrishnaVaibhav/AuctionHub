@@ -1,3 +1,4 @@
+import { EventsTab } from "./EventsTab";
 import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -12,7 +13,7 @@ import { SafetyTab } from "./SafetyTab";
 import type { AuctionStatus } from "../../lib/types";
 import { confirmDialog } from "../../lib/confirm";
 
-type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit";
+type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit" | "events";
 
 export function AdminDashboard() {
   const { isAdmin, checked } = useIsAdmin();
@@ -27,6 +28,7 @@ export function AdminDashboard() {
     ["auctions", "Auctions"],
     ["activity", "Live activity"],
     ["safety", "Safety"],
+    ["events", "Events"],
     ["support", "Support"],
     ["audit", "Audit log"],
   ];
@@ -36,12 +38,12 @@ export function AdminDashboard() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <span className="chip bg-red-600 text-snow">Super admin</span>
-          <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight">Platform control</h1>
+          <h1 className="page-title mt-2">Platform control</h1>
           <p className="text-sm text-stone-500">Everything on AuctionHub. Only platform admins can open this page.</p>
         </div>
       </div>
-      <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
+      <div className="sticky top-[4.75rem] z-20 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="glass segmented scrollbar-none max-w-full overflow-x-auto">
           {tabs.map(([k, label]) => (
             <button key={k} className={`tab ${tab === k ? "tab-active" : ""}`} onClick={() => setTab(k)}>
               {label}
@@ -56,6 +58,7 @@ export function AdminDashboard() {
       {tab === "safety" && <SafetyTab />}
       {tab === "support" && <SupportInbox />}
       {tab === "audit" && <Audit />}
+      {tab === "events" && <EventsTab />}
     </div>
   );
 }
@@ -165,8 +168,8 @@ function Overview() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card overflow-hidden">
-          <p className="border-b border-stone-100 px-4 py-3 font-semibold">Scheduled jobs</p>
-          <ul className="divide-y divide-stone-100 text-sm">
+          <p className="border-b border-stone-900/[0.06] px-4 py-3 font-semibold">Scheduled jobs</p>
+          <ul className="divide-y divide-stone-900/[0.06] text-sm">
             {d.cron.map((c) => (
               <li key={c.job} className="px-4 py-2.5">
                 <div className="flex items-center gap-2">
@@ -188,8 +191,8 @@ function Overview() {
         </div>
 
         <div className="card overflow-hidden">
-          <p className="border-b border-stone-100 px-4 py-3 font-semibold">Storage buckets</p>
-          <ul className="divide-y divide-stone-100 text-sm">
+          <p className="border-b border-stone-900/[0.06] px-4 py-3 font-semibold">Storage buckets</p>
+          <ul className="divide-y divide-stone-900/[0.06] text-sm">
             {Object.entries(d.storage_by_bucket).map(([b, v]) => (
               <li key={b} className="flex justify-between px-4 py-2.5">
                 <span className="font-medium">{b}</span>
@@ -204,9 +207,9 @@ function Overview() {
       </div>
 
       <div className="card overflow-hidden">
-        <p className="border-b border-stone-100 px-4 py-3 font-semibold">Tables (largest first)</p>
+        <p className="border-b border-stone-900/[0.06] px-4 py-3 font-semibold">Tables (largest first)</p>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table w-full text-sm">
             <thead className="text-left text-[11px] tracking-wider text-stone-500 uppercase">
               <tr>
                 <th className="px-4 py-2">Table</th>
@@ -214,7 +217,7 @@ function Overview() {
                 <th className="px-4 py-2 text-right">Size</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody className="divide-y divide-stone-900/[0.06]">
               {d.tables.map((t) => (
                 <tr key={t.table}>
                   <td className="px-4 py-2 font-mono text-xs">{t.table}</td>
@@ -302,7 +305,7 @@ function Users() {
       <input className="input max-w-md" type="search" placeholder="Search email, username, name or user id..." value={search} onChange={(e) => setSearch(e.target.value)} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[62rem] text-sm">
+        <table className="table w-full min-w-[62rem] text-sm">
           <thead className="text-left text-[11px] tracking-wider text-stone-500 uppercase">
             <tr>
               <th className="px-4 py-2.5">Sign-in photo</th>
@@ -316,11 +319,11 @@ function Users() {
               <th className="px-4 py-2.5">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody className="divide-y divide-stone-900/[0.06]">
             {(data ?? []).map((u) => {
               const banned = u.banned_until && new Date(u.banned_until) > new Date();
               return (
-                <tr key={u.id} className="cursor-pointer hover:bg-stone-50" onClick={() => setSelected(u.id)}>
+                <tr key={u.id} className="cursor-pointer hover:bg-stone-900/[0.03]" onClick={() => setSelected(u.id)}>
                   <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                     <ProviderPhoto url={u.provider_avatar} name={u.provider_name} size={36} />
                   </td>
@@ -412,8 +415,8 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
   const list = (k: string) => (Array.isArray(data?.[k]) ? (data?.[k] as Json[]) : []);
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
-      <div className="h-full w-full max-w-2xl animate-rise overflow-y-auto bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="scrim flex justify-end" onClick={onClose}>
+      <div className="glass-thick h-full w-full max-w-2xl animate-rise overflow-y-auto p-5 sm:rounded-l-[32px] sm:p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <ProviderPhoto url={(data?.provider_avatar as string) ?? null} name={(data?.provider_name as string) ?? null} size={64} />
@@ -454,7 +457,7 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
         </div>
 
         <Section title="Account">
-          <pre className="overflow-x-auto rounded-xl bg-stone-100 p-3 text-xs">{JSON.stringify(account, null, 2)}</pre>
+          <pre className="overflow-x-auto rounded-2xl bg-stone-900/[0.05] p-3 text-xs">{JSON.stringify(account, null, 2)}</pre>
         </Section>
         <Section title={`Sign-in methods (${list("identities").length})`}>
           {list("identities").map((i, n) => (
@@ -462,7 +465,7 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
               <p className="text-sm font-medium">
                 {String(i.provider)} · {String(i.email ?? "")} · last used {ago(String(i.last_sign_in_at ?? ""))}
               </p>
-              <pre className="mt-1 overflow-x-auto rounded-xl bg-stone-100 p-3 text-xs">{JSON.stringify(i.data, null, 2)}</pre>
+              <pre className="mt-1 overflow-x-auto rounded-2xl bg-stone-900/[0.05] p-3 text-xs">{JSON.stringify(i.data, null, 2)}</pre>
             </div>
           ))}
         </Section>
@@ -489,7 +492,7 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
           ))}
         </Section>
         <Section title="Private contact settings">
-          <pre className="overflow-x-auto rounded-xl bg-stone-100 p-3 text-xs">{JSON.stringify(data?.contact ?? null, null, 2)}</pre>
+          <pre className="overflow-x-auto rounded-2xl bg-stone-900/[0.05] p-3 text-xs">{JSON.stringify(data?.contact ?? null, null, 2)}</pre>
         </Section>
         <Section title={`Auctions hosted (${list("auctions").length})`}>
           {list("auctions").map((a) => (
@@ -562,7 +565,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mt-5">
       <p className="label">{title}</p>
-      <div className="divide-y divide-stone-100">{children}</div>
+      <div className="divide-y divide-stone-900/[0.06]">{children}</div>
     </div>
   );
 }
@@ -630,7 +633,7 @@ function Auctions() {
       </div>
       {(error || msg) && <p className={`text-sm ${error ? "text-red-600" : "text-stone-600"}`}>{error ?? msg}</p>}
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[60rem] text-sm">
+        <table className="table w-full min-w-[60rem] text-sm">
           <thead className="text-left text-[11px] tracking-wider text-stone-500 uppercase">
             <tr>
               <th className="px-4 py-2.5">Auction</th>
@@ -643,7 +646,7 @@ function Auctions() {
               <th className="px-4 py-2.5" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody className="divide-y divide-stone-900/[0.06]">
             {(data ?? []).map((a) => (
               <tr key={a.id}>
                 <td className="px-4 py-2.5">
@@ -728,7 +731,7 @@ function Activity() {
         <span className="ml-auto self-center text-xs text-stone-500">Refreshes every 10 s</span>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="card divide-y divide-stone-100">
+      <div className="card divide-y divide-stone-900/[0.06]">
         {rows.map((r, i) => (
           <div key={i} className="flex items-start gap-3 px-4 py-2.5 text-sm">
             <span className={`chip mt-0.5 shrink-0 ${kindStyle[r.kind] ?? "bg-stone-100"}`}>{r.kind}</span>
@@ -772,7 +775,7 @@ function Audit() {
       .then(({ data }) => setRows((data as AuditRow[] | null) ?? []));
   }, []);
   return (
-    <div className="card animate-rise divide-y divide-stone-100">
+    <div className="card animate-rise divide-y divide-stone-900/[0.06]">
       {rows.map((r) => (
         <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
           <span className="chip bg-red-100 text-red-700">{r.action}</span>
@@ -812,7 +815,7 @@ function SupportInbox() {
 
   return (
     <div className="animate-rise space-y-4">
-      <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
+      <div className="segmented">
         {["open", "resolved", ""].map((s) => (
           <button key={s || "all"} className={`tab ${status === s ? "tab-active" : ""}`} onClick={() => setStatus(s)}>
             {s || "all"}

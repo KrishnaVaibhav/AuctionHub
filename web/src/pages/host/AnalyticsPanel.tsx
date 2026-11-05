@@ -23,7 +23,7 @@ interface Analytics {
 
 function Stat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-xl bg-stone-50 p-3">
+    <div className="rounded-2xl bg-stone-900/[0.04] p-3">
       <p className="text-[11px] font-semibold tracking-wider text-stone-500 uppercase">{label}</p>
       <p className="mt-0.5 truncate font-display text-xl font-bold tabular-nums">{value}</p>
       {sub && <p className="text-xs text-stone-500">{sub}</p>}
@@ -66,7 +66,7 @@ export function AnalyticsPanel({ auction }: { auction: Auction }) {
   return (
     <section className="card space-y-5 p-5">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Analytics</h2>
+        <h2 className="section-title">Analytics</h2>
         <button className="btn-ghost py-1.5 text-xs" onClick={() => exportCsv(auction, d)}>
           Export CSV
         </button>
@@ -82,7 +82,7 @@ export function AnalyticsPanel({ auction }: { auction: Auction }) {
       {d.timeline.length > 0 && (
         <div>
           <p className="label">Bids over time</p>
-          <div className="flex h-24 items-end gap-0.5 overflow-x-auto rounded-xl bg-stone-50 p-2" role="img" aria-label="Bids per minute">
+          <div className="flex h-24 items-end gap-0.5 overflow-x-auto rounded-2xl bg-stone-900/[0.04] p-2" role="img" aria-label="Bids per minute">
             {d.timeline.map((t) => (
               <div
                 key={t.t}
@@ -96,7 +96,7 @@ export function AnalyticsPanel({ auction }: { auction: Auction }) {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[36rem] text-sm">
+        <table className="table w-full min-w-[36rem] text-sm">
           <thead className="text-left text-[11px] tracking-wider text-stone-500 uppercase">
             <tr>
               <th className="py-2">Lot</th>
@@ -109,7 +109,7 @@ export function AnalyticsPanel({ auction }: { auction: Auction }) {
               <th className="py-2 text-right">Uplift</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody className="divide-y divide-stone-900/[0.06]">
             {d.per_lot.map((l) => (
               <tr key={l.id}>
                 <td className="max-w-48 truncate py-2">
@@ -134,7 +134,7 @@ export function AnalyticsPanel({ auction }: { auction: Auction }) {
       {d.top_bidders.length > 0 && (
         <div>
           <p className="label">Most active bidders</p>
-          <ul className="divide-y divide-stone-100 text-sm">
+          <ul className="divide-y divide-stone-900/[0.06] text-sm">
             {d.top_bidders.map((b, i) => (
               <li key={i} className="flex justify-between py-1.5">
                 <span>{b.name}</span>

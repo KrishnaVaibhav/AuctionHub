@@ -81,15 +81,15 @@ export function Results({ auction, lots, isHost, userId }: { auction: Auction; l
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-stone-100 p-4">
-          <h2 className="font-semibold">Results by lot</h2>
+        <div className="flex items-center justify-between border-b border-stone-900/[0.06] p-4">
+          <h2 className="section-title">Results by lot</h2>
           {isHost && (
             <button className="btn-ghost py-1.5" onClick={exportCsv} disabled={!hostRows}>
               Export CSV
             </button>
           )}
         </div>
-        <ul className="divide-y divide-stone-100">
+        <ul className="divide-y divide-stone-900/[0.06]">
           {lots.map((l) => {
             const h = hostById.get(l.id);
             const winnerName = userId && l.current_winner_id === userId ? "You" : l.current_winner_id ? (names.get(l.current_winner_id) ?? "...") : null;

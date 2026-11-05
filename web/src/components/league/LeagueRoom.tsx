@@ -14,8 +14,19 @@ import { LotBadge } from "../StatusBadge";
 import { TeamChip, textOn } from "./TeamChip";
 import { confirmDialog } from "../../lib/confirm";
 import { LeagueSetupPanel, NextSeasonButton, RtmBanner, TradesPanel } from "./LeagueExtras";
+import { MatchesPanel } from "./MatchesPanel";
+import { MockDraft } from "./MockDraft";
+import { useLivePulse } from "../../lib/useLivePulse";
+import { funOn } from "../../lib/fun";
+import { SoldMoment } from "../live/SoldMoment";
+import { Reactions } from "../live/Reactions";
+import { BingoCard } from "../live/BingoCard";
+import { GuessLeaderboard, PickemPanel } from "../live/Predictions";
+import { WatchParty } from "../live/WatchParty";
+import { BidReplay } from "../BidReplay";
+import { teamTotals, useLeagueMatches } from "../../lib/leagueMatches";
 
-type Tab = "block" | "teams" | "players" | "board" | "trades" | "bids" | "chat";
+type Tab = "block" | "teams" | "players" | "board" | "matches" | "trades" | "games" | "party" | "replay" | "bids" | "chat";
 
 interface Props {
   auction: Auction;
@@ -23,22 +34,30 @@ interface Props {
   media: Map<string, LotMedia[]>;
   userId: string | null;
   isHost: boolean;
+  isOwner: boolean;
   isStaff: boolean;
 }
 
-export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Props) {
+export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isStaff }: Props) {
   const { teams } = useLeagueTeams(auction.id, true);
   const [tab, setTab] = useState<Tab>("block");
   const league = { ...LEAGUE_DEFAULTS, ...auction.settings.league };
   const myTeam = teams.find((t) => t.owner_id === userId) ?? null;
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams]);
+  const events = useLivePulse(lots);
+  const onBlock = lots.find((l) => l.status === "open") ?? [...lots].filter((l) => l.status === "pending").sort((a, b) => a.position - b.position)[0];
+  const isTeamStaff = isHost || isOwner;
 
   const tabs: { key: Tab; label: string; mobileOnly?: boolean }[] = [
     { key: "block", label: "Auction" },
     { key: "teams", label: `Teams (${teams.length})` },
     { key: "players", label: `Players (${lots.length})` },
     { key: "board", label: "Leaderboard" },
+    ...(auction.status !== "draft" && auction.status !== "scheduled" ? [{ key: "matches" as Tab, label: "Matches" }] : []),
     ...(auction.status === "paused" || auction.status === "ended" ? [{ key: "trades" as Tab, label: "Trades" }] : []),
+    ...(funOn(auction.settings, "pickem") || funOn(auction.settings, "bingo") ? [{ key: "games" as Tab, label: "Games" }] : []),
+    ...(funOn(auction.settings, "parties") && auction.status !== "ended" ? [{ key: "party" as Tab, label: "Party" }] : []),
+    ...(auction.status === "ended" ? [{ key: "replay" as Tab, label: "Replay" }] : []),
     { key: "bids", label: "Bid log" },
     { key: "chat", label: "Chat", mobileOnly: true },
   ];
@@ -46,10 +65,12 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="min-w-0 space-y-5">
+        <SoldMoment auction={auction} lots={lots} events={events} userId={userId} teamName={(id) => teamById.get(id)?.name} />
         <JoinOrMyTeam auction={auction} myTeam={myTeam} teams={teams} isHost={isHost} league={league} />
+        {auction.status === "live" && funOn(auction.settings, "reactions") && <Reactions auctionId={auction.id} showHeat={isHost} />}
 
-        <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div className="inline-flex gap-1 rounded-full bg-stone-200/60 p-1">
+        <div className="sticky top-[4.75rem] z-20 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="glass segmented scrollbar-none max-w-full overflow-x-auto">
             {tabs.map((t) => (
               <button key={t.key} className={`tab ${tab === t.key ? "tab-active" : ""} ${t.mobileOnly ? "lg:hidden" : ""}`} onClick={() => setTab(t.key)}>
                 {t.label}
@@ -60,12 +81,34 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isStaff }: Pr
 
         {tab === "block" && <RtmBanner auction={auction} lots={lots} teamById={teamById} myTeam={myTeam} />}
         {tab === "block" && <OnTheBlock auction={auction} lots={lots} media={media} myTeam={myTeam} teamById={teamById} league={league} isHost={isHost} />}
-        {tab === "block" && isHost && auction.status === "ended" && <NextSeasonButton auction={auction} />}
+        {tab === "block" && isOwner && auction.status === "ended" && <NextSeasonButton auction={auction} />}
+        {tab === "block" && onBlock && auction.status !== "ended" && (
+          <PickemPanel auction={auction} lot={onBlock} teams={teams} userId={userId} isTeam={isTeamStaff || myTeam != null} />
+        )}
+        {tab === "block" && (auction.status === "draft" || auction.status === "scheduled") && (
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="text-sm text-stone-600">Warm up before the real thing: draft against three bots with this player pool.</p>
+            <MockDraft auction={auction} lots={lots} />
+          </div>
+        )}
+        {tab === "games" && (
+          <div className="grid animate-rise gap-4 md:grid-cols-2">
+            {onBlock && <PickemPanel auction={auction} lot={onBlock} teams={teams} userId={userId} isTeam={isTeamStaff || myTeam != null} />}
+            <BingoCard auction={auction} lots={lots} events={events} userId={userId} />
+            <div className="card space-y-3 p-4 md:col-span-2">
+              <p className="font-semibold">Top pickers in this league</p>
+              <GuessLeaderboard auctionId={auction.id} />
+            </div>
+          </div>
+        )}
+        {tab === "party" && <WatchParty auction={auction} userId={userId} />}
         {tab === "players" && isHost && (auction.status === "draft" || auction.status === "scheduled") && <LeagueSetupPanel auction={auction} lots={lots} teams={teams} />}
         {tab === "trades" && <TradesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
         {tab === "teams" && <TeamsPanel auction={auction} lots={lots} teams={teams} league={league} isHost={isHost} userId={userId} />}
         {tab === "players" && <PlayersPanel auction={auction} lots={lots} teamById={teamById} isHost={isHost} />}
         {tab === "board" && <Leaderboard auction={auction} lots={lots} teams={teams} />}
+        {tab === "matches" && <MatchesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
+        {tab === "replay" && <BidReplay auction={auction} lots={lots} />}
         {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
         {tab === "chat" && (
           <div className="lg:hidden">
@@ -179,7 +222,7 @@ function JoinOrMyTeam({
     <div className="card space-y-4 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg font-bold">Join the league</h2>
+          <h2 className="section-title">Join the league</h2>
           <p className="text-sm text-stone-500">
             {teams.length}/{league.max_teams} teams · purse {money(league.purse, auction.settings)} · squad up to {league.squad_max}
             {auction.starts_at && <> · starts {dateTime(auction.starts_at)}</>}
@@ -328,14 +371,14 @@ function OnTheBlock({
   return (
     <div className="space-y-4">
       {lastClosed && (
-        <div className="flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-2 text-sm text-white">
+        <div className="glass flex animate-rise items-center gap-2 rounded-full px-4 py-2 text-sm">
           <span className="text-stone-500">Last:</span>
           <span className="truncate font-semibold">{lastClosed.title}</span>
           {lastClosed.status === "sold" && lastClosed.winner_team_id && teamById.get(lastClosed.winner_team_id) ? (
             <>
               <span className="text-stone-500">sold to</span>
               <TeamChip team={teamById.get(lastClosed.winner_team_id)!} />
-              <span className="ml-auto font-bold tabular-nums text-brand-300">{money(lastClosed.current_bid, s)}</span>
+              <span className="ml-auto font-bold tabular-nums text-brand-700">{money(lastClosed.current_bid, s)}</span>
             </>
           ) : (
             <span className="ml-auto text-stone-500">unsold</span>
@@ -344,7 +387,7 @@ function OnTheBlock({
       )}
 
       <div
-        className="relative overflow-hidden rounded-3xl p-5 text-snow sm:p-7"
+        className="relative overflow-hidden rounded-[32px] p-5 text-snow shadow-[0_30px_60px_-30px_rgb(0_0_0/0.6)] sm:p-7"
         style={{ background: leader ? `linear-gradient(135deg, #0c0a09 40%, ${leader.color})` : "linear-gradient(135deg, #0c0a09 50%, #44403c)" }}
       >
         <div className="flex flex-col gap-5 sm:flex-row">
@@ -394,7 +437,7 @@ function OnTheBlock({
       </div>
 
       {myTeam && auction.status === "live" && (
-        <div className="card space-y-3 p-4">
+        <div className="glass space-y-3 rounded-[28px] p-4 sm:p-5">
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <TeamChip team={myTeam} />
             <span>
@@ -406,7 +449,7 @@ function OnTheBlock({
             {reserveNeed > 0 && <span className="text-stone-500">Max bid {money(maxAllowed, s)}</span>}
           </div>
           {iLead ? (
-            <p className="rounded-xl bg-emerald-50 px-3 py-3 text-center font-semibold text-emerald-800">Your team has the highest bid</p>
+            <p className="rounded-2xl bg-emerald-50 px-3 py-3 text-center font-semibold text-emerald-800">Your team has the highest bid</p>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {options.map((amt, i) => (
@@ -496,7 +539,7 @@ function TeamsPanel({
                 <p className="truncate text-xs opacity-80">{t.owner_id === userId ? "You" : (owners.get(t.owner_id) ?? "...")}</p>
               </div>
               {isHost && auction.status === "scheduled" && (
-                <button className="rounded-lg bg-black/20 px-2 py-1 text-xs" onClick={() => void remove(t)}>
+                <button className="rounded-full bg-ink/20 px-2.5 py-1 text-xs" onClick={() => void remove(t)}>
                   Remove
                 </button>
               )}
@@ -522,7 +565,7 @@ function TeamsPanel({
                 <div className="h-full rounded-full" style={{ width: `${pct}%`, background: t.color }} />
               </div>
               {roster.length > 0 ? (
-                <ul className="divide-y divide-stone-100 text-sm">
+                <ul className="divide-y divide-stone-900/[0.06] text-sm">
                   {roster.map((l) => (
                     <li key={l.id} className="flex items-center justify-between gap-2 py-1.5">
                       <span className="truncate">{l.title}</span>
@@ -583,10 +626,10 @@ function PlayersPanel({ auction, lots, teamById, isHost }: { auction: Auction; l
         .filter((g) => g.rows.length > 0)
         .map((g) => (
           <div key={g.title} className="card overflow-hidden">
-            <p className="border-b border-stone-100 px-4 py-2.5 text-xs font-semibold tracking-wider text-stone-500 uppercase">
+            <p className="border-b border-stone-900/[0.06] px-4 py-2.5 text-xs font-semibold tracking-wider text-stone-500 uppercase">
               {g.title} ({g.rows.length})
             </p>
-            <ul className="divide-y divide-stone-100">
+            <ul className="divide-y divide-stone-900/[0.06]">
               {g.rows.map((l) => {
                 const team = l.winner_team_id ? teamById.get(l.winner_team_id) : undefined;
                 return (
@@ -630,13 +673,16 @@ function PlayersPanel({ auction, lots, teamById, isHost }: { auction: Auction; l
 // ---------------------------------------------------------------------------
 function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; teams: LeagueTeam[] }) {
   const s = auction.settings;
+  // With recorded matches, rank by fantasy team scores (captain multipliers included).
+  const { matches, scores } = useLeagueMatches(auction.id);
+  const fantasy = matches.length > 0 ? teamTotals(scores) : null;
   const rows = teams
     .map((t) => {
       const roster = lots.filter((l) => l.winner_team_id === t.id && l.status === "sold");
       return {
         team: t,
         players: roster.length,
-        points: roster.reduce((n, l) => n + Number(l.points ?? 0), 0),
+        points: fantasy ? (fantasy.get(t.id)?.points ?? 0) : roster.reduce((n, l) => n + Number(l.points ?? 0), 0),
         spent: roster.reduce((n, l) => n + Number(l.current_bid ?? 0), 0),
       };
     })
@@ -647,7 +693,7 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
 
   return (
     <div className="card animate-rise overflow-hidden">
-      <div className="grid grid-cols-[2.5rem_1fr_4rem_5rem] gap-2 border-b border-stone-100 px-4 py-2.5 text-[11px] font-semibold tracking-wider text-stone-500 uppercase sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]">
+      <div className="grid grid-cols-[2.5rem_1fr_4rem_5rem] gap-2 border-b border-stone-900/[0.06] px-4 py-2.5 text-[11px] font-semibold tracking-wider text-stone-500 uppercase sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]">
         <span>#</span>
         <span>Team</span>
         <span className="text-right">Squad</span>
@@ -658,7 +704,7 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
       {rows.map((r, i) => (
         <div
           key={r.team.id}
-          className="grid grid-cols-[2.5rem_1fr_4rem_5rem] items-center gap-2 border-b border-stone-100 px-4 py-3 last:border-0 sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]"
+          className="grid grid-cols-[2.5rem_1fr_4rem_5rem] items-center gap-2 border-b border-stone-900/[0.06] px-4 py-3 last:border-0 sm:grid-cols-[2.5rem_1fr_4rem_5rem_7rem_7rem]"
         >
           <span className={`flex h-8 w-8 items-center justify-center rounded-full font-display text-sm font-extrabold ${medals[i] ?? "text-stone-500"}`}>{i + 1}</span>
           <span className="flex min-w-0 items-center gap-2">
@@ -672,7 +718,11 @@ function Leaderboard({ auction, lots, teams }: { auction: Auction; lots: Lot[]; 
         </div>
       ))}
       <p className="px-4 py-3 text-xs text-stone-500">
-        Ranked by total player points (set by the host), then purse left.{" "}
+        {fantasy ? "Ranked by match points, captains and vice-captains included" : "Ranked by total player points (set by the host)"}, then purse left.{" "}
+        <Link to={`/league/${auction.id}/season`} className="font-medium text-brand-700 hover:underline">
+          Season table
+        </Link>
+        {" · "}
         <Link to="/terms" className="underline">
           Virtual points only, no real money.
         </Link>

@@ -39,7 +39,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition md:h-10 md:w-10 hover:bg-stone-100 hover:text-stone-900"
+        className="relative flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition md:h-10 md:w-10 hover:bg-stone-900/5 hover:text-stone-900"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
       >
         <BellIcon size={20} weight={unread ? "fill" : "bold"} aria-hidden="true" />
@@ -52,7 +52,7 @@ export function NotificationBell() {
 
       {open && (
         <div className="glass absolute right-0 z-40 mt-3 w-[min(22rem,calc(100vw-2rem))] animate-rise overflow-hidden rounded-[24px]">
-          <div className="flex items-center justify-between border-b border-stone-900/5 px-4 py-3 dark:border-white/5">
+          <div className="flex items-center justify-between border-b border-stone-900/5 px-4 py-3 dark:border-snow/5">
             <p className="font-semibold">Notifications</p>
             {unread > 0 && (
               <button className="text-xs text-stone-500 hover:text-stone-900" onClick={() => void markAllRead()}>
@@ -62,7 +62,7 @@ export function NotificationBell() {
           </div>
           {perm === "default" && (
             <button
-              className="w-full border-b border-stone-100 bg-brand-50 px-4 py-2 text-left text-xs text-brand-700"
+              className="w-full border-b border-stone-900/[0.06] bg-brand-50 px-4 py-2 text-left text-xs text-brand-700"
               onClick={() => void Notification.requestPermission().then(setPerm)}
             >
               Turn on pop-up alerts for outbids and wins while AuctionHub is open
@@ -73,7 +73,7 @@ export function NotificationBell() {
             {items.map((n) => (
               <button
                 key={n.id}
-                className={`flex w-full gap-3 border-b border-stone-900/5 px-4 py-3 text-left transition last:border-0 hover:bg-white/50 dark:border-white/5 dark:hover:bg-white/5 ${n.read_at ? "" : "bg-brand-50"}`}
+                className={`flex w-full gap-3 border-b border-stone-900/5 px-4 py-3 text-left transition last:border-0 hover:bg-white/50 dark:border-snow/5 dark:hover:bg-snow/5 ${n.read_at ? "" : "bg-brand-50"}`}
                 onClick={() => {
                   void markRead(n.id);
                   setOpen(false);

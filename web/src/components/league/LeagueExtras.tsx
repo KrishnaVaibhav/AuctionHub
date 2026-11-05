@@ -70,7 +70,7 @@ export function LeagueSetupPanel({ auction, lots, teams }: { auction: Auction; l
   return (
     <section className="card space-y-3 p-5">
       <div>
-        <h2 className="font-display text-lg font-extrabold">Retentions and right to match</h2>
+        <h2 className="section-title">Retentions and right to match</h2>
         <p className="text-sm text-stone-500">
           Each team can keep up to {league.retain_max ?? 4} players before the auction (the price comes out of its purse).
           {(league.rtm_cards ?? 0) > 0
@@ -79,7 +79,7 @@ export function LeagueSetupPanel({ auction, lots, teams }: { auction: Auction; l
         </p>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <ul className="divide-y divide-stone-100">
+      <ul className="divide-y divide-stone-900/[0.06]">
         {players.map((l) => {
           const r = retain[l.id] ?? { team: teams[0].id, price: String(l.start_price) };
           const owner = l.winner_team_id ? teams.find((t) => t.id === l.winner_team_id) : undefined;
@@ -242,12 +242,13 @@ export function TradesPanel({
 
   return (
     <div className="space-y-4">
+      <TradeDeadline deadline={auction.settings.league?.trade_deadline} />
       {!open && <p className="card p-5 text-sm text-stone-500">Trades open while the league is paused or after the auction ends.</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {open && myTeam && (
         <form onSubmit={propose} className="card space-y-3 p-5">
-          <h2 className="font-display text-lg font-extrabold">Propose a trade</h2>
+          <h2 className="section-title">Propose a trade</h2>
           <select className="input" required value={to} onChange={(e) => (setTo(e.target.value), setGet([]))} aria-label="Trade with team">
             <option value="">Trade with...</option>
             {teams
@@ -299,9 +300,9 @@ export function TradesPanel({
       )}
 
       <section className="card overflow-hidden">
-        <h2 className="border-b border-stone-100 px-5 py-3 font-semibold">Trades</h2>
+        <h2 className="section-title border-b border-stone-900/[0.06] px-5 py-3">Trades</h2>
         {trades.length === 0 && <p className="px-5 py-6 text-sm text-stone-500">No trades yet.</p>}
-        <ul className="divide-y divide-stone-100 text-sm">
+        <ul className="divide-y divide-stone-900/[0.06] text-sm">
           {trades.map((t) => {
             const from = teamById.get(t.from_team);
             const toTeam = teamById.get(t.to_team);
@@ -362,6 +363,19 @@ export function NextSeasonButton({ auction }: { auction: Auction }) {
       <button className="btn-accent" onClick={() => void start()}>
         Next season
       </button>
+    </div>
+  );
+}
+
+/** Live countdown to the trade deadline; turns red in the last day. */
+function TradeDeadline({ deadline }: { deadline?: string }) {
+  const now = useServerNow(1000);
+  if (!deadline) return null;
+  const ms = new Date(deadline).getTime() - now;
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-[22px] px-4 py-3 ${ms <= 0 ? "bg-stone-900/[0.05] text-stone-600" : ms < 86_400_000 ? "bg-red-600 text-snow" : "glass"}`}>
+      <span className="text-sm font-semibold">{ms > 0 ? "Trade deadline" : "Trade deadline passed"}</span>
+      {ms > 0 && <span className="font-mono text-xl font-bold tabular-nums">{remaining(ms)}</span>}
     </div>
   );
 }

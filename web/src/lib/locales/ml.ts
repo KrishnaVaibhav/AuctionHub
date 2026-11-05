@@ -162,5 +162,17 @@ const d: Dict = {
   "{n} live now": "{n} ഇപ്പോൾ തത്സമയം",
   "{n} lots": "{n} ലോട്ടുകൾ",
   "{n} starting soon": "{n} ഉടൻ തുടങ്ങും",
+  "Main": "പ്രധാനം",
+  "More": "കൂടുതൽ",
+  "Replay": "റീപ്ലേ",
+  "No bids to replay.": "റീപ്ലേ ചെയ്യാൻ ബിഡുകളില്ല.",
+  "Bid {n} of {total}": "ബിഡ് {n} / {total}",
+  "Pause replay": "റീപ്ലേ നിർത്തുക",
+  "Play replay": "റീപ്ലേ പ്ലേ ചെയ്യുക",
+  "Restart replay": "റീപ്ലേ വീണ്ടും തുടങ്ങുക",
+  "Replay position": "റീപ്ലേ സ്ഥാനം",
+  "Replay speed": "റീപ്ലേ വേഗം",
+  "Top lots so far": "ഇതുവരെയുള്ള മുൻനിര ലോട്ടുകൾ",
+  "Latest bids": "പുതിയ ബിഡുകൾ",
 };
 export default d;

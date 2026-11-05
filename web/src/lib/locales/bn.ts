@@ -162,5 +162,17 @@ const d: Dict = {
   "{n} live now": "{n}টি এখন লাইভ",
   "{n} lots": "{n}টি লট",
   "{n} starting soon": "{n}টি শীঘ্রই শুরু",
+  "Main": "প্রধান",
+  "More": "আরও",
+  "Replay": "রিপ্লে",
+  "No bids to replay.": "রিপ্লে করার মতো কোনো বিড নেই।",
+  "Bid {n} of {total}": "বিড {n} / {total}",
+  "Pause replay": "রিপ্লে থামান",
+  "Play replay": "রিপ্লে চালান",
+  "Restart replay": "রিপ্লে আবার শুরু করুন",
+  "Replay position": "রিপ্লে অবস্থান",
+  "Replay speed": "রিপ্লে গতি",
+  "Top lots so far": "এ পর্যন্ত শীর্ষ লট",
+  "Latest bids": "সর্বশেষ বিড",
 };
 export default d;
