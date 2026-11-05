@@ -28,6 +28,6 @@ test("host turns a room feature off from the room controls", async ({ page }) =>
   const dialog = page.getByRole("dialog", { name: "Room controls" });
   await dialog.getByRole("checkbox", { name: /Live reactions/ }).uncheck();
   await expect(dialog.getByText("Turned off")).toBeVisible();
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page.getByRole("group", { name: "React" })).toHaveCount(0);
 });
