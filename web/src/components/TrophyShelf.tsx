@@ -4,6 +4,7 @@ import { TrophyIcon } from "@phosphor-icons/react";
 import { supabase } from "../lib/supabase";
 import { money } from "../lib/format";
 import { publicUrl } from "../lib/media";
+import { t } from "../lib/i18n";
 
 interface Trophy {
   lot_id: string;
@@ -25,7 +26,7 @@ export function TrophyShelf({ userId }: { userId: string }) {
   return (
     <section className="space-y-3">
       <h2 className="section-title flex items-center gap-2">
-        <TrophyIcon size={20} weight="fill" className="text-brand-500" aria-hidden="true" /> Trophy shelf
+        <TrophyIcon size={20} weight="fill" className="text-brand-500" aria-hidden="true" /> {t("Trophy shelf")}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         {rows.map((r, i) => (

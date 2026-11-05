@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import type { AuctionSettings, Lot } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -64,7 +65,7 @@ export const BADGES: Record<string, { label: string; desc: string; tone: string 
 export function badgeInfo(badge: string, events?: Map<string, string>) {
   if (badge.startsWith("event:")) {
     const title = events?.get(badge.slice(6)) ?? "Event";
-    return { label: title, desc: `Won during ${title}`, tone: "bg-violet-100 text-violet-800" };
+    return { label: title, desc: t("Won during {event}", { event: title }), tone: "bg-violet-100 text-violet-800" };
   }
   return BADGES[badge] ?? { label: badge.replace(/_/g, " "), desc: "", tone: "bg-stone-200 text-stone-800" };
 }

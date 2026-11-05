@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { t } from "../lib/i18n";
 import { Link, useParams } from "react-router";
 import { LinkSimpleIcon, TrophyIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../lib/supabase";
@@ -58,14 +59,14 @@ export function SeasonTable() {
           </span>
           <h1 className="page-title mt-3">{series}</h1>
           <p className="page-sub">
-            {data.seasons.length} {data.seasons.length === 1 ? "season" : "seasons"} · fantasy points from recorded matches, or the host's player
-            points where no matches were recorded. Virtual points only.
+            {t(data.seasons.length === 1 ? "{n} season" : "{n} seasons", { n: data.seasons.length })} ·{" "}
+            {t("Fantasy points from recorded matches, or the host's player points where no matches were recorded. Virtual points only.")}
           </p>
         </div>
         <div className="enter flex gap-2" style={{ ["--i" as string]: 1 }}>
           {latest && (
             <Link to={`/a/${latest.auction_id}`} className="btn-glass">
-              Open latest season
+              {t("Open latest season")}
             </Link>
           )}
           <button
@@ -76,7 +77,7 @@ export function SeasonTable() {
             }}
           >
             <LinkSimpleIcon size={16} weight="bold" aria-hidden="true" />
-            {copied ? "Link copied" : "Share"}
+            {copied ? t("Link copied") : t("Share")}
           </button>
         </div>
       </header>
@@ -85,22 +86,22 @@ export function SeasonTable() {
         <button
           className="btn-ghost"
           onClick={() =>
-            void shareCard({ eyebrow: "Leading the table", headline: data.teams[0].name, big: `${data.teams[0].total} pts`, footer: series, accent: data.teams[0].color }, "auctionhub-season.png")
+            void shareCard({ eyebrow: t("Leading the table"), headline: data.teams[0].name, big: `${data.teams[0].total} pts`, footer: series, accent: data.teams[0].color }, "auctionhub-season.png")
           }
         >
-          Share the leader card
+          {t("Share the leader card")}
         </button>
       )}
 
       {data.teams.length === 0 ? (
-        <div className="card py-14 text-center text-sm text-stone-500">No teams yet.</div>
+        <div className="card py-14 text-center text-sm text-stone-500">{t("No teams yet.")}</div>
       ) : (
         <div className="card overflow-x-auto">
           <table className="table w-full min-w-[28rem] text-sm">
             <thead className="text-left text-[11px] tracking-wider text-stone-500 uppercase">
               <tr>
                 <th className="px-4 py-2.5">#</th>
-                <th className="px-4 py-2.5">Team</th>
+                <th className="px-4 py-2.5">{t("Team")}</th>
                 {data.seasons.map((s) => (
                   <th key={s.auction_id} className="px-4 py-2.5 text-right">
                     <Link to={`/a/${s.auction_id}`} className="hover:text-stone-900">
@@ -108,7 +109,7 @@ export function SeasonTable() {
                     </Link>
                   </th>
                 ))}
-                <th className="px-4 py-2.5 text-right">Total</th>
+                <th className="px-4 py-2.5 text-right">{t("Total")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-900/[0.06]">
@@ -138,7 +139,7 @@ export function SeasonTable() {
 
       {data.players.length > 0 && (
         <section className="space-y-2">
-          <h2 className="section-title px-1">Top players</h2>
+          <h2 className="section-title px-1">{t("Top players")}</h2>
           <div className="group-list">
             {data.players.map((p, i) => (
               <div key={p.title} className="group-row">
