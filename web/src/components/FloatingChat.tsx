@@ -17,6 +17,17 @@ function useIsDesktop() {
   return desktop;
 }
 
+/** The chat column beside the room, mounted on desktop only (phones use FloatingChat). */
+export function DesktopChat({ auction, userId, isStaff }: { auction: Auction; userId: string | null; isStaff: boolean }) {
+  const desktop = useIsDesktop();
+  if (!desktop) return null;
+  return (
+    <aside className="sticky top-24 self-start">
+      <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
+    </aside>
+  );
+}
+
 /**
  * Phone and tablet chat that floats over the room, so people can follow the
  * chat and bid at the same time. Closed: a bubble at the bottom right with an

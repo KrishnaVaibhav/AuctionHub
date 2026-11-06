@@ -34,7 +34,7 @@ select throws_ok($$select public.make_prediction('e2100000-0000-0000-0000-000000
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000e102","role":"authenticated"}';
 select lives_ok($$select public.make_prediction('e2100000-0000-0000-0000-000000000001', 'price', 300, null)$$, 'guess placed');
 select lives_ok($$select public.make_prediction('e2100000-0000-0000-0000-000000000001', 'price', 100, null)$$, 'guess can change before bidding');
-select is((select xp from public.profiles where id = '00000000-0000-0000-0000-00000000e102'), 10, 'guessing earns XP');
+select is((select xp from public.profiles where id = '00000000-0000-0000-0000-00000000e102'), 5, 'guessing earns XP once per lot, not per change');
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000e103","role":"authenticated"}';
 select public.make_prediction('e2100000-0000-0000-0000-000000000001', 'price', 1000, null);
 select is((select count(*)::int from public.predictions where lot_id = 'e2100000-0000-0000-0000-000000000001'), 1, 'others'' guesses are hidden while open');
