@@ -46,3 +46,35 @@ export const LEAGUE_INCREMENTS: [number, number][] = [
 ];
 
 export const TEAM_COLORS = ["#f59e0b", "#ef4444", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#facc15", "#1e293b"];
+
+function hslHex(h: number, sat: number, light: number): string {
+  const a = (sat * Math.min(light, 1 - light)) / 1;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = light - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(c * 255)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/**
+ * One distinct colour per team the host allows: the curated set first, then
+ * evenly spread hues (golden angle, alternating shade) for bigger leagues.
+ */
+export function teamPalette(maxTeams: number): string[] {
+  const n = Math.max(2, Math.min(50, Math.floor(maxTeams) || 0));
+  const out = TEAM_COLORS.slice(0, n);
+  for (let i = 0; out.length < n; i++) {
+    const c = hslHex((i * 137.508 + 20) % 360, 0.7, i % 2 ? 0.38 : 0.52);
+    if (!out.includes(c)) out.push(c);
+  }
+  return out;
+}
+
+/** Colours still free for a new team (case-insensitive). */
+export function freeColors(maxTeams: number, taken: string[]): string[] {
+  const used = new Set(taken.map((c) => c.toLowerCase()));
+  return teamPalette(maxTeams).filter((c) => !used.has(c.toLowerCase()));
+}
