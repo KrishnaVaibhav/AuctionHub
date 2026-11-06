@@ -21,6 +21,67 @@ create trigger league_teams_color_guard before insert or update of color on publ
   for each row execute function public.guard_team_color();
 revoke execute on function public.guard_team_color() from public, anon, authenticated;
 
+-- join_league: same as 0023, but a taken colour becomes the next free one.
+create or replace function public.join_league(p_auction_id uuid, p_name text, p_short_name text, p_color text default '#f59e0b')
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid  uuid := auth.uid();
+  a    public.auctions;
+  tid  uuid;
+  col  text := lower(coalesce(p_color, '#f59e0b'));
+begin
+  if uid is null then
+    raise exception 'Sign in to join' using errcode = 'P0001';
+  end if;
+  select * into a from public.auctions where id = p_auction_id for update;
+  if a.id is null or a.mode <> 'league' then
+    raise exception 'This is not a league auction' using errcode = 'P0001';
+  end if;
+  if a.status = 'draft' then
+    raise exception 'Teams can join once the host schedules the league' using errcode = 'P0001';
+  end if;
+  if a.status not in ('scheduled', 'live', 'paused') then
+    raise exception 'This league has ended' using errcode = 'P0001';
+  end if;
+  if a.host_id = uid and coalesce((a.settings -> 'league' ->> 'host_can_play')::boolean, false) = false then
+    raise exception 'The host is not playing in this league' using errcode = 'P0001';
+  end if;
+  if (select count(*) from public.league_teams where auction_id = p_auction_id)
+     >= public.league_setting(a.settings, 'max_teams', 10) then
+    raise exception 'The league is full' using errcode = 'P0001';
+  end if;
+  if exists (select 1 from public.profiles p where p.id = uid and p.banned_until > now()) then
+    raise exception 'Your account is suspended' using errcode = 'P0001';
+  end if;
+
+  -- A colour another team already has (or the default sent by older clients)
+  -- is swapped for the first free one, so joining never fails on colour.
+  if exists (select 1 from public.league_teams t where t.auction_id = p_auction_id and lower(t.color) = col) then
+    select c into col
+      from unnest(array['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#facc15', '#1e293b']) with ordinality as p(c, n)
+     where not exists (select 1 from public.league_teams t where t.auction_id = p_auction_id and lower(t.color) = p.c)
+     order by n
+     limit 1;
+    while col is null or exists (select 1 from public.league_teams t where t.auction_id = p_auction_id and lower(t.color) = col) loop
+      col := '#' || lpad(to_hex((random() * 16777215)::int), 6, '0');
+    end loop;
+  end if;
+
+  insert into public.league_teams (auction_id, owner_id, name, short_name, color, purse_left)
+  values (p_auction_id, uid, btrim(p_name), upper(btrim(p_short_name)), col,
+          public.league_setting(a.settings, 'purse', 1000000000))
+  returning id into tid;
+  return tid;
+exception
+  when unique_violation then
+    raise exception 'You already have a team here, or that short name is taken' using errcode = 'P0001';
+end;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- Custom bid amounts on or off
 -- ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 -- pgTAP tests: unique team colours; hosts can turn off custom bid amounts.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(10);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000d101', 'chost@test.dev'),
@@ -25,9 +25,12 @@ select public.start_auction('d2000000-0000-0000-0000-000000000002');
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000d102","role":"authenticated"}';
 select lives_ok($$select public.join_league('d2000000-0000-0000-0000-000000000001', 'Reds', 'RED', '#EF4444')$$, 'first team takes red');
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000d103","role":"authenticated"}';
-select throws_ok($$select public.join_league('d2000000-0000-0000-0000-000000000001', 'Also red', 'ARD', '#ef4444')$$,
-  'P0001', 'That colour is taken. Pick another.', 'a taken colour is refused, any case');
-select lives_ok($$select public.join_league('d2000000-0000-0000-0000-000000000001', 'Blues', 'BLU', '#3b82f6')$$, 'a free colour works');
+select lives_ok($$select public.join_league('d2000000-0000-0000-0000-000000000001', 'Also red', 'ARD', '#ef4444')$$, 'joining with a taken colour still works');
+select is((select color from public.league_teams where short_name = 'ARD'), '#f59e0b', 'and gets the first free colour instead');
+reset role;
+select throws_ok($$update public.league_teams set color = '#ef4444' where short_name = 'ARD'$$,
+  'P0001', 'That colour is taken. Pick another.', 'two teams can never share a colour');
+set local role authenticated;
 
 -- Standard auction with custom bids off
 select throws_ok($$select public.place_bid('d2100000-0000-0000-0000-000000000002', 150)$$,
