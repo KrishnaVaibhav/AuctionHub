@@ -323,5 +323,10 @@ const d: Dict = {
   "silver": "सिल्वर",
   "gold": "गोल्ड",
   "aurora": "ऑरोरा",
+  "You're the highest bidder": "आप सबसे ऊँची बोली पर हैं",
+  "The host set fixed steps: each bid adds one increment.": "होस्ट ने तय कदम रखे हैं: हर बोली एक कदम बढ़ाती है।",
+  "Minimise chat": "चैट छोटा करें",
+  "Open chat ({n} new)": "चैट खोलें ({n} नए)",
+  "Open chat": "चैट खोलें",
 };
 export default d;

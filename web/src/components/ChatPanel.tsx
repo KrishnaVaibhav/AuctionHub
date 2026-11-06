@@ -4,6 +4,7 @@ import { supabase, errorMessage, channelName } from "../lib/supabase";
 import { useProfileNames } from "../lib/profiles";
 import { useProfileMeta } from "../lib/progress";
 import { CHAT_COLORS } from "../lib/fun";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { LevelChip } from "./Progress";
 import type { Auction, ChatMessage } from "../lib/types";
 
@@ -11,11 +12,17 @@ interface Props {
   auction: Auction;
   userId: string | null;
   isStaff: boolean;
+  /** Fills its container without the card frame (used by the floating chat). */
+  compact?: boolean;
+  /** Shown as a close button in the header when set. */
+  onClose?: () => void;
+  /** Latest messages, for previews and unread counts outside the panel. */
+  onMessages?: (messages: ChatMessage[]) => void;
 }
 
 const PAGE = 100;
 
-export function ChatPanel({ auction, userId, isStaff }: Props) {
+export function ChatPanel({ auction, userId, isStaff, compact = false, onClose, onMessages }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +31,12 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
   const stickToBottom = useRef(true);
   const names = useProfileNames(messages.map((m) => m.user_id));
   const meta = useProfileMeta(messages.map((m) => m.user_id));
+
+  const report = useRef(onMessages);
+  report.current = onMessages;
+  useEffect(() => {
+    report.current?.(messages);
+  }, [messages]);
 
   const chatOpen =
     ["scheduled", "live", "paused"].includes(auction.status) && auction.settings.chat?.enabled !== false;
@@ -109,10 +122,15 @@ export function ChatPanel({ auction, userId, isStaff }: Props) {
   const pinned = visible.filter((m) => m.pinned);
 
   return (
-    <div className="card flex h-[70dvh] flex-col lg:h-[calc(100dvh-8rem)] lg:max-h-[44rem]">
+    <div className={compact ? "flex h-full min-h-0 flex-col" : "card flex h-[70dvh] flex-col lg:h-[calc(100dvh-8rem)] lg:max-h-[44rem]"}>
       <div className="flex items-center gap-2 border-b border-stone-900/[0.06] px-4 py-3">
         <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
         <h2 className="section-title text-base">{t("Live chat")}</h2>
+        {onClose && (
+          <button type="button" className="btn-icon ml-auto h-9 w-9" onClick={onClose} aria-label={t("Minimise chat")}>
+            <CaretDownIcon size={18} weight="bold" aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {pinned.length > 0 && (

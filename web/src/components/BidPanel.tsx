@@ -182,7 +182,25 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
         </Link>
       )}
 
-      {userId && canBid && (
+      {userId && canBid && settings.custom_bids === false && (
+        <div className="space-y-2">
+          {leading ? (
+            <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-800">{t("You're the highest bidder")}</p>
+          ) : (
+            <button type="button" className="btn-accent w-full py-3 text-base" disabled={busy} onClick={() => void placeBid(undefined, minBid)}>
+              {busy ? t("Placing...") : t("Bid {amount}", { amount: money(minBid, settings) })}
+            </button>
+          )}
+          <p className="text-center text-xs text-stone-500">{t("The host set fixed steps: each bid adds one increment.")}</p>
+          {lot.buy_now_price && lot.bid_count === 0 && (
+            <button type="button" className="btn-primary w-full" disabled={busy} onClick={() => void buyNow()}>
+              {t("Buy now for {amount}", { amount: money(lot.buy_now_price, settings) })}
+            </button>
+          )}
+        </div>
+      )}
+
+      {userId && canBid && settings.custom_bids !== false && (
         <form onSubmit={placeBid} className="space-y-3">
           {!leading && (
             <div className="grid grid-cols-3 gap-2">
