@@ -6,9 +6,10 @@ import { dateTime, money, remaining } from "../../lib/format";
 import { useServerNow } from "../../lib/clock";
 import { useProfileNames } from "../../lib/profiles";
 import { publicUrl } from "../../lib/media";
-import { LEAGUE_DEFAULTS, TEAM_COLORS, useLeagueTeams } from "../../lib/useLeagueTeams";
+import { LEAGUE_DEFAULTS, freeColors, useLeagueTeams } from "../../lib/useLeagueTeams";
 import type { Auction, LeagueTeam, Lot, LotMedia } from "../../lib/types";
 import { ChatPanel } from "../ChatPanel";
+import { FloatingChat } from "../FloatingChat";
 import { BidLog } from "../BidLog";
 import { LotBadge } from "../StatusBadge";
 import { TeamChip, textOn } from "./TeamChip";
@@ -59,7 +60,6 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
     ...(funOn(auction.settings, "parties") && auction.status !== "ended" ? [{ key: "party" as Tab, label: "Party" }] : []),
     ...(auction.status === "ended" ? [{ key: "replay" as Tab, label: "Replay" }] : []),
     { key: "bids", label: "Bid log" },
-    { key: "chat", label: "Chat", mobileOnly: true },
   ];
 
   return (
@@ -110,12 +110,8 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
         {tab === "matches" && <MatchesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
         {tab === "replay" && <BidReplay auction={auction} lots={lots} />}
         {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
-        {tab === "chat" && (
-          <div className="lg:hidden">
-            <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
-          </div>
-        )}
       </div>
+      <FloatingChat auction={auction} userId={userId} isStaff={isStaff} lift={false} />
       <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
         <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
       </aside>
@@ -141,7 +137,11 @@ function JoinOrMyTeam({
 }) {
   const [name, setName] = useState("");
   const [short, setShort] = useState("");
-  const [color, setColor] = useState(TEAM_COLORS[teams.length % TEAM_COLORS.length]);
+  const free = freeColors(league.max_teams, teams.map((t) => t.color));
+  const [picked, setPicked] = useState<string | null>(null);
+  // A colour someone else just took is no longer offered; fall back to the first free one.
+  const color = picked && free.includes(picked) ? picked : (free[0] ?? "#f59e0b");
+  const setColor = setPicked;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const shareUrl = typeof window !== "undefined" ? window.location.href.split("?")[0] : "";
@@ -254,13 +254,15 @@ function JoinOrMyTeam({
             </button>
           </div>
           <div className="flex flex-wrap gap-2 sm:col-span-3">
-            {TEAM_COLORS.map((c) => (
+            <span className="w-full text-xs text-stone-500">Team colour. Colours other teams picked are taken.</span>
+            {free.map((c) => (
               <button
                 type="button"
                 key={c}
                 onClick={() => setColor(c)}
-                aria-label={`Color ${c}`}
-                className={`h-7 w-7 rounded-full border-2 ${color === c ? "border-stone-900" : "border-white"}`}
+                aria-label={`Colour ${c}`}
+                aria-pressed={color === c}
+                className={`h-8 w-8 rounded-full border-2 transition ${color === c ? "scale-110 border-stone-900 ring-2 ring-stone-900/20" : "border-white"}`}
                 style={{ background: c }}
               />
             ))}
@@ -350,7 +352,8 @@ function OnTheBlock({
   const squad = myTeam ? lots.filter((l) => l.winner_team_id === myTeam.id && l.status === "sold").length : 0;
   const reserveNeed = Math.max(league.squad_min - squad - 1, 0) * league.min_base;
   const maxAllowed = myTeam ? Number(myTeam.purse_left) - reserveNeed : 0;
-  const options = current.current_bid == null ? [minBid, round2(minBid + step), round2(minBid + step * 3)] : [minBid, round2(minBid + step), round2(minBid + step * 3)];
+  // The host can limit bids to the next step only (settings.custom_bids = false).
+  const options = s.custom_bids === false ? [minBid] : [minBid, round2(minBid + step), round2(minBid + step * 3)];
   const iLead = myTeam && current.winner_team_id === myTeam.id;
   const cover = media.get(current.id)?.find((m) => m.kind === "image");
   const total = league.lot_seconds * 1000;
@@ -452,7 +455,7 @@ function OnTheBlock({
           {iLead ? (
             <p className="rounded-2xl bg-emerald-50 px-3 py-3 text-center font-semibold text-emerald-800">Your team has the highest bid</p>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`grid gap-2 ${options.length === 1 ? "grid-cols-1" : "grid-cols-3"}`}>
               {options.map((amt, i) => (
                 <button
                   key={amt}

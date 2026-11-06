@@ -36,6 +36,8 @@ export interface AuctionSettings {
   lot_duration_minutes?: number;
   lot_stagger_seconds?: number;
   chat?: { enabled?: boolean; slow_mode_s?: number; allow_links?: boolean };
+  /** false: bidders can only bid the next minimum (no typed amounts, jumps or auto-bid). Default true. */
+  custom_bids?: boolean;
 }
 
 export interface Profile {

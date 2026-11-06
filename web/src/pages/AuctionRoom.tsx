@@ -13,6 +13,7 @@ import type { Auction, BidResult, Lot, LotMedia } from "../lib/types";
 import { AuctionBadge, LotBadge } from "../components/StatusBadge";
 import { BidPanel } from "../components/BidPanel";
 import { ChatPanel } from "../components/ChatPanel";
+import { FloatingChat } from "../components/FloatingChat";
 import { LotGallery } from "../components/LotGallery";
 import { StreamEmbed } from "../components/StreamEmbed";
 import { Countdown } from "../components/Countdown";
@@ -52,7 +53,7 @@ function AuctionRoomInner() {
   const { auction, lots, media, moderatorIds, staff, loading, error, reload } = useAuctionRoom(id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "games", "party", "replay", "chat"] as Tab[]).find((t) => t === params.get("tab")) ?? "lot");
+  const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "games", "party", "replay", "chat"] as Tab[]).find((t) => t === params.get("tab") && t !== "chat") ?? "lot");
   const [hostError, setHostError] = useState<string | null>(null);
   const { isAdmin } = useIsAdmin();
   const [barBusy, setBarBusy] = useState(false);
@@ -129,7 +130,6 @@ function AuctionRoomInner() {
     ...(funOn(auction.settings, "guesses") || funOn(auction.settings, "bingo") ? [{ key: "games" as Tab, label: t("Games") }] : []),
     ...(funOn(auction.settings, "parties") && !finished ? [{ key: "party" as Tab, label: t("Party") }] : []),
     ...(auction.status === "ended" ? [{ key: "replay" as Tab, label: t("Replay") }] : []),
-    { key: "chat", label: t("Chat"), mobileOnly: true },
   ];
 
   const openLot = (lotId: string) => {
@@ -271,11 +271,6 @@ function AuctionRoomInner() {
             )}
             {tab === "party" && <WatchParty auction={auction} userId={userId} />}
             {tab === "results" && <Results auction={auction} lots={lots} isHost={role.owner} userId={userId} />}
-            {tab === "chat" && (
-              <div className="lg:hidden">
-                <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
-              </div>
-            )}
           </div>
 
           <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
@@ -284,7 +279,14 @@ function AuctionRoomInner() {
         </div>
 
         {/* Mobile sticky bid bar */}
-        {selected && tab !== "chat" && selected.status === "open" && auction.status === "live" && (
+        <FloatingChat
+          auction={auction}
+          userId={userId}
+          isStaff={isStaff}
+          startOpen={params.get("tab") === "chat"}
+          lift={Boolean(selected && selected.status === "open" && auction.status === "live")}
+        />
+        {selected && selected.status === "open" && auction.status === "live" && (
           <div className="fixed inset-x-0 bottom-0 z-20 px-3 lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
             <div className="glass mx-auto max-w-xl animate-rise rounded-[28px] px-4 py-3">
             <div className="mx-auto flex max-w-xl items-center gap-3">

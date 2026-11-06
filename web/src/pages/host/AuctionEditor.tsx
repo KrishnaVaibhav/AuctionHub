@@ -197,6 +197,7 @@ function AuctionForm({
   const [mode, setMode] = useState(auction.mode);
   const lg = { ...LEAGUE_DEFAULTS, ...s.league };
   const [compact, setCompact] = useState(Boolean(s.compact));
+  const [customBids, setCustomBids] = useState(s.custom_bids !== false);
   const [purse, setPurse] = useState(String(lg.purse));
   const [squadMin, setSquadMin] = useState(String(lg.squad_min));
   const [squadMax, setSquadMax] = useState(String(lg.squad_max));
@@ -243,6 +244,7 @@ function AuctionForm({
       lot_stagger_seconds: Math.max(0, Number(stagger) || 0),
       chat: { enabled: chatEnabled, slow_mode_s: Math.max(0, Number(slowMode) || 0), allow_links: allowLinks },
       compact,
+      custom_bids: customBids,
       league: {
         // Keep settings edited elsewhere (scoring rules, captain multipliers).
         ...auction.settings.league,
@@ -529,6 +531,13 @@ function AuctionForm({
             <input id="inc" className="input font-mono" value={increments} onChange={(e) => setIncrements(e.target.value)} />
             <Hint>Smallest raise at each price. "0:10, 1000:50" means steps of 10 below 1,000, then 50.</Hint>
           </div>
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
+            <span>
+              Custom bid amounts
+              <Hint>On: bidders can type any amount or jump ahead, and set an auto-bid. Off: one button that bids the next step only.</Hint>
+            </span>
+            <input type="checkbox" className="switch" checked={customBids} onChange={(e) => setCustomBids(e.target.checked)} />
+          </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             <span>
               Short amounts (e.g. 1.5Cr)

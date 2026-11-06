@@ -323,5 +323,10 @@ const d: Dict = {
   "silver": "సిల్వర్",
   "gold": "గోల్డ్",
   "aurora": "అరోరా",
+  "You're the highest bidder": "మీ బిడ్ అత్యధికం",
+  "The host set fixed steps: each bid adds one increment.": "హోస్ట్ నిర్ణీత దశలు పెట్టారు: ప్రతి బిడ్ ఒక దశ పెంచుతుంది.",
+  "Minimise chat": "చాట్ చిన్నది చేయి",
+  "Open chat ({n} new)": "చాట్ తెరవండి ({n} కొత్తవి)",
+  "Open chat": "చాట్ తెరవండి",
 };
 export default d;
