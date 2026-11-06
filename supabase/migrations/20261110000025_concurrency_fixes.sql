@@ -504,8 +504,8 @@ declare
   rt  public.league_teams;
 begin
   -- Auction first (league_rtm ends in _league_open_next, which locks it).
-  perform 1 from public.auctions a join public.lots x on x.auction_id = a.id
-   where x.id = p_lot_id for no key update of a;
+  perform 1 from public.auctions au join public.lots x on x.auction_id = au.id
+   where x.id = p_lot_id for no key update of au;
   select * into l from public.lots where id = p_lot_id for update;
   if l.id is null or not l.rtm_offered or l.status <> 'open' then
     raise exception 'No right to match is waiting on this player' using errcode = 'P0001';
@@ -544,8 +544,8 @@ declare
   name  text;
 begin
   -- Auction first: buying the last lot ends the auction (an auction row update).
-  perform 1 from public.auctions a join public.lots x on x.auction_id = a.id
-   where x.id = p_lot_id for no key update of a;
+  perform 1 from public.auctions au join public.lots x on x.auction_id = au.id
+   where x.id = p_lot_id for no key update of au;
   select * into l from public.lots where id = p_lot_id for update;
   if l.id is null then
     raise exception 'Lot not found' using errcode = 'P0001';
