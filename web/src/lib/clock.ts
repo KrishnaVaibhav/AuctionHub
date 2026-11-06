@@ -7,12 +7,19 @@ let synced: Promise<void> | null = null;
 
 export function syncServerClock(): Promise<void> {
   synced ??= (async () => {
-    const t0 = Date.now();
-    const { data, error } = await supabase.rpc("server_time");
-    const t1 = Date.now();
-    if (!error && typeof data === "string") {
-      offsetMs = new Date(data).getTime() - (t0 + t1) / 2;
+    try {
+      const t0 = Date.now();
+      const { data, error } = await supabase.rpc("server_time");
+      const t1 = Date.now();
+      if (!error && typeof data === "string") {
+        offsetMs = new Date(data).getTime() - (t0 + t1) / 2;
+        return;
+      }
+    } catch {
+      /* offline: fall through */
     }
+    // Failed: keep the local clock for now and try again on the next call.
+    synced = null;
   })();
   return synced;
 }

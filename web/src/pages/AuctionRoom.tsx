@@ -12,8 +12,7 @@ import { publicUrl } from "../lib/media";
 import type { Auction, BidResult, Lot, LotMedia } from "../lib/types";
 import { AuctionBadge, LotBadge } from "../components/StatusBadge";
 import { BidPanel } from "../components/BidPanel";
-import { ChatPanel } from "../components/ChatPanel";
-import { FloatingChat } from "../components/FloatingChat";
+import { DesktopChat, FloatingChat } from "../components/FloatingChat";
 import { LotGallery } from "../components/LotGallery";
 import { StreamEmbed } from "../components/StreamEmbed";
 import { Countdown } from "../components/Countdown";
@@ -273,9 +272,7 @@ function AuctionRoomInner() {
             {tab === "results" && <Results auction={auction} lots={lots} isHost={role.owner} userId={userId} />}
           </div>
 
-          <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
-            <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
-          </aside>
+          <DesktopChat auction={auction} userId={userId} isStaff={isStaff} />
         </div>
 
         {/* Mobile sticky bid bar */}

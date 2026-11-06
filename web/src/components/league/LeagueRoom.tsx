@@ -8,8 +8,7 @@ import { useProfileNames } from "../../lib/profiles";
 import { publicUrl } from "../../lib/media";
 import { LEAGUE_DEFAULTS, freeColors, useLeagueTeams } from "../../lib/useLeagueTeams";
 import type { Auction, LeagueTeam, Lot, LotMedia } from "../../lib/types";
-import { ChatPanel } from "../ChatPanel";
-import { FloatingChat } from "../FloatingChat";
+import { DesktopChat, FloatingChat } from "../FloatingChat";
 import { BidLog } from "../BidLog";
 import { LotBadge } from "../StatusBadge";
 import { TeamChip, textOn } from "./TeamChip";
@@ -112,9 +111,7 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
         {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
       </div>
       <FloatingChat auction={auction} userId={userId} isStaff={isStaff} lift={false} />
-      <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
-        <ChatPanel auction={auction} userId={userId} isStaff={isStaff} />
-      </aside>
+      <DesktopChat auction={auction} userId={userId} isStaff={isStaff} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase, errorMessage, channelName } from "./supabase";
 import type { Auction, Lot, LotMedia } from "./types";
 
@@ -35,6 +35,19 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Ignore answers for an auction we already navigated away from.
+  const current = useRef(auctionId);
+  current.current = auctionId;
+  const [shownId, setShownId] = useState(auctionId);
+  if (shownId !== auctionId) {
+    setShownId(auctionId);
+    setAuction(null);
+    setLots([]);
+    setMedia(new Map());
+    setStaff([]);
+    setLoading(true);
+  }
+
   const reload = useCallback(async () => {
     if (!auctionId) return;
     const [a, l, m] = await Promise.all([
@@ -42,6 +55,7 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
       supabase.from("lots").select("*").eq("auction_id", auctionId).order("position").order("created_at"),
       supabase.from("auction_moderators").select("user_id, can_edit, can_run").eq("auction_id", auctionId),
     ]);
+    if (current.current !== auctionId) return;
     if (a.error || l.error) {
       setError(errorMessage(a.error ?? l.error));
     } else {
@@ -61,6 +75,7 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
           lotRows.map((x) => x.id),
         )
         .order("position");
+      if (current.current !== auctionId) return;
       const map = new Map<string, LotMedia[]>();
       for (const row of (data as LotMedia[] | null) ?? []) {
         map.set(row.lot_id, [...(map.get(row.lot_id) ?? []), row]);
