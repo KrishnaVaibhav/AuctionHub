@@ -318,10 +318,14 @@ function OnTheBlock({
   const waiting = opensIn > 0;
 
   // When the timer runs out, ask the server to close this player and bring up the next.
+  // Retries every 3 s while still overdue (a fast device clock can ask too early),
+  // up to 5 times; the server job picks up anything left after that.
   useEffect(() => {
-    if (auction.status !== "live" || !current?.ends_at) return;
-    const key = `${current.id}:${current.ends_at}`;
-    if (endsIn <= 0 && ticked.current !== key) {
+    if (auction.status !== "live" || !current?.ends_at || endsIn > 0) return;
+    const attempt = Math.floor(-endsIn / 3000);
+    if (attempt > 4) return;
+    const key = `${current.id}:${current.ends_at}:${attempt}`;
+    if (ticked.current !== key) {
       ticked.current = key;
       void supabase.rpc("league_tick", { p_auction_id: auction.id });
     }
