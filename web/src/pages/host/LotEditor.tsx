@@ -66,20 +66,24 @@ function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: L
           <div>
             <label className="label">Drop by</label>
             <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchStep} onChange={(e) => set({ ...v, dutchStep: e.target.value })} />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">How much the price falls at each step.</p>
           </div>
           <div>
             <label className="label">Every (seconds)</label>
             <input className="input" type="number" min={5} max={3600} step={1} required disabled={disabled} value={v.dutchInterval} onChange={(e) => set({ ...v, dutchInterval: e.target.value })} />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">Time between price drops.</p>
           </div>
           <div>
             <label className="label">Floor price</label>
             <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchFloor} onChange={(e) => set({ ...v, dutchFloor: e.target.value })} />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">The price never drops below this.</p>
           </div>
         </>
       )}
       <div className="sm:col-span-3">
         <label className="label">Title</label>
         <input className="input" required maxLength={120} disabled={disabled} value={v.title} onChange={(e) => set({ ...v, title: e.target.value })} />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">Short name bidders see on the lot card.</p>
       </div>
       <div>
         <label className="label">{v.saleType === "offer" ? "Minimum offer" : v.saleType === "dutch" ? "Opening price" : "Start price"}</label>
@@ -93,14 +97,17 @@ function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: L
           value={v.startPrice}
           onChange={(e) => set({ ...v, startPrice: e.target.value })}
         />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">Where bidding begins. For a league, the player's base price.</p>
       </div>
       <div>
         <label className="label">Reserve (secret, optional)</label>
         <input className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.reserve} onChange={(e) => set({ ...v, reserve: e.target.value })} />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">Lowest price you will accept. Hidden from bidders; below it the lot does not sell.</p>
       </div>
       <div>
         <label className="label">Buy now (optional)</label>
         <input className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.buyNow} onChange={(e) => set({ ...v, buyNow: e.target.value })} />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">Anyone can pay this to win the lot at once and end it.</p>
       </div>
       <div className="sm:col-span-2">
         <label className="label">Description</label>
@@ -111,6 +118,7 @@ function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: L
           value={v.description}
           onChange={(e) => set({ ...v, description: e.target.value })}
         />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">Condition, size, history: anything that helps people bid.</p>
       </div>
       <div>
         <label className="label">Details (one "key: value" per line)</label>
@@ -121,6 +129,7 @@ function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: L
           value={v.fields}
           onChange={(e) => set({ ...v, fields: e.target.value })}
         />
+        <p className="mt-1 block text-xs leading-snug text-stone-500">Shown as a small table on the lot, e.g. "Year: 1972".</p>
       </div>
     </div>
   );
