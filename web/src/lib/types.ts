@@ -20,6 +20,8 @@ export interface LeagueSettings {
   trades?: boolean;
   season?: number;
   scoring?: Record<string, number>;
+  /** Last stats link a host imported from (CSV, Google Sheet or JSON). */
+  stats_url?: string;
   trade_deadline?: string;
   captain_x?: number;
   vice_x?: number;
@@ -79,6 +81,8 @@ export interface Lot {
   current_bid: number | null;
   current_winner_id: string | null;
   bid_count: number;
+  /** Times the end was pushed back (anti-snipe or the host). */
+  extensions?: number;
   reserve_met: boolean;
   opens_at: string | null;
   ends_at: string | null;

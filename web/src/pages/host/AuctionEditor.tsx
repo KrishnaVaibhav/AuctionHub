@@ -1,5 +1,5 @@
 import { CaretLeftIcon } from "@phosphor-icons/react";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { supabase, errorMessage } from "../../lib/supabase";
@@ -24,6 +24,11 @@ import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
 /** Remount per auction so no state (form fields, selection, tabs) leaks between auctions. */
+/** Small grey help line under a settings field. */
+function Hint({ children }: { children: ReactNode }) {
+  return <span className="mt-1 block text-xs leading-snug font-normal text-stone-500">{children}</span>;
+}
+
 export function AuctionEditor() {
   const { id } = useParams();
   return <AuctionEditorInner key={id} />;
@@ -308,12 +313,14 @@ function AuctionForm({
             Title
           </label>
           <input id="t" className="input" required minLength={3} maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Hint>Shown on the home page, in search and on shared links.</Hint>
         </div>
         <div>
           <label className="label" htmlFor="d">
             Description
           </label>
           <textarea id="d" className="input min-h-28" maxLength={5000} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Hint>What people are bidding on, rules, pickup or delivery. Shown above the lots.</Hint>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -321,12 +328,14 @@ function AuctionForm({
               Starts at
             </label>
             <input id="sa" type="datetime-local" className="input" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+            <Hint>When it goes live by itself after you schedule. Leave empty to start by hand with Go live.</Hint>
           </div>
           <div>
             <label className="label" htmlFor="ea">
               Lots close at (optional)
             </label>
             <input id="ea" type="datetime-local" className="input" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+            <Hint>One closing time for every lot. Empty: each lot closes after the lot duration below.</Hint>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -342,12 +351,14 @@ function AuctionForm({
                 </option>
               ))}
             </select>
+            <Hint>Puts the auction under this heading on the home page.</Hint>
           </div>
           <div>
             <label className="label" htmlFor="tags">
               Tags (comma separated, up to 8)
             </label>
             <input id="tags" className="input" placeholder="vintage, silver, 1970s" value={tags} onChange={(e) => setTags(e.target.value)} />
+            <Hint>Help people find it in search and themed events.</Hint>
           </div>
         </div>
         <div>
@@ -363,6 +374,7 @@ function AuctionForm({
             value={streamUrl}
             onChange={(e) => setStreamUrl(e.target.value)}
           />
+            <Hint>Embeds your video next to the bidding, so viewers can watch and bid together.</Hint>
         </div>
 
         <div>
@@ -395,10 +407,12 @@ function AuctionForm({
             <div>
               <label className="label">Purse per team</label>
               <input type="number" min={1} className="input" value={purse} onChange={(e) => setPurse(e.target.value)} />
+            <Hint>Virtual points each team gets to spend on players.</Hint>
             </div>
             <div>
               <label className="label">Max teams</label>
               <input type="number" min={2} max={50} className="input" value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)} />
+            <Hint>Joining stops once this many teams are in.</Hint>
             </div>
             <div>
               <label className="label">Squad min / max</label>
@@ -406,38 +420,49 @@ function AuctionForm({
                 <input type="number" min={0} className="input" value={squadMin} onChange={(e) => setSquadMin(e.target.value)} />
                 <input type="number" min={1} className="input" value={squadMax} onChange={(e) => setSquadMax(e.target.value)} />
               </div>
+            <Hint>Fewest and most players a team can buy. A full squad stops bidding.</Hint>
             </div>
             <div>
               <label className="label">Timer per player (sec)</label>
               <input type="number" min={5} className="input" value={lotSeconds} onChange={(e) => setLotSeconds(e.target.value)} />
+            <Hint>How long a player stays on the block if nobody bids.</Hint>
             </div>
             <div>
               <label className="label">Timer after a bid (sec)</label>
               <input type="number" min={3} className="input" value={bidSeconds} onChange={(e) => setBidSeconds(e.target.value)} />
+            <Hint>Each bid resets the clock to this, so others can answer.</Hint>
             </div>
             <div>
               <label className="label">Break between players (sec)</label>
               <input type="number" min={0} className="input" value={breakSeconds} onChange={(e) => setBreakSeconds(e.target.value)} />
+            <Hint>Pause before the next player comes up.</Hint>
             </div>
             <div>
               <label className="label">Keep back per empty min slot</label>
               <input type="number" min={0} className="input" value={minBase} onChange={(e) => setMinBase(e.target.value)} />
+            <Hint>Purse a team must keep for each squad slot it still has to fill, so it can reach the minimum.</Hint>
             </div>
             <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium sm:col-span-2">
-              Host can also own a team
+              <span>
+                Host can also own a team
+                <Hint>Lets you join with your own team and bid like everyone else.</Hint>
+              </span>
               <input type="checkbox" className="switch" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
             </label>
             <div>
               <label className="label">Retentions per team</label>
               <input type="number" min={0} className="input" value={retainMax} onChange={(e) => setRetainMax(e.target.value)} />
+            <Hint>Players a team can keep from last season before the auction.</Hint>
             </div>
             <div>
               <label className="label">Right-to-match cards per team</label>
               <input type="number" min={0} className="input" value={rtmCards} onChange={(e) => setRtmCards(e.target.value)} />
+            <Hint>Lets a team match the winning bid for its former player and take that player back.</Hint>
             </div>
             <div>
               <label className="label">Time to match (sec)</label>
               <input type="number" min={5} max={120} className="input" value={rtmSeconds} onChange={(e) => setRtmSeconds(e.target.value)} />
+            <Hint>How long a team has to use its right-to-match card.</Hint>
             </div>
             <div className="sm:col-span-2">
               <label className="label">Category limits per team</label>
@@ -445,12 +470,16 @@ function AuctionForm({
               <p className="mt-1 text-xs text-stone-500">Give players a "Category: Overseas" line in their details.</p>
             </div>
             <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
-              Allow trades
+              <span>
+                Allow trades
+                <Hint>Teams can swap players with each other after buying them.</Hint>
+              </span>
               <input type="checkbox" className="switch" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
             </label>
             <div>
               <label className="label" htmlFor="tdl">Trade deadline (optional)</label>
               <input id="tdl" type="datetime-local" className="input" value={tradeDeadline} onChange={(e) => setTradeDeadline(e.target.value)} />
+            <Hint>After this, trades between teams are blocked.</Hint>
             </div>
             <p className="text-xs text-stone-500 sm:col-span-3">
               Add players below as lots (their start price is the base price). Schedule the league so teams can join, then go live. Purses
@@ -470,41 +499,55 @@ function AuctionForm({
                 <option key={c}>{c}</option>
               ))}
             </select>
+            <Hint>Every price in this auction uses it.</Hint>
           </div>
           <div>
             <label className="label" htmlFor="as">
               Anti-snipe (sec)
             </label>
             <input id="as" type="number" min={0} max={600} className="input" value={antiSnipe} onChange={(e) => setAntiSnipe(e.target.value)} />
+            <Hint>A bid this close to the end adds this much time, so nobody wins by a last-second snipe. 0 turns it off.</Hint>
           </div>
           <div>
             <label className="label" htmlFor="du">
               Lot duration (min)
             </label>
             <input id="du" type="number" min={1} max={10080} className="input" value={duration} onChange={(e) => setDuration(e.target.value)} />
+            <Hint>How long each lot stays open once it starts.</Hint>
           </div>
           <div>
             <label className="label" htmlFor="st">
               Stagger lots (sec)
             </label>
             <input id="st" type="number" min={0} className="input" value={stagger} onChange={(e) => setStagger(e.target.value)} />
+            <Hint>Closes each next lot this much later, so lots end one by one.</Hint>
           </div>
           <div className="sm:col-span-2">
             <label className="label" htmlFor="inc">
               Increments (from : step)
             </label>
             <input id="inc" className="input font-mono" value={increments} onChange={(e) => setIncrements(e.target.value)} />
+            <Hint>Smallest raise at each price. "0:10, 1000:50" means steps of 10 below 1,000, then 50.</Hint>
           </div>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
-            Short amounts (e.g. 1.5Cr)
+            <span>
+              Short amounts (e.g. 1.5Cr)
+              <Hint>Shows big prices short, like 1.5Cr or 20L, instead of every digit.</Hint>
+            </span>
             <input type="checkbox" className="switch" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
           </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
-            Chat enabled
+            <span>
+              Chat enabled
+              <Hint>Live chat next to the bidding. Turn off to keep the room quiet.</Hint>
+            </span>
             <input type="checkbox" className="switch" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
           </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
-            Allow links in chat
+            <span>
+              Allow links in chat
+              <Hint>Off blocks web links in messages, which stops most spam.</Hint>
+            </span>
             <input type="checkbox" className="switch" checked={allowLinks} onChange={(e) => setAllowLinks(e.target.checked)} />
           </label>
           <div>
@@ -512,6 +555,7 @@ function AuctionForm({
               Chat slow mode (sec)
             </label>
             <input id="sm" type="number" min={0} max={300} className="input" value={slowMode} onChange={(e) => setSlowMode(e.target.value)} />
+            <Hint>Wait between messages from the same person. 0 turns it off.</Hint>
           </div>
         </fieldset>
         <p className="text-xs text-stone-500">

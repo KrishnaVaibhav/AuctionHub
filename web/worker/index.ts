@@ -158,6 +158,97 @@ async function sweepStorageOrphans(env: Env): Promise<number> {
   return removed;
 }
 
+// ---------------------------------------------------------------------------
+// League stats import: fetch a host's CSV/JSON link server-side (most sites
+// block browser fetches). Hosts and co-hosts of that auction only.
+// ---------------------------------------------------------------------------
+const STATS_MAX_BYTES = 1_000_000;
+const UUID_ONLY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Public https URLs only: no IP literals, no local names, no odd ports, no credentials. */
+export function safeStatsUrl(raw: string): URL | null {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
+  const host = u.hostname.toLowerCase();
+  if (u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443")) return null;
+  if (!host.includes(".") || host.startsWith("[") || /^[\d.]+$/.test(host)) return null;
+  if (/(^|\.)(localhost|local|internal|lan|home|corp|intranet)$/.test(host)) return null;
+  return u;
+}
+
+async function canRunAuction(env: Env, auth: string, auctionId: string): Promise<boolean> {
+  for (const perm of ["run", "edit"]) {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/auction_perm`, {
+      method: "POST",
+      headers: { apikey: env.SUPABASE_ANON_KEY, authorization: auth, "content-type": "application/json" },
+      body: JSON.stringify({ p_auction_id: auctionId, p_perm: perm }),
+    });
+    if (res.ok && (await res.json()) === true) return true;
+  }
+  return false;
+}
+
+async function statsFetch(request: Request, env: Env): Promise<Response> {
+  const fail = (error: string, status: number) => Response.json({ error }, { status, headers: { "cache-control": "no-store" } });
+  if (request.method !== "POST") return fail("Method not allowed", 405);
+  const auth = request.headers.get("authorization") ?? "";
+  if (!auth.startsWith("Bearer ")) return fail("Sign in first", 401);
+  let body: { url?: unknown; auction_id?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return fail("Bad request", 400);
+  }
+  const auctionId = typeof body.auction_id === "string" ? body.auction_id : "";
+  if (!UUID_ONLY.test(auctionId)) return fail("Bad request", 400);
+  const first = typeof body.url === "string" ? safeStatsUrl(body.url) : null;
+  if (!first) return fail("Use a public https link", 400);
+  let target: URL = first;
+  if (!(await canRunAuction(env, auth, auctionId))) return fail("Only the host can import stats", 403);
+
+  // Follow up to 3 redirects by hand so each hop passes the same URL check.
+  let res: Response | null = null;
+  for (let hop = 0; hop < 4; hop++) {
+    res = await fetch(target.toString(), {
+      redirect: "manual",
+      headers: { accept: "text/csv, application/json, text/plain;q=0.9, */*;q=0.1", "user-agent": "AuctionHub stats import" },
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    if (!res) return fail("Could not reach that link", 502);
+    if (res.status < 300 || res.status >= 400) break;
+    const next: string | null = res.headers.get("location");
+    const nextUrl: URL | null = next ? safeStatsUrl(new URL(next, target).toString()) : null;
+    if (!nextUrl || hop === 3) return fail("That link redirects somewhere we can't follow", 502);
+    target = nextUrl;
+  }
+  if (!res || !res.ok || !res.body) return fail(`That link answered ${res?.status ?? "nothing"}`, 502);
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > STATS_MAX_BYTES) {
+      await reader.cancel();
+      return fail("That file is over 1 MB", 413);
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.byteLength;
+  }
+  return new Response(new TextDecoder().decode(bytes), { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -165,6 +256,7 @@ export default {
       const res = await pingSupabase(env);
       return Response.json({ ok: res.ok, supabase: res.status, orphanSweep: Boolean(env.SUPABASE_SERVICE_ROLE_KEY) }, { status: res.ok ? 200 : 502 });
     }
+    if (url.pathname === "/api/stats-fetch") return statsFetch(request, env);
     if (url.pathname.startsWith("/api/")) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }

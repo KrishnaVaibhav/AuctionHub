@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckIcon, GridNineIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { BINGO_EVENTS, bingoCard, bingoHits, bingoLine, funOn, type PulseEvent } from "../../lib/fun";
@@ -8,14 +8,51 @@ import { Confetti } from "./Confetti";
 
 const label = new Map(BINGO_EVENTS.map((e) => [e.key, e.label]));
 
-/** A 3x3 card of room events, dealt per viewer. Squares mark themselves as things happen. */
+interface ServerState {
+  card: string[] | null;
+  hits: string[];
+  claimed: boolean;
+  line: boolean;
+}
+
+/**
+ * A 3x3 card of room events. Signed-in viewers get a card dealt by the server,
+ * which also decides which squares have happened and whether a line is real.
+ * Guests see a local card for fun (they can't claim).
+ */
 export function BingoCard({ auction, lots, events, userId }: { auction: Auction; lots: Lot[]; events: PulseEvent[]; userId: string | null }) {
-  const card = useMemo(() => bingoCard(`${userId ?? "guest"}:${auction.id}`), [userId, auction.id]);
-  const hits = bingoHits(lots, events);
+  const localCard = useMemo(() => bingoCard(`${userId ?? "guest"}:${auction.id}`), [userId, auction.id]);
+  const [server, setServer] = useState<ServerState | null>(null);
+  const on = funOn(auction.settings, "bingo");
+
+  // Re-ask the server shortly after anything changes in the room.
+  const pulse = `${events.length}:${lots.map((l) => `${l.status}${l.bid_count}`).join(",")}`;
+  useEffect(() => {
+    if (!on) return;
+    let alive = true;
+    const id = setTimeout(() => {
+      void supabase.rpc("bingo_state", { p_auction_id: auction.id }).then(({ data, error }) => {
+        if (alive && !error && data) setServer(data as ServerState);
+      });
+    }, 1200);
+    return () => {
+      alive = false;
+      clearTimeout(id);
+    };
+  }, [auction.id, userId, pulse, on]);
+
+  const card = server?.card ?? localCard;
+  const hits = useMemo(() => {
+    const local = bingoHits(lots, events);
+    // The server's view wins for signed-in viewers; the live pulse fills the gap until it answers.
+    return server ? new Set([...server.hits, ...(server.card ? [] : local)]) : local;
+  }, [server, lots, events]);
   const line = bingoLine(card, hits);
+  const canClaim = Boolean(userId && server?.card && server.line);
   const [claimed, setClaimed] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  if (!funOn(auction.settings, "bingo")) return null;
+  const done = claimed || Boolean(server?.claimed);
+  if (!on) return null;
 
   async function claim() {
     const { error } = await supabase.rpc("claim_bingo", { p_auction_id: auction.id });
@@ -48,11 +85,12 @@ export function BingoCard({ auction, lots, events, userId }: { auction: Auction;
           );
         })}
       </div>
-      {line && userId && (
-        <button className="btn-accent w-full" disabled={claimed} onClick={() => void claim()}>
-          {claimed ? t("Bingo badge earned!") : t("Bingo! Claim your badge")}
+      {(canClaim || done) && (
+        <button className="btn-accent w-full" disabled={done} onClick={() => void claim()}>
+          {done ? t("Bingo badge earned!") : t("Bingo! Claim your badge")}
         </button>
       )}
+      {line && userId && !canClaim && !done && <p className="text-xs text-stone-500">{t("Checking your line...")}</p>}
       {!userId && <p className="text-xs text-stone-500">{t("Sign in to claim a badge when you get a line.")}</p>}
       {msg && <p className="text-xs text-red-600">{msg}</p>}
     </div>

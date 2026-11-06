@@ -225,6 +225,7 @@ Ended auctions get a Replay tab (`BidReplay`). It reads the public `bids` histor
 - `league_matches`, `league_player_stats`, `league_team_scores`: written only by `league_record_match` / `league_delete_match` (run permission).
 - Points per stat come from `settings.league.scoring`; a `points` value on a row overrides it. Captain and vice-captain (`league_set_captain`, owner of the team) multiply by `captain_x` (2) and `vice_x` (1.5), snapshotted per match.
 - `lots.points` mirrors each player's total across matches.
+- **Stats import**: hosts paste a sheet, upload a CSV/JSON file, or fetch a link (CSV, Google Sheet, JSON feed). The link is kept in `settings.league.stats_url`. Links the browser can't read (CORS) go through the Worker's `POST /api/stats-fetch`: signed-in host or co-host of that auction only (checked with `auction_perm`), public https hosts only (no IP literals or local names, every redirect re-checked), 10 s timeout, 1 MB cap.
 - Seasons share `auctions.series_id`; teams share `league_teams.franchise_id` across seasons. `league_season_table` (callable by anyone who can see the league) powers the public `/league/:id/season` page.
 
 ## Engagement layer
@@ -235,7 +236,9 @@ Design rule: XP, levels and badges reward watching, chatting, guessing and ratin
 - **Live room moments** are client-side, derived from realtime lot row changes (`useLivePulse`): hype meter, showdown banner, "Extended!" toast, Sold! moment with confetti, synthesised sounds and vibration. Reactions travel over Realtime broadcast and are never stored.
 - **Live stage** (`LiveStage`): the room's first read, sized by priority: price, then time left, then the viewer's status (the only saturated block). The header compacts while live.
 - **Predictions** (`predictions`): price guesses and league pick'em via `make_prediction`; locked at the first bid; hidden until the lot closes; scored by `engagement_on_close` (price: 100/75/50/25/5 by error; pick'em: 50). Hosts, co-hosts and team owners can't play. `prediction_leaderboard` for weekly and per-auction tables.
-- **Badges** (`user_badges`) awarded by triggers: first_win, collector, sniper, bargain, night_owl, bullseye, seller, top_seller, recruiter/welcome (referral), bingo (honor-system claim), and `event:<id>` for wins in a running themed event.
+- **Bingo** is checked by the server: `bingo_state` deals each signed-in viewer a card once (`bingo_cards`) and returns the squares hit, computed by `_bingo_hits` from stored lots and bids (`lots.extensions` counts end-time pushes); `claim_bingo` pays only for a real line, once per auction. Guests see a local card and can't claim.
+- **Outbid** in the live stage asks the server once per lot whether the viewer has bid, so it survives a reload.
+- **Badges** (`user_badges`) awarded by triggers: first_win, collector, sniper, bargain, night_owl, bullseye, seller, top_seller, recruiter/welcome (referral), bingo, and `event:<id>` for wins in a running themed event.
 - **XP** (`profiles.xp`, daily caps in `xp_daily`): watch heartbeat, chat, guesses, ratings, bingo. Level = floor(sqrt(xp/50)) + 1. Cosmetics (chat colour at 3, frames at 5/10/15) via `set_cosmetics`.
 - **Host tiers** (`host_tiers`): bronze/silver/gold from sales and seller rating; live auctions sort by tier on the home page.
 - **Trophy shelf** (`trophy_shelf`): opt-in via `profiles.show_shelf`.

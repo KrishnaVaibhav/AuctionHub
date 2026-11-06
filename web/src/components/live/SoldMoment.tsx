@@ -65,7 +65,7 @@ export function SoldMoment({ auction, lots, events, userId, teamName }: { auctio
         </p>
         <p className="mt-4 font-display text-5xl font-extrabold tabular-nums">{money(count, auction.settings)}</p>
         <p className="mt-2 text-base">
-          {t("to")} <strong>{who}</strong>
+          {t("Winner")}: <strong>{who}</strong>
         </p>
         <div className="mt-6 flex justify-center gap-2">
           {mine && (

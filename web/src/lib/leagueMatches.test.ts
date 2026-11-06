@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatScoring, parseScoring, parseStatsSheet, teamTotals } from "./leagueMatches";
+import { formatScoring, jsonToSheet, parseScoring, parseStatsSheet, sheetFromResponse, statsSourceUrl, teamTotals } from "./leagueMatches";
 
 const players = [
   { id: "1", title: "Virat Kohli" },
@@ -40,5 +40,38 @@ describe("teamTotals", () => {
       { match_id: "m2", team_id: "a", points: 5.5, captain_lot_id: null, vice_lot_id: null },
     ]);
     expect(t.get("a")).toEqual({ points: 15.5, matches: 2 });
+  });
+});
+
+describe("stats links", () => {
+  it("turns a Google Sheet link into its CSV export", () => {
+    expect(statsSourceUrl("https://docs.google.com/spreadsheets/d/abc_123/edit#gid=42")).toBe(
+      "https://docs.google.com/spreadsheets/d/abc_123/export?format=csv&gid=42",
+    );
+    expect(statsSourceUrl("https://docs.google.com/spreadsheets/d/abc/edit")).toBe("https://docs.google.com/spreadsheets/d/abc/export?format=csv");
+  });
+  it("keeps published and plain links, rejects non-https", () => {
+    const pub = "https://docs.google.com/spreadsheets/d/e/2PACX/pub?output=csv";
+    expect(statsSourceUrl(pub)).toBe(pub);
+    expect(statsSourceUrl("https://example.com/stats.csv")).toBe("https://example.com/stats.csv");
+    expect(statsSourceUrl("http://example.com/stats.csv")).toBeNull();
+    expect(statsSourceUrl("not a link")).toBeNull();
+  });
+  it("reads a JSON feed as a sheet", () => {
+    const sheet = jsonToSheet({ players: [{ name: "Virat Kohli", runs: 82, team: "RCB", wickets: "0" }, { player: "Jasprit Bumrah", wickets: 3 }] });
+    expect(sheet).toBe("player,runs,wickets\nVirat Kohli,82,0\nJasprit Bumrah,,3");
+    const parsed = parseStatsSheet(sheet, [
+      { id: "a", title: "Virat Kohli" },
+      { id: "b", title: "Jasprit Bumrah" },
+    ]);
+    expect(parsed.rows).toEqual([
+      { lot_id: "a", stats: { runs: 82, wickets: 0 } },
+      { lot_id: "b", stats: { wickets: 3 } },
+    ]);
+  });
+  it("passes CSV through and refuses web pages", () => {
+    expect(sheetFromResponse(" player,runs\nA,1 ")).toBe("player,runs\nA,1");
+    expect(() => sheetFromResponse("<!DOCTYPE html><html>")).toThrow(/web page/);
+    expect(() => jsonToSheet({ nope: 1 })).toThrow();
   });
 });

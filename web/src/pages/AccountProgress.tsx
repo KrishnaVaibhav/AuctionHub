@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { t } from "../lib/i18n";
 import { CopySimpleIcon, LockSimpleIcon, MagnifyingGlassIcon, TrashIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../lib/supabase";
 import { CHAT_COLORS, FRAMES, levelOf } from "../lib/fun";
@@ -40,7 +41,7 @@ export function AccountProgress({ userId }: { userId: string }) {
 
   async function cosmetics(color: string | null, frame: string | null) {
     const { error } = await supabase.rpc("set_cosmetics", { p_color: color, p_frame: frame });
-    setMsg(error ? { ok: false, text: errorMessage(error) } : { ok: true, text: "Saved" });
+    setMsg(error ? { ok: false, text: errorMessage(error) } : { ok: true, text: t("Saved") });
     if (!error) await load();
   }
   async function shelf(on: boolean) {
@@ -59,10 +60,10 @@ export function AccountProgress({ userId }: { userId: string }) {
         <LevelBar xp={me.xp} />
 
         <div className="space-y-2">
-          <h3 className="label">Chat name colour {level < 3 && <span className="normal-case">· unlocks at level 3</span>}</h3>
+          <h3 className="label">{t("Chat name colour")} {level < 3 && <span className="normal-case">· {t("unlocks at level 3")}</span>}</h3>
           <div className="flex flex-wrap gap-2">
             <button className={`choice px-3 py-1.5 text-sm ${!me.chat_color ? "choice-on" : ""}`} onClick={() => void cosmetics(null, me.frame)}>
-              Default
+              {t("Default")}
             </button>
             {Object.keys(CHAT_COLORS).map((c) => (
               <button
@@ -80,10 +81,10 @@ export function AccountProgress({ userId }: { userId: string }) {
         </div>
 
         <div className="space-y-2">
-          <h3 className="label">Avatar frame</h3>
+          <h3 className="label">{t("Avatar frame")}</h3>
           <div className="flex flex-wrap gap-2">
             <button className={`choice px-3 py-1.5 text-sm ${!me.frame ? "choice-on" : ""}`} onClick={() => void cosmetics(me.chat_color, null)}>
-              None
+              {t("None")}
             </button>
             {(Object.entries(FRAMES) as [keyof typeof FRAMES, (typeof FRAMES)[keyof typeof FRAMES]][]).map(([f, info]) => (
               <button
@@ -93,7 +94,7 @@ export function AccountProgress({ userId }: { userId: string }) {
                 onClick={() => void cosmetics(me.chat_color, f)}
               >
                 {level < info.level && <LockSimpleIcon size={12} weight="bold" aria-hidden="true" />}
-                {f} <span className="text-xs text-stone-500">Lv {info.level}</span>
+                {t(f)} <span className="text-xs text-stone-500">{t("Lv {n}", { n: info.level })}</span>
               </button>
             ))}
           </div>
@@ -103,36 +104,36 @@ export function AccountProgress({ userId }: { userId: string }) {
 
       <section className="card space-y-4 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="section-title">Badges ({badges.length})</h2>
+          <h2 className="section-title">{t("Badges ({n})", { n: badges.length })}</h2>
           {badges[0] && (
             <button
               className="btn-ghost px-3 py-1.5 text-xs"
               onClick={() => {
                 const info = badgeInfo(badges[0].badge, events);
-                void shareCard({ eyebrow: "New badge", headline: info.label, big: "🏅", footer: info.desc, accent: "#8b5cf6" }, "auctionhub-badge.png");
+                void shareCard({ eyebrow: t("New badge"), headline: t(info.label), big: "🏅", footer: t(info.desc), accent: "#8b5cf6" }, "auctionhub-badge.png");
               }}
             >
-              Share latest
+              {t("Share latest")}
             </button>
           )}
         </div>
-        <BadgeGrid badges={badges} events={events} empty="Win a lot, guess a price within 2% or finish a bingo line to earn your first badge." />
+        <BadgeGrid badges={badges} events={events} empty={t("Win a lot, guess a price within 2% or finish a bingo line to earn your first badge.")} />
         <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl bg-stone-900/[0.04] p-4">
           <span>
-            <span className="block text-sm font-semibold">Show my trophy shelf</span>
-            <span className="block text-xs text-stone-500">Lots you won in public auctions appear on your public profile.</span>
+            <span className="block text-sm font-semibold">{t("Show my trophy shelf")}</span>
+            <span className="block text-xs text-stone-500">{t("Lots you won in public auctions appear on your public profile.")}</span>
           </span>
           <input type="checkbox" className="switch" checked={me.show_shelf} onChange={(e) => void shelf(e.target.checked)} />
         </label>
       </section>
 
       <section className="card space-y-3 p-5 sm:p-6">
-        <h2 className="section-title">Invite a friend</h2>
-        <p className="text-sm text-stone-500">When a friend joins with your link and wins their first lot, you both get a badge.</p>
+        <h2 className="section-title">{t("Invite a friend")}</h2>
+        <p className="text-sm text-stone-500">{t("When a friend joins with your link and wins their first lot, you both get a badge.")}</p>
         <div className="flex gap-2">
-          <input className="input font-mono text-xs" readOnly value={invite} onFocus={(e) => e.target.select()} aria-label="Your invite link" />
+          <input className="input font-mono text-xs" readOnly value={invite} onFocus={(e) => e.target.select()} aria-label={t("Your invite link")} />
           <button className="btn-primary shrink-0" onClick={() => void navigator.clipboard?.writeText(invite)}>
-            <CopySimpleIcon size={16} aria-hidden="true" /> Copy
+            <CopySimpleIcon size={16} aria-hidden="true" /> {t("Copy")}
           </button>
         </div>
       </section>
@@ -170,25 +171,25 @@ function SavedSearches() {
   return (
     <section className="card space-y-4 p-5 sm:p-6">
       <div>
-        <h2 className="section-title">Saved searches</h2>
-        <p className="text-sm text-stone-500">Get a notification when new lots match. Checked every 15 minutes.</p>
+        <h2 className="section-title">{t("Saved searches")}</h2>
+        <p className="text-sm text-stone-500">{t("Get a notification when new lots match. Checked every 15 minutes.")}</p>
       </div>
       <form onSubmit={add} className="grid gap-2 sm:grid-cols-[1fr_10rem_8rem_auto]">
         <label className="relative">
           <MagnifyingGlassIcon size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-stone-500" aria-hidden="true" />
-          <input className="input pl-9" maxLength={80} placeholder="e.g. Rolex" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Words to match" />
+          <input className="input pl-9" maxLength={80} placeholder={t("e.g. Rolex")} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t("Words to match")} />
         </label>
-        <select className="input" value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category">
-          <option value="">Any category</option>
+        <select className="input" value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t("Category")}>
+          <option value="">{t("Any category")}</option>
           {CATEGORIES.map(([v, l]) => (
             <option key={v} value={v}>
-              {l}
+              {t(l)}
             </option>
           ))}
         </select>
-        <input type="number" min={1} className="input" placeholder="Max price" value={max} onChange={(e) => setMax(e.target.value)} aria-label="Maximum start price" />
+        <input type="number" min={1} className="input" placeholder={t("Max price")} value={max} onChange={(e) => setMax(e.target.value)} aria-label={t("Maximum start price")} />
         <button className="btn-primary" disabled={!query.trim() && !category}>
-          Save
+          {t("Save")}
         </button>
       </form>
       {err && <p className="text-sm text-red-600">{err}</p>}
@@ -197,13 +198,13 @@ function SavedSearches() {
           {rows.map((r) => (
             <li key={r.id} className="flex items-center justify-between gap-2 py-2">
               <span className="truncate">
-                {r.query || "Anything"}
+                {r.query || t("Anything")}
                 {r.category && <span className="text-stone-500"> · {r.category}</span>}
-                {r.max_price && <span className="text-stone-500"> · up to {r.max_price}</span>}
+                {r.max_price && <span className="text-stone-500"> · {t("up to {amount}", { amount: r.max_price })}</span>}
               </span>
               <button
                 className="btn-icon h-9 w-9"
-                aria-label={`Delete saved search ${r.query}`}
+                aria-label={t("Delete saved search {q}", { q: r.query })}
                 onClick={async () => {
                   await supabase.from("saved_searches").delete().eq("id", r.id);
                   await load();

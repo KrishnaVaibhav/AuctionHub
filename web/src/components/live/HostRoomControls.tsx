@@ -71,6 +71,7 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
 
               <section className="space-y-2">
                 <h3 className="label">Announcement</h3>
+                <p className="mt-1 block text-xs leading-snug text-stone-500">A short line pinned to the top of the room for every viewer.</p>
                 <textarea className="input min-h-20" maxLength={200} placeholder="Shown at the top of the room for everyone" value={text} onChange={(e) => setText(e.target.value)} />
                 <div className="flex gap-2">
                   <button className="btn-accent" onClick={() => void announce(text)}>
@@ -87,6 +88,7 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
               {timed && selected && (
                 <section className="space-y-2">
                   <h3 className="label">Timer · #{selected.position + 1} {selected.title}</h3>
+                <p className="mt-1 block text-xs leading-snug text-stone-500">Add time to the open lot, or close it in 10 seconds.</p>
                   <div className="flex flex-wrap gap-2">
                     {[30, 60, 300].map((s) => (
                       <button key={s} className="btn-ghost" onClick={() => void extend(selected, s)}>
@@ -120,6 +122,7 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
               {reopenable.length > 0 && auction.mode !== "league" && (
                 <section className="space-y-2">
                   <h3 className="label">Reopen a lot</h3>
+                <p className="mt-1 block text-xs leading-snug text-stone-500">Puts an unsold or withdrawn lot back up for bidding.</p>
                   <div className="flex items-center gap-2 text-sm">
                     for
                     <input type="number" min={1} max={1440} className="input w-24" value={minutes} onChange={(e) => setMinutes(e.target.value)} />

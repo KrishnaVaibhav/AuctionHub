@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { CrownSimpleIcon, TrophyIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { confirmDialog } from "../../lib/confirm";
-import { formatScoring, parseScoring, parseStatsSheet, teamTotals, useLeagueMatches } from "../../lib/leagueMatches";
+import { fetchStatsSheet, formatScoring, parseScoring, parseStatsSheet, sheetFromResponse, teamTotals, useLeagueMatches } from "../../lib/leagueMatches";
 import type { Auction, LeagueTeam, Lot } from "../../lib/types";
 import { TeamChip } from "./TeamChip";
 import { FixturesPanel, SeasonAwards } from "./FixturesPanel";
@@ -227,15 +227,41 @@ function RecordMatch({ auction, lots, onDone }: { auction: Auction; lots: Lot[];
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const parsed = useMemo(() => parseStatsSheet(sheet, lots), [sheet, lots]);
+  const savedLink = auction.settings.league?.stats_url ?? "";
+  const [link, setLink] = useState(savedLink);
+  const [fetching, setFetching] = useState(false);
+
+  async function loadLink() {
+    setFetching(true);
+    setMsg(null);
+    try {
+      setSheet(await fetchStatsSheet(link, auction.id));
+    } catch (err) {
+      setMsg({ ok: false, text: err instanceof Error ? err.message : String(err) });
+    }
+    setFetching(false);
+  }
+
+  async function loadFile(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 1_000_000) return setMsg({ ok: false, text: "That file is over 1 MB" });
+    try {
+      setSheet(sheetFromResponse(await file.text()));
+    } catch (err) {
+      setMsg({ ok: false, text: err instanceof Error ? err.message : String(err) });
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
     // Save scoring rules first if they changed (needs edit permission).
+    // The stats link is remembered for next time.
     const scoring = parseScoring(rules);
-    if (formatScoring(scoring) !== formatScoring(auction.settings.league?.scoring)) {
-      const settings = { ...auction.settings, league: { ...auction.settings.league, scoring } };
+    const statsUrl = link.trim();
+    if (formatScoring(scoring) !== formatScoring(auction.settings.league?.scoring) || statsUrl !== savedLink) {
+      const settings = { ...auction.settings, league: { ...auction.settings.league, scoring, stats_url: statsUrl || undefined } };
       const { error } = await supabase.from("auctions").update({ settings }).eq("id", auction.id);
       if (error) {
         setBusy(false);
@@ -275,6 +301,28 @@ function RecordMatch({ auction, lots, onDone }: { auction: Auction; lots: Lot[];
         <span className="label">Scoring (points per stat)</span>
         <input className="input font-mono text-xs" value={rules} onChange={(e) => setRules(e.target.value)} />
       </label>
+      <div>
+        <span className="label">Stats link (CSV, Google Sheet or JSON feed)</span>
+        <div className="flex flex-wrap gap-2">
+          <input
+            type="url"
+            className="input min-w-0 flex-1 font-mono text-xs"
+            placeholder="https://docs.google.com/spreadsheets/d/..."
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+          />
+          <button type="button" className="btn-ghost" disabled={fetching || !link.trim()} onClick={() => void loadLink()}>
+            {fetching ? "Fetching..." : "Fetch"}
+          </button>
+          <label className="btn-ghost cursor-pointer">
+            Upload file
+            <input type="file" accept=".csv,.tsv,.txt,.json,text/csv,application/json" className="sr-only" onChange={(e) => void loadFile(e.target.files?.[0])} />
+          </label>
+        </div>
+        <span className="mt-1 block text-xs text-stone-500">
+          A Google Sheet must be shared as "Anyone with the link". The link is saved, so next match is one tap.
+        </span>
+      </div>
       <label className="block">
         <span className="label">Stats sheet</span>
         <textarea
