@@ -208,12 +208,13 @@ function JoinOrMyTeam({
   if (auction.status === "draft") {
     return isHost ? (
       <div className="card bg-brand-50 p-4 text-sm text-brand-700">
-        Teams can join once you <strong>schedule</strong> the league (Edit, set a start time, then Schedule). You can still go live early.
+        Teams can't see this league while it's a draft. <strong>Schedule</strong> it (Edit, set a start time, then Schedule) so teams can find and join it. You can go live any time, and teams can still join after that.
       </div>
     ) : null;
   }
 
-  if (auction.status !== "scheduled") return null;
+  // Teams can join until the league ends (late joiners still get the full purse).
+  if (auction.status !== "scheduled" && auction.status !== "live" && auction.status !== "paused") return null;
 
   const canJoin = !isHost || league.host_can_play;
   const full = teams.length >= league.max_teams;

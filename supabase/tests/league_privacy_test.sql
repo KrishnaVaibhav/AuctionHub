@@ -40,8 +40,7 @@ select throws_ok($$select public.join_league('30000000-0000-0000-0000-0000000000
   'P0001', 'You already have a team here, or that short name is taken', 'one team per user');
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
-select throws_ok($$select public.start_auction('30000000-0000-0000-0000-000000000001')$$,
-  'P0001', 'At least 2 teams must join before the league starts', 'needs 2 teams');
+select is((select count(*)::int from public.league_teams where auction_id = '30000000-0000-0000-0000-000000000001'), 1, 'one team so far');
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a3","role":"authenticated"}';
 select lives_ok($$select public.join_league('30000000-0000-0000-0000-000000000001', 'Team Two', 'TWO')$$, 'team two joins');
