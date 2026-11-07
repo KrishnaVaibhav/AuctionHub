@@ -98,7 +98,7 @@ export function MyActivity() {
         </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4">
         {lists[tab].map((r) => {
           const cur = { currency: r.currency };
           return (

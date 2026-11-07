@@ -7,6 +7,9 @@
   /* Body and controls use the system face; the self-hosted display face is for headlines and prices only. */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif;
   --font-display: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  /* Big screens: 3xl = 1920px monitors, 4xl = 2560px (1440p/4K at 150%). */
+  --breakpoint-3xl: 120rem;
+  --breakpoint-4xl: 160rem;
   --color-brand-50: #fffbeb;
   --color-brand-100: #fef3c7;
   --color-brand-200: #fde68a;
@@ -74,6 +77,23 @@
     from { opacity: 0; transform: translateY(6px); }
     /* "none" (not translateY(0)) so finished elements don't trap position:fixed children. */
     to { opacity: 1; transform: none; }
+  }
+}
+
+/*
+ * Page width: 1280px up to laptops, then it grows with the screen so big
+ * monitors use their sides instead of a narrow column in the middle.
+ */
+@utility max-w-page {
+  max-width: 80rem;
+  @media (width >= 96rem) {
+    max-width: 90rem;
+  }
+  @media (width >= 120rem) {
+    max-width: 110rem;
+  }
+  @media (width >= 160rem) {
+    max-width: 140rem;
   }
 }
 
@@ -197,6 +217,12 @@
   }
   html.dark {
     color-scheme: dark;
+  }
+  /* 2560px+ wide screens: scale the whole rem-based UI up a little so text stays readable. */
+  @media (width >= 160rem) {
+    html {
+      font-size: 112.5%;
+    }
   }
   body {
     background: var(--color-stone-50);

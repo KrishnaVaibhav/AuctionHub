@@ -134,7 +134,7 @@ function AuctionEditorInner() {
       {error && <p className="rounded-2xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">{error}</p>}
       {notice && <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">{notice}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 3xl:grid-cols-3">
         {role.owner && <VisibilityPanel auction={auction} onChanged={reload} />}
         {role.owner && <ModeratorsPanel auction={auction} onChanged={reload} />}
         <EmbedPanel auction={auction} />

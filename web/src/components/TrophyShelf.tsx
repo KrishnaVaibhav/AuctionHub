@@ -28,7 +28,7 @@ export function TrophyShelf({ userId }: { userId: string }) {
       <h2 className="section-title flex items-center gap-2">
         <TrophyIcon size={20} weight="fill" className="text-brand-500" aria-hidden="true" /> {t("Trophy shelf")}
       </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 3xl:grid-cols-8">
         {rows.map((r, i) => (
           <Link key={r.lot_id} to={`/a/${r.auction_id}`} className="card card-hover reveal group overflow-hidden" style={{ ["--i" as string]: i }}>
             <div className="aspect-square bg-stone-100">

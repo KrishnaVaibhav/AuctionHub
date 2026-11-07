@@ -143,7 +143,7 @@ function AuctionList({ title, rows, empty }: { title: string; rows: Auction[]; e
       {rows.length === 0 ? (
         <p className="text-sm text-stone-500">{empty}</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5">
           {rows.map((a) => (
             <Link key={a.id} to={`/a/${a.id}`} className="card flex gap-3 overflow-hidden p-3 card-hover">
               <div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100">

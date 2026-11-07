@@ -63,7 +63,7 @@ export function Layout() {
     <div className="flex min-h-dvh flex-col">
       {/* Floating glass navigation: content scrolls underneath it. */}
       <header className="sticky top-0 z-30 px-3 sm:px-6" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
-        <LiquidGlass className="mx-auto flex h-14 max-w-7xl items-center gap-2 rounded-full pr-2 pl-3 sm:pl-4">
+        <LiquidGlass className="mx-auto flex h-14 max-w-page items-center gap-2 rounded-full pr-2 pl-3 sm:pl-4">
           <Link to="/" className="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight">
             <img src="/favicon.svg" alt="" className="h-8 w-8" />
             <span>
@@ -110,7 +110,7 @@ export function Layout() {
         </LiquidGlass>
 
         {menuOpen && (
-          <LiquidGlass className="thick mx-auto mt-2 max-w-7xl animate-rise rounded-[28px] p-3 md:hidden">
+          <LiquidGlass className="thick mx-auto mt-2 max-w-page animate-rise rounded-[28px] p-3 md:hidden">
             {isAdmin && (
               <nav className="mb-3 flex flex-col gap-1 border-b border-stone-900/5 pb-3 dark:border-snow/5">
                 <NavLink to="/admin" className={navClass}>
@@ -143,7 +143,7 @@ export function Layout() {
         </div>
       )}
 
-      <main className={`mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8`}>
+      <main className={`mx-auto w-full max-w-page flex-1 px-4 py-6 sm:px-6 sm:py-8 2xl:px-8 2xl:py-10`}>
         <Outlet />
       </main>
 
@@ -178,7 +178,7 @@ export function Layout() {
       )}
 
       <footer className={`border-t border-stone-900/[0.06] py-8 dark:border-snow/[0.06] ${showTabBar ? "pb-28 md:pb-8" : ""}`}>
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-xs text-stone-500 sm:flex-row sm:px-6">
+        <div className="mx-auto flex max-w-page flex-col items-center justify-between gap-3 px-4 text-xs text-stone-500 sm:flex-row sm:px-6">
           <span>
             <span className="font-semibold text-stone-700">AuctionHub</span> · {t("Live auctions, real-time bidding")}
           </span>
