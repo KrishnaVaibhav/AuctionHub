@@ -12,6 +12,7 @@ import { NotFound } from "../NotFound";
 import { SafetyTab } from "./SafetyTab";
 import type { AuctionStatus } from "../../lib/types";
 import { confirmDialog } from "../../lib/confirm";
+import { Segmented } from "../../components/Glass";
 
 type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit" | "events";
 
@@ -815,13 +816,13 @@ function SupportInbox() {
 
   return (
     <div className="animate-rise space-y-4">
-      <div className="segmented">
-        {["open", "resolved", ""].map((s) => (
-          <button key={s || "all"} className={`tab ${status === s ? "tab-active" : ""}`} onClick={() => setStatus(s)}>
-            {s || "all"}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        aria-label="Report status"
+        width={92}
+        value={status || "all"}
+        onChange={(v) => setStatus(v === "all" ? "" : v)}
+        items={["open", "resolved", "all"].map((s) => ({ value: s, label: s }))}
+      />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="space-y-3">
         {(data ?? []).map((r) => (

@@ -8,6 +8,7 @@ import { shareCard } from "../lib/shareCard";
 import { badgeInfo } from "../lib/fun";
 import { CATEGORIES } from "../lib/categories";
 import { BadgeGrid, LevelBar } from "../components/Progress";
+import { Toggle } from "../components/Glass";
 
 interface Me {
   xp: number;
@@ -123,7 +124,7 @@ export function AccountProgress({ userId }: { userId: string }) {
             <span className="block text-sm font-semibold">{t("Show my trophy shelf")}</span>
             <span className="block text-xs text-stone-500">{t("Lots you won in public auctions appear on your public profile.")}</span>
           </span>
-          <input type="checkbox" className="switch" checked={me.show_shelf} onChange={(e) => void shelf(e.target.checked)} />
+          <Toggle checked={me.show_shelf} onChange={(v) => void shelf(v)} />
         </label>
       </section>
 

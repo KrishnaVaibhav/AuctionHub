@@ -3,6 +3,7 @@ import { supabase, errorMessage } from "../../lib/supabase";
 import { useProfileNames } from "../../lib/profiles";
 import type { Auction } from "../../lib/types";
 import type { StaffRow } from "../../lib/useAuctionRoom";
+import { Toggle } from "../../components/Glass";
 
 /**
  * Owner adds people by username. Everyone added moderates chat and sees the
@@ -87,11 +88,11 @@ export function ModeratorsPanel({ auction, onChanged }: { auction: Auction; onCh
                 </span>
                 <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-stone-600" title="Edit the auction, lots and photos">
                   Edit
-                  <input type="checkbox" className="switch" checked={r.can_edit} onChange={(e) => void setPerm(r.user_id, "can_edit", e.target.checked)} aria-label={`${name} can edit`} />
+                  <Toggle checked={r.can_edit} onChange={(v) => void setPerm(r.user_id, "can_edit", v)} aria-label={`${name} can edit`} />
                 </label>
                 <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-stone-600" title="Go live, pause, close lots, answer offers">
                   Run
-                  <input type="checkbox" className="switch" checked={r.can_run} onChange={(e) => void setPerm(r.user_id, "can_run", e.target.checked)} aria-label={`${name} can run the auction`} />
+                  <Toggle checked={r.can_run} onChange={(v) => void setPerm(r.user_id, "can_run", v)} aria-label={`${name} can run the auction`} />
                 </label>
                 <button className="text-xs text-stone-500 hover:text-red-600" onClick={() => void remove(r.user_id)} aria-label={`Remove ${name}`}>
                   Remove

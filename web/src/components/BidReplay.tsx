@@ -5,6 +5,7 @@ import { money } from "../lib/format";
 import { useProfileNames } from "../lib/profiles";
 import { t } from "../lib/i18n";
 import type { Auction, Lot } from "../lib/types";
+import { Segmented } from "./Glass";
 
 interface ReplayBid {
   id: number;
@@ -167,13 +168,13 @@ export function BidReplay({ auction, lots }: { auction: Auction; lots: Lot[] }) 
           className="min-w-32 flex-1 accent-brand-500"
           aria-label={t("Replay position")}
         />
-        <div className="segmented" role="radiogroup" aria-label={t("Replay speed")}>
-          {SPEEDS.map((s) => (
-            <button key={s} role="radio" aria-checked={speed === s} className={`tab px-3 tabular-nums ${speed === s ? "tab-active" : ""}`} onClick={() => setSpeed(s)}>
-              {s}x
-            </button>
-          ))}
-        </div>
+        <Segmented
+          aria-label={t("Replay speed")}
+          width={52}
+          value={String(speed)}
+          onChange={(v) => setSpeed(Number(v) as typeof speed)}
+          items={SPEEDS.map((s) => ({ value: String(s), label: <span className="tabular-nums">{s}x</span> }))}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">

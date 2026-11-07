@@ -20,6 +20,7 @@ import { BulkPhotos } from "./BulkPhotos";
 import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 import { CATEGORIES, parseTags } from "../../lib/categories";
 import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
+import { Toggle } from "../../components/Glass";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
@@ -449,7 +450,7 @@ function AuctionForm({
                 Host can also own a team
                 <Hint>Lets you join with your own team and bid like everyone else.</Hint>
               </span>
-              <input type="checkbox" className="switch" checked={hostCanPlay} onChange={(e) => setHostCanPlay(e.target.checked)} />
+              <Toggle checked={hostCanPlay} onChange={(v) => setHostCanPlay(v)} />
             </label>
             <div>
               <label className="label">Retentions per team</label>
@@ -476,7 +477,7 @@ function AuctionForm({
                 Allow trades
                 <Hint>Teams can swap players with each other after buying them.</Hint>
               </span>
-              <input type="checkbox" className="switch" checked={trades} onChange={(e) => setTrades(e.target.checked)} />
+              <Toggle checked={trades} onChange={(v) => setTrades(v)} />
             </label>
             <div>
               <label className="label" htmlFor="tdl">Trade deadline (optional)</label>
@@ -536,28 +537,28 @@ function AuctionForm({
               Custom bid amounts
               <Hint>On: bidders can type any amount or jump ahead, and set an auto-bid. Off: one button that bids the next step only.</Hint>
             </span>
-            <input type="checkbox" className="switch" checked={customBids} onChange={(e) => setCustomBids(e.target.checked)} />
+            <Toggle checked={customBids} onChange={(v) => setCustomBids(v)} />
           </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             <span>
               Short amounts (e.g. 1.5Cr)
               <Hint>Shows big prices short, like 1.5Cr or 20L, instead of every digit.</Hint>
             </span>
-            <input type="checkbox" className="switch" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
+            <Toggle checked={compact} onChange={(v) => setCompact(v)} />
           </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             <span>
               Chat enabled
               <Hint>Live chat next to the bidding. Turn off to keep the room quiet.</Hint>
             </span>
-            <input type="checkbox" className="switch" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
+            <Toggle checked={chatEnabled} onChange={(v) => setChatEnabled(v)} />
           </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             <span>
               Allow links in chat
               <Hint>Off blocks web links in messages, which stops most spam.</Hint>
             </span>
-            <input type="checkbox" className="switch" checked={allowLinks} onChange={(e) => setAllowLinks(e.target.checked)} />
+            <Toggle checked={allowLinks} onChange={(v) => setAllowLinks(v)} />
           </label>
           <div>
             <label className="label" htmlFor="sm">

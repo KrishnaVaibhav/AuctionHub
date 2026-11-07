@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CodeIcon } from "@phosphor-icons/react";
 import type { Auction } from "../../lib/types";
+import { Segmented } from "../../components/Glass";
 
 /** Copy-paste iframe for showing a live auction on any website. */
 export function EmbedPanel({ auction }: { auction: Auction }) {
@@ -27,13 +28,15 @@ export function EmbedPanel({ auction }: { auction: Auction }) {
           <p className="text-sm text-stone-500">A live widget with the lots, prices and countdowns. Visitors click through to bid.</p>
         </div>
       </div>
-      <div className="segmented w-fit" role="radiogroup" aria-label="Widget theme">
-        {(["light", "dark"] as const).map((t) => (
-          <button key={t} role="radio" aria-checked={theme === t} className={`tab ${theme === t ? "tab-active" : ""}`} onClick={() => setTheme(t)}>
-            {t === "light" ? "Light" : "Dark"}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        aria-label="Widget theme"
+        value={theme}
+        onChange={setTheme}
+        items={[
+          { value: "light", label: "Light" },
+          { value: "dark", label: "Dark" },
+        ]}
+      />
       <textarea className="input min-h-24 font-mono text-xs" readOnly value={snippet} aria-label="Embed code" onFocus={(e) => e.currentTarget.select()} />
       <div className="flex flex-wrap gap-2">
         <button className="btn-accent" onClick={() => void copy()}>

@@ -10,6 +10,7 @@ import { LotBadge } from "./StatusBadge";
 import { confirmDialog } from "../lib/confirm";
 import { SaleTypePanel } from "./SaleTypePanel";
 import { t } from "../lib/i18n";
+import { LiquidGlass } from "./Glass";
 
 interface Props {
   auction: Auction;
@@ -137,7 +138,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
   if (lot.sale_type && lot.sale_type !== "english") return <SaleTypePanel auction={auction} lot={lot} userId={userId} isHost={isHost} />;
 
   return (
-    <div className="glass space-y-4 rounded-[28px] p-5 sm:p-6">
+    <LiquidGlass className="thick space-y-4 rounded-[28px] p-5 sm:p-6">
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {announce.urgent ? "" : announce.text}
       </p>
@@ -271,6 +272,6 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
           </ul>
         )}
       </div>
-    </div>
+    </LiquidGlass>
   );
 }
