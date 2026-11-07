@@ -10,6 +10,7 @@ import { useIsAdmin } from "../lib/admin";
 import { NotificationBell } from "./NotificationBell";
 import { LanguagePicker } from "./LanguagePicker";
 import { t } from "../lib/i18n";
+import { LiquidGlass } from "./Glass";
 
 export function Layout() {
   const { session, profile, signOut } = useAuth();
@@ -62,7 +63,7 @@ export function Layout() {
     <div className="flex min-h-dvh flex-col">
       {/* Floating glass navigation: content scrolls underneath it. */}
       <header className="sticky top-0 z-30 px-3 sm:px-6" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
-        <div className="glass mx-auto flex h-14 max-w-7xl items-center gap-2 rounded-full pr-2 pl-3 sm:pl-4">
+        <LiquidGlass className="mx-auto flex h-14 max-w-7xl items-center gap-2 rounded-full pr-2 pl-3 sm:pl-4">
           <Link to="/" className="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight">
             <img src="/favicon.svg" alt="" className="h-8 w-8" />
             <span>
@@ -106,10 +107,10 @@ export function Layout() {
               {menuOpen ? <XIcon size={22} weight="bold" aria-hidden="true" /> : <DotsThreeCircleIcon size={24} aria-hidden="true" />}
             </button>
           </div>
-        </div>
+        </LiquidGlass>
 
         {menuOpen && (
-          <div className="glass mx-auto mt-2 max-w-7xl animate-rise rounded-[28px] p-3 md:hidden">
+          <LiquidGlass className="thick mx-auto mt-2 max-w-7xl animate-rise rounded-[28px] p-3 md:hidden">
             {isAdmin && (
               <nav className="mb-3 flex flex-col gap-1 border-b border-stone-900/5 pb-3 dark:border-snow/5">
                 <NavLink to="/admin" className={navClass}>
@@ -132,7 +133,7 @@ export function Layout() {
                 </Link>
               )}
             </div>
-          </div>
+          </LiquidGlass>
         )}
       </header>
 
@@ -152,7 +153,7 @@ export function Layout() {
           className="fixed inset-x-0 bottom-0 z-30 px-3 md:hidden"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
-          <div className="glass mx-auto flex max-w-md items-stretch justify-around gap-1 rounded-full p-1.5">
+          <LiquidGlass className="mx-auto flex max-w-md items-stretch justify-around gap-1 rounded-full p-1.5">
             {tabs.map(({ to, label, icon: TabIcon, end }) => (
               <NavLink
                 key={to}
@@ -172,7 +173,7 @@ export function Layout() {
                 )}
               </NavLink>
             ))}
-          </div>
+          </LiquidGlass>
         </nav>
       )}
 

@@ -18,6 +18,8 @@ export function resolvedTheme(theme: Theme = getTheme()): "light" | "dark" {
 export function applyTheme(theme: Theme = getTheme()) {
   const dark = resolvedTheme(theme) === "dark";
   document.documentElement.classList.toggle("dark", dark);
+  // glisse (the Liquid Glass components) reads the theme from data-theme.
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0f0e0d" : "#fafaf9");
 }
 

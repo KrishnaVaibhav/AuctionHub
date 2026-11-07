@@ -1,5 +1,6 @@
 import { DesktopIcon, MoonIcon, SunIcon, type Icon as PhIcon } from "@phosphor-icons/react";
 import { useTheme, type Theme } from "../lib/theme";
+import { Segmented } from "./Glass";
 
 const icons: Record<Theme, PhIcon> = { light: SunIcon, dark: MoonIcon, system: DesktopIcon };
 
@@ -32,20 +33,20 @@ export function ThemeToggle() {
 export function ThemeSegmented() {
   const [theme, setTheme] = useTheme();
   return (
-    <div className="segmented" role="radiogroup" aria-label="Theme">
-      {order.map((t) => (
-        <button
-          key={t}
-          type="button"
-          role="radio"
-          aria-checked={theme === t}
-          onClick={() => setTheme(t)}
-          className={`tab flex flex-1 items-center justify-center gap-1.5 ${theme === t ? "tab-active" : ""}`}
-        >
-          <Icon theme={t} />
-          {labels[t]}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      aria-label="Theme"
+      width={100}
+      value={theme}
+      onChange={setTheme}
+      items={order.map((t) => ({
+        value: t,
+        label: (
+          <span className="flex items-center gap-1.5">
+            <Icon theme={t} />
+            {labels[t]}
+          </span>
+        ),
+      }))}
+    />
   );
 }

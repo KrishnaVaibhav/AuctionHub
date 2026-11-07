@@ -92,10 +92,6 @@
   &:hover:not(:disabled) {
     transform: translateY(-1px);
   }
-  &:active:not(:disabled) {
-    transform: scale(0.97);
-    transition-duration: 80ms;
-  }
   &:disabled {
     cursor: not-allowed;
     opacity: 0.5;
@@ -224,7 +220,7 @@
   ::selection {
     background: rgb(251 191 36 / 0.35);
   }
-  input[type="checkbox"]:not(.switch),
+  input[type="checkbox"],
   input[type="radio"] {
     accent-color: var(--color-brand-500);
   }
@@ -359,47 +355,6 @@
     @apply mb-1.5 block text-[11px] font-semibold tracking-wider text-stone-500 uppercase;
   }
 
-  /* iOS switch: add class="switch" to a checkbox. */
-  .switch {
-    appearance: none;
-    position: relative;
-    flex: none;
-    width: 2.75rem;
-    height: 1.625rem;
-    border-radius: 9999px;
-    background: var(--color-stone-300);
-    cursor: pointer;
-    transition: background-color 250ms var(--ease-spring);
-  }
-  .switch::before {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 1.375rem;
-    height: 1.375rem;
-    border-radius: 9999px;
-    background: #fff;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 0.2), 0 0 0 0.5px rgb(0 0 0 / 0.04);
-    transition: transform 350ms var(--ease-spring), width 200ms var(--ease-spring);
-  }
-  .switch:active:not(:disabled)::before {
-    width: 1.7rem;
-  }
-  .switch:checked {
-    background: var(--color-emerald-500);
-  }
-  .switch:checked::before {
-    transform: translateX(1.125rem);
-  }
-  .switch:checked:active:not(:disabled)::before {
-    transform: translateX(0.8rem);
-  }
-  .switch:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
   /* Interactive card: lifts on hover. */
   .card-hover {
     @apply transition duration-500 ease-[var(--ease-spring)] hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.8),0_24px_48px_-24px_rgb(41_37_36/0.35)];
@@ -530,4 +485,84 @@ html:not(:lang(en)) .font-display {
 html:not(:lang(en)) .hero-title {
   font-size: clamp(1.85rem, 1.2rem + 2.2vw, 3rem);
   line-height: 1.25;
+}
+
+/*
+ * Liquid Glass fusion with glisse (https://github.com/0kzh/glisse, MIT).
+ * glisse brings the optics: a lens that bends the page behind each glass's
+ * rim (Chromium), a lit rim drawn for each glass's exact shape, a lens thumb
+ * on switches and segmented controls. AuctionHub keeps its look: warm stone
+ * glass, amber accents, its shadows and capsule shapes. Unlayered, like
+ * glisse's own sheet, so these win over it and over utility classes.
+ */
+:root {
+  --lg-foreground: var(--color-stone-900);
+  --lg-muted: var(--color-stone-500);
+  --lg-fill: var(--color-brand-500);
+  --lg-on: var(--color-brand-500);
+  --lg-ring: var(--color-brand-600);
+  --lg-glass: rgb(255 255 255 / 0.52);
+  --lg-glass-active: rgb(255 255 255 / 0.78);
+  --lg-edge: rgb(41 37 36 / 0.1);
+  --lg-segment-track: rgb(41 37 36 / 0.06);
+  --lg-segment-label: var(--color-stone-900);
+  --lg-track: rgb(41 37 36 / 0.2);
+  --lg-rim-shine: 0.38;
+}
+:root.dark {
+  --lg-glass: rgb(30 27 25 / 0.5);
+  --lg-glass-active: rgb(60 55 50 / 0.62);
+  --lg-edge: rgb(255 255 255 / 0.1);
+  --lg-segment-track: rgb(255 255 255 / 0.07);
+  --lg-track: rgb(245 240 235 / 0.22);
+  --lg-rim-shine: 0.16;
+}
+
+/* Glass surfaces: glisse's lens and rim, our tint, frost and shadow. */
+.lg-glass.liquid {
+  --lg-blur: 14px;
+  box-shadow:
+    inset 0 0 0 0.5px var(--lg-edge),
+    0 1px 2px rgb(41 37 36 / 0.06),
+    0 14px 44px -16px rgb(41 37 36 / 0.32);
+}
+.lg-glass.liquid[data-rim] {
+  box-shadow:
+    0 1px 2px rgb(41 37 36 / 0.06),
+    0 14px 44px -16px rgb(41 37 36 / 0.32);
+}
+.dark .lg-glass.liquid,
+.dark .lg-glass.liquid[data-rim] {
+  box-shadow: 0 18px 50px -16px rgb(0 0 0 / 0.65);
+}
+/* glisse sets position: relative unlayered; keep Tailwind's positioning. */
+.lg-glass.liquid.fixed {
+  position: fixed;
+}
+.lg-glass.liquid.absolute {
+  position: absolute;
+}
+.lg-glass.liquid.sticky {
+  position: sticky;
+}
+/* Dense glass for panels that hold a lot of text. */
+.lg-glass.liquid.thick {
+  --lg-glass: rgb(255 255 255 / 0.8);
+}
+.dark .lg-glass.liquid.thick {
+  --lg-glass: rgb(26 24 22 / 0.84);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lg-glass.liquid {
+    --lg-glass: var(--color-white);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Segmented control: our type, a capsule thumb. */
+.segmented-lg {
+  --lg-tab-height: 36px;
+  font-size: 0.875rem;
+  font-weight: 500;
 }

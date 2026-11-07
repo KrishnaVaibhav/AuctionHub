@@ -4,6 +4,7 @@ import { SlidersHorizontalIcon, XIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { FEATURES, funOn, type FeatureKey } from "../../lib/fun";
 import type { Auction, Lot } from "../../lib/types";
+import { Toggle } from "../Glass";
 
 /** Everything the host can change mid-auction, in one sheet. */
 export function HostRoomControls({ auction, lots, selected }: { auction: Auction; lots: Lot[]; selected?: Lot }) {
@@ -152,7 +153,7 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
                         <span className="block text-sm font-medium">{f.label}</span>
                         <span className="block text-xs text-stone-500">{f.hint}</span>
                       </span>
-                      <input type="checkbox" className="switch" checked={pending[f.key] ?? funOn(auction.settings, f.key)} onChange={(e) => void feature(f.key, e.target.checked)} />
+                      <Toggle checked={pending[f.key] ?? funOn(auction.settings, f.key)} onChange={(v) => void feature(f.key, v)} />
                     </label>
                   ))}
                 </div>

@@ -4,6 +4,7 @@ import { money } from "../lib/format";
 import { useProfileNames } from "../lib/profiles";
 import type { Auction, Bid, Lot } from "../lib/types";
 import { Avatar } from "./Avatar";
+import { Toggle } from "./Glass";
 
 const PAGE = 50;
 
@@ -69,7 +70,7 @@ export function BidLog({ auction, lots, userId }: { auction: Auction; lots: Lot[
         </select>
         <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-stone-600">
           Auto-bids
-          <input type="checkbox" className="switch" checked={showAuto} onChange={(e) => setShowAuto(e.target.checked)} />
+          <Toggle checked={showAuto} onChange={(v) => setShowAuto(v)} />
         </label>
       </div>
 

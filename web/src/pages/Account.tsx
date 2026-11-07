@@ -7,6 +7,7 @@ import { ThemeSegmented } from "../components/ThemeToggle";
 import { LanguagePicker } from "../components/LanguagePicker";
 import { Link } from "react-router";
 import { AccountProgress } from "./AccountProgress";
+import { Toggle } from "../components/Glass";
 
 export function Account() {
   const { session, profile, refreshProfile, signOut } = useAuth();
@@ -199,7 +200,7 @@ function ContactPrivacy({ userId, email }: { userId: string; email: string }) {
               {phone ? `, phone` : ""} and note. Nobody else ever sees them.
             </span>
           </span>
-          <input type="checkbox" className="switch mt-0.5" checked={share} onChange={(e) => setShare(e.target.checked)} />
+          <Toggle checked={share} onChange={(v) => setShare(v)} className="mt-0.5" />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
