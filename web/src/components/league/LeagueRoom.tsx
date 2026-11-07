@@ -107,7 +107,7 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
         {tab === "players" && <PlayersPanel auction={auction} lots={lots} teamById={teamById} isHost={isHost} />}
         {tab === "board" && <Leaderboard auction={auction} lots={lots} teams={teams} />}
         {tab === "matches" && <MatchesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
-        {tab === "replay" && <BidReplay auction={auction} lots={lots} />}
+        {tab === "replay" && <BidReplay auction={auction} lots={lots} media={media} />}
         {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
       </div>
       <FloatingChat auction={auction} userId={userId} isStaff={isStaff} lift={false} />

@@ -258,7 +258,7 @@ function AuctionRoomInner() {
 
             {tab === "lots" && <LotGrid auction={auction} lots={lots} media={media} userId={userId} selectedId={selected?.id} onOpen={openLot} />}
             {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
-            {tab === "replay" && <BidReplay auction={auction} lots={lots} />}
+            {tab === "replay" && <BidReplay auction={auction} lots={lots} media={media} />}
             {tab === "games" && (
               <div className="grid animate-rise gap-4 md:grid-cols-2">
                 {selected && <GuessPanel auction={auction} lot={selected} userId={userId} isTeam={isTeam} />}

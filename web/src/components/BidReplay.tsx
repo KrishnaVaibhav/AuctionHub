@@ -4,7 +4,8 @@ import { supabase, errorMessage } from "../lib/supabase";
 import { money } from "../lib/format";
 import { useProfileNames } from "../lib/profiles";
 import { t } from "../lib/i18n";
-import type { Auction, Lot } from "../lib/types";
+import { publicUrl } from "../lib/media";
+import type { Auction, Lot, LotMedia } from "../lib/types";
 import { Segmented } from "./Glass";
 
 interface ReplayBid {
@@ -28,7 +29,12 @@ const PAGE = 1000;
 const MAX_BIDS = 20000;
 
 /** Plays an ended auction's bids back in order: a spotlight on each bid, a race of the top lots and a running feed. */
-export function BidReplay({ auction, lots }: { auction: Auction; lots: Lot[] }) {
+export function BidReplay({ auction, lots, media }: { auction: Auction; lots: Lot[]; media?: Map<string, LotMedia[]> }) {
+  /** The lot's first photo, as a public URL. */
+  const photo = (lotId: string | undefined) => {
+    const m = lotId ? media?.get(lotId)?.find((x) => x.kind === "image") : undefined;
+    return m ? publicUrl("lot-media", m.path) : null;
+  };
   const [bids, setBids] = useState<ReplayBid[] | null>(null);
   const [teams, setTeams] = useState<Map<string, TeamLite>>(new Map());
   const [error, setError] = useState<string | null>(null);
@@ -118,8 +124,20 @@ export function BidReplay({ auction, lots }: { auction: Auction; lots: Lot[] }) 
           background: `linear-gradient(135deg, #0c0a09 45%, ${(current.team_id && teams.get(current.team_id)?.color) || "#b45309"})`,
         }}
       >
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
+        {photo(current.lot_id) && (
+          // The lot's photo, blurred, washes the spotlight behind the text.
+          <img src={photo(current.lot_id)!} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-30 blur-2xl" />
+        )}
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          {photo(current.lot_id) && (
+            <img
+              key={current.lot_id}
+              src={photo(current.lot_id)!}
+              alt={currentLot?.title ?? ""}
+              className="h-28 w-28 shrink-0 animate-rise rounded-3xl object-cover shadow-[0_18px_40px_-16px_rgb(0_0_0/0.7)] ring-1 ring-snow/15 sm:h-36 sm:w-36"
+            />
+          )}
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold tracking-widest text-brand-300 uppercase">
               {t("Bid {n} of {total}", { n: index, total: bids.length })}
             </p>
@@ -185,8 +203,13 @@ export function BidReplay({ auction, lots }: { auction: Auction; lots: Lot[] }) 
             const l = lotById.get(lotId);
             return (
               <div key={lotId} className={lotId === current.lot_id ? "text-stone-900" : "text-stone-600"}>
-                <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="truncate font-medium">{l ? `#${l.position + 1} ${l.title}` : "-"}</span>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="flex min-w-0 items-center gap-2">
+                    {photo(lotId) ? (
+                      <img src={photo(lotId)!} alt="" className="h-7 w-7 shrink-0 rounded-lg object-cover" loading="lazy" />
+                    ) : null}
+                    <span className="truncate font-medium">{l ? `#${l.position + 1} ${l.title}` : "-"}</span>
+                  </span>
                   <span className="shrink-0 font-semibold tabular-nums">{money(s.amount, auction.settings)}</span>
                 </div>
                 <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-stone-900/[0.06]">
@@ -208,12 +231,17 @@ export function BidReplay({ auction, lots }: { auction: Auction; lots: Lot[] }) 
           <h3 className="section-title text-base">{t("Latest bids")}</h3>
           <ul className="mt-2 divide-y divide-stone-900/[0.06] text-sm">
             {feed.map((b) => (
-              <li key={b.id} className="animate-rise py-2">
-                <p className="flex justify-between gap-2">
-                  <span className="truncate font-medium">{label({ who: b.bidder_id, team: b.team_id })}</span>
-                  <span className="font-semibold tabular-nums">{money(b.amount, auction.settings)}</span>
-                </p>
-                <p className="truncate text-xs text-stone-500">{lotById.get(b.lot_id)?.title ?? ""}</p>
+              <li key={b.id} className="flex animate-rise items-center gap-2.5 py-2">
+                {photo(b.lot_id) ? (
+                  <img src={photo(b.lot_id)!} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" loading="lazy" />
+                ) : null}
+                <div className="min-w-0 flex-1">
+                  <p className="flex justify-between gap-2">
+                    <span className="truncate font-medium">{label({ who: b.bidder_id, team: b.team_id })}</span>
+                    <span className="font-semibold tabular-nums">{money(b.amount, auction.settings)}</span>
+                  </p>
+                  <p className="truncate text-xs text-stone-500">{lotById.get(b.lot_id)?.title ?? ""}</p>
+                </div>
               </li>
             ))}
           </ul>
