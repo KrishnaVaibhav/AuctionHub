@@ -62,7 +62,7 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
   ];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_26rem] 3xl:grid-cols-[minmax(0,1fr)_30rem] 3xl:gap-8">
       <div className="min-w-0 space-y-5">
         <SoldMoment auction={auction} lots={lots} events={events} userId={userId} teamName={(id) => teamById.get(id)?.name} />
         <JoinOrMyTeam auction={auction} myTeam={myTeam} teams={teams} isHost={isHost} league={league} />

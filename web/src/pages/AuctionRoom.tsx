@@ -184,7 +184,7 @@ function AuctionRoomInner() {
         <LeagueRoom auction={auction} lots={lots} media={media} userId={userId} isHost={isHost} isOwner={role.owner} isStaff={isStaff} />
       ) : (
         <>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_26rem] 3xl:grid-cols-[minmax(0,1fr)_30rem] 3xl:gap-8">
           <div className="min-w-0 space-y-5">
             {auction.stream_url && !finished && <StreamEmbed url={auction.stream_url} />}
 
@@ -403,7 +403,7 @@ function LotGrid({
   const names = useProfileNames(lots.map((l) => l.current_winner_id));
   if (lots.length === 0) return <div className="card py-16 text-center text-sm text-stone-500">No lots yet.</div>;
   return (
-    <div className="grid animate-rise gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid animate-rise gap-3 sm:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5">
       {lots.map((l) => {
         const cover = media.get(l.id)?.find((m) => m.kind === "image");
         const leader = userId && l.current_winner_id === userId ? "You" : l.current_winner_id ? names.get(l.current_winner_id) : null;

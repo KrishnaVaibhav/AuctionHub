@@ -182,7 +182,7 @@ export function Home() {
       {rows.length === 0 && !loading ? (
         <EmptyState tab={tab} counts={counts} onShow={setTab} />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 4xl:grid-cols-7">
           {rest.map((a, i) => (
             <AuctionCard
               key={a.id}

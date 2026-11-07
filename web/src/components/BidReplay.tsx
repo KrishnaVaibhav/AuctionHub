@@ -177,7 +177,7 @@ export function BidReplay({ auction, lots }: { auction: Auction; lots: Lot[] }) 
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]">
         {/* Race of the top lots */}
         <div className="card space-y-2.5 p-4 sm:p-5">
           <h3 className="section-title text-base">{t("Top lots so far")}</h3>
