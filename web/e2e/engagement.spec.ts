@@ -26,7 +26,9 @@ test("host turns a room feature off from the room controls", async ({ page }) =>
   await uiLogin(page, host, `/a/${auctionId}`);
   await page.getByRole("button", { name: "Room" }).click();
   const dialog = page.getByRole("dialog", { name: "Room controls" });
-  await dialog.getByRole("checkbox", { name: /Live reactions/ }).uncheck();
+  const reactions = dialog.getByRole("switch", { name: /Live reactions/ });
+  await expect(reactions).toHaveAttribute("aria-checked", "true");
+  await reactions.click();
   await expect(dialog.getByText("Turned off")).toBeVisible();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page.getByRole("group", { name: "React" })).toHaveCount(0);
