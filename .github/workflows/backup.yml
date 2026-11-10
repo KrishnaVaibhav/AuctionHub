@@ -25,7 +25,7 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v7
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: 3.0.0
       - run: supabase link --project-ref "$PROJECT_REF"
