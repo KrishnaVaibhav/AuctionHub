@@ -4,7 +4,6 @@ import { t } from "../lib/i18n";
 import { useProfileNames } from "../lib/profiles";
 import type { Auction, ChatMessage } from "../lib/types";
 import { ChatPanel } from "./ChatPanel";
-import { LiquidGlass } from "./Glass";
 
 function useIsDesktop() {
   const query = "(min-width: 1024px)";
@@ -84,15 +83,15 @@ export function FloatingChat({
   return (
     <>
       {/* The panel stays mounted so messages keep arriving while minimised. */}
-      <LiquidGlass
-        className={`thick fixed inset-x-3 z-30 overflow-hidden rounded-[26px] transition duration-300 ease-[var(--ease-spring)] ${
+      <div
+        className={`glass-thick fixed inset-x-3 z-30 overflow-hidden rounded-[26px] transition duration-300 ease-[var(--ease-spring)] ${
           open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
         }`}
         style={{ bottom, height: "min(46dvh, 26rem)" }}
         aria-hidden={!open}
       >
         <ChatPanel auction={auction} userId={userId} isStaff={isStaff} compact onClose={() => setOpen(false)} onMessages={setMessages} />
-      </LiquidGlass>
+      </div>
 
       {!open && (
         <div className="fixed right-3 z-30 flex max-w-[calc(100vw-1.5rem)] items-end gap-2" style={{ bottom }}>

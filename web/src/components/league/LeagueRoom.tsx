@@ -78,6 +78,7 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
           </div>
         </div>
 
+        <div key={tab} className="animate-tab space-y-5">
         {tab === "block" && <RtmBanner auction={auction} lots={lots} teamById={teamById} myTeam={myTeam} />}
         {tab === "block" && <OnTheBlock auction={auction} lots={lots} media={media} myTeam={myTeam} teamById={teamById} league={league} isHost={isHost} />}
         {tab === "block" && isOwner && auction.status === "ended" && <NextSeasonButton auction={auction} />}
@@ -109,6 +110,7 @@ export function LeagueRoom({ auction, lots, media, userId, isHost, isOwner, isSt
         {tab === "matches" && <MatchesPanel auction={auction} lots={lots} teams={teams} myTeam={myTeam} isHost={isHost} />}
         {tab === "replay" && <BidReplay auction={auction} lots={lots} media={media} />}
         {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
+        </div>
       </div>
       <FloatingChat auction={auction} userId={userId} isStaff={isStaff} lift={false} />
       <DesktopChat auction={auction} userId={userId} isStaff={isStaff} />
