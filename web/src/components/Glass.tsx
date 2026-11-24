@@ -1,15 +1,5 @@
-import { Glass, SegmentedControl, Switch, type SegmentedControlItem } from "glisse";
-import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-
-/**
- * Liquid Glass surface: glisse's lens (it bends what's behind its rim in
- * Chromium, with a lit rim everywhere) in AuctionHub's warm tint. Use it for
- * the floating layer: the nav, tab bar, bid bar and floating panels. The
- * `liquid` class (index.css) carries the tint, blur and shadow.
- */
-export function LiquidGlass({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <Glass className={`liquid ${className}`} {...props} />;
-}
+import { SegmentedControl, Switch, type SegmentedControlItem } from "glisse";
+import type { CSSProperties, ReactNode } from "react";
 
 /** On/off switch with glisse's lens thumb, in brand amber. */
 export function Toggle({

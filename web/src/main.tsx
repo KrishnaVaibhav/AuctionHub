@@ -5,6 +5,8 @@ import "@fontsource-variable/geist/wght.css";
 import "./index.css";
 import { AuthProvider } from "./lib/auth";
 import { installPress } from "./lib/press";
+import { installGlass } from "./lib/glass";
+import { installTabThumbs } from "./lib/tabThumb";
 import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
 import { Home } from "./pages/Home";
@@ -70,6 +72,8 @@ function Localized() {
 }
 
 installPress();
+installGlass();
+installTabThumbs();
 
 void initI18n().then(() =>
   createRoot(document.getElementById("root")!).render(

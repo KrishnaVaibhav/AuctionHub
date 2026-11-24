@@ -77,6 +77,11 @@
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
   }
+  @keyframes tab-in {
+    from { opacity: 0; transform: translateY(10px); }
+    /* "none" so finished panels don't trap position:fixed children. */
+    to { opacity: 1; transform: none; }
+  }
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
     /* "none" (not translateY(0)) so finished elements don't trap position:fixed children. */
@@ -127,62 +132,73 @@
 }
 
 /*
- * Glass: a web approximation of Apple's Liquid Glass (Apple ships it for its
- * own platforms only; there is no official web CSS). Used on the floating
- * layer: the nav, tab bar, toolbars, menus, sheets, dialogs, the mobile bid
- * bar and the hero board. A top specular sheen and a lit rim give it depth.
- * Defined as utilities so other classes can @apply them.
+ * Glass: real Liquid Glass optics, not a blur. Every element with a glass
+ * class becomes a lens (lib/glass, glisse's engine): it bends the page behind
+ * its rim through a rounded bezel with a little colour split (Chromium, via an
+ * SVG backdrop filter in --lg-filter) and paints the lit rim iOS draws on
+ * glass, sized to the element's exact shape (--lg-rim, every browser). Blur is
+ * only a light frost so text on it stays readable; clear glass has almost none.
+ * Used on the floating layer: nav, tab bar, toolbars, menus, sheets, the bid
+ * bar and panels. Defined as utilities so other classes can @apply them.
  */
 @utility glass {
-  background-color: rgb(255 255 255 / 0.58);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0) 42%);
-  border: 1px solid rgb(255 255 255 / 0.72);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  backdrop-filter: blur(28px) saturate(190%);
+  --glass-tint: rgb(255 255 255 / 0.36);
+  --glass-frost: 3px;
+  background-color: var(--glass-tint);
+  background-image: var(--lg-rim, none);
+  background-size: 100% 100%;
+  -webkit-backdrop-filter: blur(var(--glass-frost)) var(--lg-filter, saturate(1.6));
+  backdrop-filter: blur(var(--glass-frost)) var(--lg-filter, saturate(1.6));
+  /* Until the rim is painted (or without JS): a hairline edge and a top light. */
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.9),
-    inset 0 -1px 0 rgb(255 255 255 / 0.25),
-    inset 0 0 0 0.5px rgb(255 255 255 / 0.35),
+    inset 0 0 0 0.5px var(--lg-edge),
+    inset 0 1px 0 rgb(255 255 255 / 0.55),
     0 1px 2px rgb(41 37 36 / 0.06),
     0 14px 44px -16px rgb(41 37 36 / 0.32);
-  &:where(.dark, .dark *) {
-    background-color: rgb(30 27 25 / 0.55);
-    background-image: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0) 42%);
-    border-color: rgb(255 255 255 / 0.1);
+  &[data-rim] {
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.1),
-      inset 0 0 0 0.5px rgb(255 255 255 / 0.04),
+      0 1px 2px rgb(41 37 36 / 0.06),
+      0 14px 44px -16px rgb(41 37 36 / 0.32);
+  }
+  &:where(.dark, .dark *) {
+    --glass-tint: rgb(30 27 25 / 0.42);
+    box-shadow:
+      inset 0 0 0 0.5px var(--lg-edge),
       0 18px 50px -16px rgb(0 0 0 / 0.65);
+  }
+  &:where(.dark, .dark *)[data-rim] {
+    box-shadow: 0 18px 50px -16px rgb(0 0 0 / 0.65);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     background-color: var(--color-white);
   }
   @media (prefers-reduced-transparency: reduce) {
     background-color: var(--color-white);
-    background-image: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
   @media (prefers-contrast: more) {
-    border-color: var(--color-stone-400);
+    box-shadow: inset 0 0 0 1px var(--color-stone-400);
   }
 }
 
-/* Thick glass: denser fill for sheets and drawers that hold a lot of text. */
+/* Thick glass: more frost and tint, for sheets, menus and panels full of text. */
 @utility glass-thick {
   @apply glass;
-  background-color: rgb(255 255 255 / 0.84);
+  --glass-tint: rgb(255 255 255 / 0.74);
+  --glass-frost: 14px;
   &:where(.dark, .dark *) {
-    background-color: rgb(26 24 22 / 0.86);
+    --glass-tint: rgb(26 24 22 / 0.82);
   }
 }
 
-/* Clear glass: more see-through, for controls sitting on photos. */
+/* Clear glass: almost no frost, for controls sitting on photos. */
 @utility glass-clear {
   @apply glass;
-  background-color: rgb(255 255 255 / 0.32);
+  --glass-tint: rgb(255 255 255 / 0.18);
+  --glass-frost: 1.5px;
   &:where(.dark, .dark *) {
-    background-color: rgb(20 18 16 / 0.38);
+    --glass-tint: rgb(20 18 16 / 0.26);
   }
 }
 
@@ -418,9 +434,47 @@
   .tab-active {
     @apply bg-white text-stone-900 shadow-[0_1px_3px_rgb(41_37_36/0.12),0_1px_1px_rgb(41_37_36/0.04)] dark:bg-stone-300;
   }
-  /* iOS-style segmented control track. */
+  /* iOS-style segmented control: a glass track (a real lens, see lib/glass) with a
+     capsule that slides to the selected tab (lib/tabThumb sets --thumb-*). */
   .segmented {
-    @apply inline-flex gap-1 rounded-full bg-stone-900/[0.06] p-1 dark:bg-snow/[0.07];
+    @apply glass relative isolate inline-flex gap-1 rounded-full p-1;
+  }
+  .segmented[data-thumb]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: var(--thumb-w);
+    height: var(--thumb-h);
+    border-radius: 9999px;
+    background: var(--color-white);
+    box-shadow:
+      0 1px 3px rgb(41 37 36 / 0.14),
+      0 1px 1px rgb(41 37 36 / 0.05),
+      inset 0 1px 0 rgb(255 255 255 / 0.9);
+    transform: translate(var(--thumb-x), var(--thumb-y));
+    transition:
+      transform 480ms var(--ease-spring),
+      width 480ms var(--ease-spring),
+      height 480ms var(--ease-spring);
+  }
+  .dark .segmented[data-thumb]::before {
+    background: var(--color-stone-300);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+  .segmented[data-thumb="instant"]::before {
+    transition: none;
+  }
+  /* The capsule draws the selection now; the tab itself stays clear. */
+  .segmented[data-thumb] .tab-active {
+    background: transparent;
+    box-shadow: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .segmented[data-thumb]::before {
+      transition: none;
+    }
   }
   /* Floating glass toolbar that pins under the nav (tabs on long pages). */
   .toolbar {
@@ -505,6 +559,16 @@
     }
   }
 
+  /* A tab's content arriving: give the wrapper key={tab} so it replays on each switch. */
+  .animate-tab {
+    animation: tab-in 340ms var(--ease-spring) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-tab {
+      animation: none;
+    }
+  }
+
   /* Staggered entrance: set --i on each child. */
   .enter {
     animation: var(--animate-enter);
@@ -568,48 +632,6 @@ html:not(:lang(en)) .hero-title {
   --lg-segment-track: rgb(255 255 255 / 0.07);
   --lg-track: rgb(245 240 235 / 0.22);
   --lg-rim-shine: 0.16;
-}
-
-/* Glass surfaces: glisse's lens and rim, our tint, frost and shadow. */
-.lg-glass.liquid {
-  --lg-blur: 14px;
-  box-shadow:
-    inset 0 0 0 0.5px var(--lg-edge),
-    0 1px 2px rgb(41 37 36 / 0.06),
-    0 14px 44px -16px rgb(41 37 36 / 0.32);
-}
-.lg-glass.liquid[data-rim] {
-  box-shadow:
-    0 1px 2px rgb(41 37 36 / 0.06),
-    0 14px 44px -16px rgb(41 37 36 / 0.32);
-}
-.dark .lg-glass.liquid,
-.dark .lg-glass.liquid[data-rim] {
-  box-shadow: 0 18px 50px -16px rgb(0 0 0 / 0.65);
-}
-/* glisse sets position: relative unlayered; keep Tailwind's positioning. */
-.lg-glass.liquid.fixed {
-  position: fixed;
-}
-.lg-glass.liquid.absolute {
-  position: absolute;
-}
-.lg-glass.liquid.sticky {
-  position: sticky;
-}
-/* Dense glass for panels that hold a lot of text. */
-.lg-glass.liquid.thick {
-  --lg-glass: rgb(255 255 255 / 0.8);
-}
-.dark .lg-glass.liquid.thick {
-  --lg-glass: rgb(26 24 22 / 0.84);
-}
-@media (prefers-reduced-transparency: reduce) {
-  .lg-glass.liquid {
-    --lg-glass: var(--color-white);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 
 /* Segmented control: our type, a capsule thumb. */

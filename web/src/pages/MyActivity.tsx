@@ -87,6 +87,7 @@ export function MyActivity() {
       {error && <p className="text-sm text-red-600">{error}</p>}
       {loading && <div className="h-40 animate-pulse rounded-2xl bg-stone-100" />}
 
+      <div key={tab} className="animate-tab space-y-6">
       {tab === "watching" && session && <WatchingList userId={session.user.id} />}
 
       {tab !== "watching" && !loading && lists[tab].length === 0 && (
@@ -163,6 +164,7 @@ export function MyActivity() {
             </div>
           );
         })}
+      </div>
       </div>
       {deal && session && (
         <DealChat lotId={deal.lot_id} lotTitle={deal.title} userId={session.user.id} otherName={hosts.get(deal.host_id) ?? "the host"} onClose={() => setDeal(null)} />

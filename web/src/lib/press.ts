@@ -171,8 +171,13 @@ function pressable(el: HTMLElement): (event: PointerEvent) => void {
   };
 }
 
-/** What gets the spring press: every button style, tabs, and anything marked data-press. */
-export const PRESSABLE = '.btn, [class*="btn-"], .tab, [data-press]';
+/**
+ * What gets the spring press: every button style, tabs, chips you can tap,
+ * cards that are links or buttons, menu items, nav links, and anything marked
+ * data-press.
+ */
+export const PRESSABLE =
+  '.btn, [class*="btn-"], .tab, button.chip, a.chip, a.card, button.card, [role="menuitem"], header nav a, nav[aria-label] a, [data-press]';
 
 /** Installs the spring press for the whole page. Call once at startup. */
 export function installPress(selector = PRESSABLE): () => void {

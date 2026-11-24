@@ -36,7 +36,6 @@ import { GuessLeaderboard, GuessPanel } from "../components/live/Predictions";
 import { BingoCard } from "../components/live/BingoCard";
 import { WatchParty } from "../components/live/WatchParty";
 import { HostRoomControls } from "../components/live/HostRoomControls";
-import { LiquidGlass } from "../components/Glass";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "games" | "party" | "replay" | "chat";
 
@@ -199,6 +198,7 @@ function AuctionRoomInner() {
               </div>
             </div>
 
+            <div key={tab} className="animate-tab space-y-5">
             {tab === "lot" &&
               (selected ? (
                 <div className="grid animate-rise gap-6 md:grid-cols-2">
@@ -271,6 +271,7 @@ function AuctionRoomInner() {
             )}
             {tab === "party" && <WatchParty auction={auction} userId={userId} />}
             {tab === "results" && <Results auction={auction} lots={lots} isHost={role.owner} userId={userId} />}
+            </div>
           </div>
 
           <DesktopChat auction={auction} userId={userId} isStaff={isStaff} />
@@ -286,7 +287,7 @@ function AuctionRoomInner() {
         />
         {selected && selected.status === "open" && auction.status === "live" && (
           <div className="fixed inset-x-0 bottom-0 z-20 px-3 lg:hidden" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
-            <LiquidGlass className="mx-auto max-w-xl animate-rise rounded-[28px] px-4 py-3">
+            <div className="glass mx-auto max-w-xl animate-rise rounded-[28px] px-4 py-3">
             <div className="mx-auto flex max-w-xl items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs text-stone-500">
@@ -327,7 +328,7 @@ function AuctionRoomInner() {
             <p role="status" aria-live="polite" className={`mx-auto max-w-xl text-xs font-medium empty:hidden ${barMsg?.ok ? "text-emerald-700" : "text-red-600"}`}>
               {barMsg?.text}
             </p>
-            </LiquidGlass>
+            </div>
           </div>
         )}
         </>

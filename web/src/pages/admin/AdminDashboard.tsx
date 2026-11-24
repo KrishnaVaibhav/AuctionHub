@@ -52,6 +52,7 @@ export function AdminDashboard() {
           ))}
         </div>
       </div>
+      <div key={tab} className="animate-tab ">
       {tab === "overview" && <Overview />}
       {tab === "users" && <Users />}
       {tab === "auctions" && <Auctions />}
@@ -60,6 +61,7 @@ export function AdminDashboard() {
       {tab === "support" && <SupportInbox />}
       {tab === "audit" && <Audit />}
       {tab === "events" && <EventsTab />}
+      </div>
     </div>
   );
 }
