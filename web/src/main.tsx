@@ -1,7 +1,7 @@
 import { lazy, StrictMode, Suspense, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import "@fontsource/inter-tight/latin-800.css";
+import "@fontsource-variable/geist/wght.css";
 import "./index.css";
 import { AuthProvider } from "./lib/auth";
 import { installPress } from "./lib/press";

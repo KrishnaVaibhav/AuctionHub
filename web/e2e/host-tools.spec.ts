@@ -26,8 +26,11 @@ test("host imports lots from CSV, sees analytics, and duplicates the auction", a
   await expect(page.getByText(/1 bids \(1 manual\)/)).toBeVisible();
 
   // Duplicate creates a new draft with the same lots
-  await page.getByRole("button", { name: "Duplicate" }).click();
+  await page.getByRole("button", { name: "More auction actions" }).click();
+  await page.getByRole("menuitem", { name: "Duplicate" }).click();
   await expect(page.locator("main").getByText("Draft").first()).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Title" }).first()).toHaveValue(/\(copy\)$/);
+  // A new draft opens on its lots; the title lives under Details & rules.
   await expect(page.getByText("Brass lamp").first()).toBeVisible();
+  await page.getByRole("tab", { name: "Details & rules" }).click();
+  await expect(page.getByRole("textbox", { name: "Title" }).first()).toHaveValue(/\(copy\)$/);
 });
