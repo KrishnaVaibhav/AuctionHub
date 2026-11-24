@@ -1,6 +1,6 @@
-import { CaretLeftIcon } from "@phosphor-icons/react";
+import { CaretLeftIcon, CheckIcon } from "@phosphor-icons/react";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { auctionRole, useAuctionRoom } from "../../lib/useAuctionRoom";
@@ -21,6 +21,7 @@ import { canDelete, deleteAuctionCompletely } from "../../lib/auctions";
 import { CATEGORIES, parseTags } from "../../lib/categories";
 import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
 import { Toggle } from "../../components/Glass";
+import { Menu } from "../../components/Menu";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
@@ -44,6 +45,7 @@ function AuctionEditorInner() {
   const role = auctionRole(auction, staff, session?.user.id ?? null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
 
   if (room.loading) return <p className="text-sm text-stone-500">Loading...</p>;
   if (!auction) return <p className="text-sm text-red-600">{room.error ?? "Auction not found"}</p>;
@@ -85,8 +87,33 @@ function AuctionEditorInner() {
     }
   }
 
+  const live = auction.status === "live" || auction.status === "paused";
+  const ended = auction.status === "ended" || auction.status === "cancelled";
+  const lotWord = auction.mode === "league" ? "Players" : "Lots";
+  const oneLot = auction.mode === "league" ? "player" : "lot";
+  const noLots = lots.length === 0;
+  const tabs: { key: EditorTab; label: string; show: boolean }[] = [
+    { key: "lots", label: `${lotWord} (${lots.length})`, show: true },
+    { key: "details", label: "Details & rules", show: role.canEdit },
+    { key: "sharing", label: "Sharing & team", show: true },
+    { key: "results", label: "Results", show: role.owner && auction.status !== "draft" },
+  ];
+  const fallback: EditorTab = (live || ended) && role.owner ? "results" : "lots";
+  const asked = params.get("tab") as EditorTab | null;
+  const tab: EditorTab = tabs.some((x) => x.key === asked && x.show) ? asked! : fallback;
+  const go = (key: EditorTab) =>
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p);
+        n.set("tab", key);
+        return n;
+      },
+      { replace: true },
+    );
+  const goLive = () => void rpc("start_auction", { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" });
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Link to="/host" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
           <CaretLeftIcon size={16} weight="bold" aria-hidden="true" />
@@ -94,17 +121,17 @@ function AuctionEditorInner() {
         </Link>
         <AuctionBadge status={auction.status} />
         {role.cohost && <span className="chip bg-sky-100 text-sky-800">Co-host</span>}
-        <div className="ml-auto flex flex-wrap gap-2">
-          {role.owner && (
-            <button className="btn-ghost" onClick={() => void duplicate()}>
-              Duplicate
-            </button>
-          )}
-          <Link to={`/a/${auction.id}`} className="btn-ghost">
-            Open room
+      </div>
+
+      {/* Title and the actions that matter right now; rare or destructive ones live under More. */}
+      <div className="-mt-2 flex flex-wrap items-end justify-between gap-4">
+        <h1 className="page-title min-w-0 break-words">{auction.title}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={`/a/${auction.id}`} className={live ? "btn-accent" : "btn-ghost"}>
+            {live ? "Run the room" : "Open room"}
           </Link>
           {role.canRun && auction.status === "draft" && (
-            <button className="btn-ghost" onClick={() => void rpc("schedule_auction")}>
+            <button className="btn-ghost" disabled={noLots} title={noLots ? `Add a ${oneLot} first` : undefined} onClick={() => void rpc("schedule_auction")}>
               Schedule
             </button>
           )}
@@ -114,59 +141,141 @@ function AuctionEditorInner() {
             </button>
           )}
           {role.canRun && (auction.status === "draft" || auction.status === "scheduled") && (
-            <button className="btn-accent" onClick={() => void rpc("start_auction", { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" })}>
+            <button className="btn-accent" disabled={noLots} title={noLots ? `Add a ${oneLot} first` : undefined} onClick={goLive}>
               Go live now
             </button>
           )}
-          {role.owner && canDelete(auction.status) && (
-            <button className="btn-danger" onClick={() => void remove()}>
-              Delete
-            </button>
-          )}
-          {role.owner && !["draft", "ended", "cancelled"].includes(auction.status) && (
-            <button className="btn-danger" onClick={() => void rpc("cancel_auction", { title: "Cancel this auction?", body: "All open lots are withdrawn.", confirmLabel: "Cancel auction", cancelLabel: "Keep", danger: true })}>
-              Cancel auction
-            </button>
-          )}
+          <Menu
+            label="More auction actions"
+            items={[
+              { label: "Duplicate", onSelect: () => void duplicate(), hidden: !role.owner },
+              {
+                label: "Cancel auction",
+                danger: true,
+                hidden: !role.owner || ["draft", "ended", "cancelled"].includes(auction.status),
+                onSelect: () =>
+                  void rpc("cancel_auction", { title: "Cancel this auction?", body: "All open lots are withdrawn.", confirmLabel: "Cancel auction", cancelLabel: "Keep", danger: true }),
+              },
+              { label: "Delete", danger: true, hidden: !role.owner || !canDelete(auction.status), onSelect: () => void remove() },
+            ]}
+          />
         </div>
       </div>
-      <h1 className="page-title -mt-4">{auction.title}</h1>
+
       {error && <p className="rounded-2xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">{error}</p>}
       {notice && <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">{notice}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-2 3xl:grid-cols-3">
-        {role.owner && <VisibilityPanel auction={auction} onChanged={reload} />}
-        {role.owner && <ModeratorsPanel auction={auction} onChanged={reload} />}
-        <EmbedPanel auction={auction} />
+      {/* Before it starts: what's done and what's left, one click each. */}
+      {(auction.status === "draft" || auction.status === "scheduled") && role.canEdit && (
+        <ol className="grid gap-2 sm:grid-cols-3" aria-label="Setup steps">
+          <Step n={1} done label="Name and rules" hint="Defaults work. Change timing, currency or chat if you like." onClick={() => go("details")} />
+          <Step
+            n={2}
+            done={!noLots}
+            label={noLots ? `Add ${lotWord.toLowerCase()}` : `${lots.length} ${lots.length === 1 ? oneLot : lotWord.toLowerCase()} ready`}
+            hint={noLots ? "Type them in, or import a CSV file." : "Add photos so bidders see what they get."}
+            onClick={() => go("lots")}
+          />
+          <Step
+            n={3}
+            done={auction.status === "scheduled"}
+            label={auction.status === "scheduled" ? "Scheduled" : "Go live"}
+            hint={noLots ? `Needs at least one ${oneLot}.` : "Go live now, or set a start time and schedule."}
+            onClick={role.canRun && !noLots ? goLive : () => go("lots")}
+          />
+        </ol>
+      )}
+
+      <div className="sticky top-[4.75rem] z-20 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="glass segmented scrollbar-none max-w-full overflow-x-auto" role="tablist" aria-label="Auction sections">
+          {tabs
+            .filter((x) => x.show)
+            .map((x) => (
+              <button key={x.key} role="tab" aria-selected={tab === x.key} className={`tab ${tab === x.key ? "tab-active" : ""}`} onClick={() => go(x.key)}>
+                {x.label}
+              </button>
+            ))}
+        </div>
       </div>
 
-      {role.canEdit && <AuctionForm auction={auction} onSaved={async (msg) => { setNotice(msg); await reload(); }} onError={setError} />}
+      {tab === "lots" && (
+        <section className="animate-rise space-y-4" aria-label={lotWord}>
+          {!editable && <p className="text-sm text-stone-500">Lot details lock once the auction starts. You can still add photos.</p>}
+          {editable && noLots && (
+            <div className="card p-5">
+              <p className="font-semibold">No {lotWord.toLowerCase()} yet</p>
+              <p className="mt-1 text-sm text-stone-600">Add the first one below, or import many at once from a CSV file.</p>
+            </div>
+          )}
+          {lots.map((lot, i) => (
+            <LotEditor
+              key={lot.id}
+              auction={auction}
+              lot={lot}
+              index={i}
+              total={lots.length}
+              siblings={lots}
+              media={media.get(lot.id) ?? []}
+              editable={editable}
+              onChange={reload}
+            />
+          ))}
+          {editable && <NewLotForm auction={auction} nextPosition={lots.length} onCreated={reload} />}
+          {editable && <ImportLots auction={auction} nextPosition={lots.length} onDone={reload} />}
+          {role.canEdit && <BulkPhotos auction={auction} lots={lots} media={media} editable={editable} onDone={reload} />}
+        </section>
+      )}
 
-      {role.owner && auction.status !== "draft" && <AnalyticsPanel auction={auction} />}
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="section-title">{auction.mode === "league" ? "Players" : "Lots"} ({lots.length})</h2>
-          {!editable && <p className="text-xs text-stone-500">Lot details lock once the auction starts. You can still add photos.</p>}
-        </div>
-        {lots.map((lot, i) => (
-          <LotEditor
-            key={lot.id}
+      {tab === "details" && role.canEdit && (
+        <div className="animate-rise">
+          <AuctionForm
             auction={auction}
-            lot={lot}
-            index={i}
-            total={lots.length}
-            siblings={lots}
-            media={media.get(lot.id) ?? []}
-            editable={editable}
-            onChange={reload}
+            onSaved={async (msg) => {
+              setNotice(msg);
+              await reload();
+            }}
+            onError={setError}
           />
-        ))}
-        {editable && <NewLotForm auction={auction} nextPosition={lots.length} onCreated={reload} />}
-        {editable && <ImportLots auction={auction} nextPosition={lots.length} onDone={reload} />}
-        {role.canEdit && <BulkPhotos auction={auction} lots={lots} media={media} editable={editable} onDone={reload} />}
-      </section>
+        </div>
+      )}
+
+      {tab === "sharing" && (
+        <div className="grid animate-rise gap-6 lg:grid-cols-2 3xl:grid-cols-3">
+          {role.owner && <VisibilityPanel auction={auction} onChanged={reload} />}
+          {role.owner && <ModeratorsPanel auction={auction} onChanged={reload} />}
+          <EmbedPanel auction={auction} />
+        </div>
+      )}
+
+      {tab === "results" && role.owner && auction.status !== "draft" && (
+        <div className="animate-rise">
+          <AnalyticsPanel auction={auction} />
+        </div>
+      )}
     </div>
+  );
+}
+
+type EditorTab = "lots" | "details" | "sharing" | "results";
+
+/** One setup step: a numbered card that jumps to where the step is done. */
+function Step({ n, done, label, hint, onClick }: { n: number; done: boolean; label: string; hint: string; onClick: () => void }) {
+  return (
+    <li>
+      <button type="button" onClick={onClick} className="card flex h-full w-full items-start gap-3 p-4 text-left transition hover:-translate-y-0.5">
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${done ? "bg-emerald-500 text-white" : "bg-brand-100 text-brand-800"}`}
+          aria-hidden="true"
+        >
+          {done ? <CheckIcon size={16} weight="bold" /> : n}
+        </span>
+        <span className="min-w-0">
+          <span className="block font-semibold">{label}</span>
+          <span className="block text-sm text-stone-600">{hint}</span>
+        </span>
+        {done && <span className="sr-only">(done)</span>}
+      </button>
+    </li>
   );
 }
 

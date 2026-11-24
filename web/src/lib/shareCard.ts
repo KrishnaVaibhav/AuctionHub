@@ -60,7 +60,7 @@ export async function drawCard(spec: CardSpec): Promise<Blob> {
   ctx.fill();
   ctx.stroke();
 
-  const font = (w: number, px: number) => `${w} ${px}px "Inter Tight", -apple-system, "Segoe UI", system-ui, sans-serif`;
+  const font = (w: number, px: number) => `${w} ${px}px "Geist Variable", -apple-system, "Segoe UI", system-ui, sans-serif`;
   ctx.fillStyle = accent;
   ctx.font = font(800, 40);
   ctx.fillText(spec.eyebrow.toUpperCase(), 140, 200);

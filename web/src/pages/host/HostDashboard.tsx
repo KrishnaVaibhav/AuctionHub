@@ -134,17 +134,21 @@ export function HostDashboard() {
                 {a.mode === "league" && <span className="chip bg-violet-100 text-violet-800">League</span>}
                 {a.visibility !== "public" && <span className="chip bg-stone-100 text-stone-700">{visibilityLabel[a.visibility]}</span>}
                 <span className="text-xs text-stone-500">{a.lots[0]?.count ?? 0} lots</span>
+                {a.status === "draft" && !(a.lots[0]?.count ?? 0) && <span className="chip bg-amber-100 text-amber-800">Next: add lots</span>}
+                {a.status === "draft" && (a.lots[0]?.count ?? 0) > 0 && <span className="chip bg-emerald-100 text-emerald-800">Ready to go live</span>}
               </div>
               <p className="mt-1 font-semibold">{a.title}</p>
               <p className="text-xs text-stone-500">Starts {dateTime(a.starts_at)}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Link to={`/host/a/${a.id}`} className="btn-ghost">
-                Edit
+              <Link to={`/host/a/${a.id}${a.status === "draft" && !(a.lots[0]?.count ?? 0) ? "?tab=lots" : ""}`} className={a.status === "draft" ? "btn-primary" : "btn-ghost"}>
+                {a.status === "draft" && !(a.lots[0]?.count ?? 0) ? "Add lots" : "Edit"}
               </Link>
-              <Link to={`/a/${a.id}`} className="btn-primary">
-                Open room
-              </Link>
+              {a.status !== "draft" && (
+                <Link to={`/a/${a.id}`} className="btn-primary">
+                  {a.status === "live" || a.status === "paused" ? "Run the room" : "Open room"}
+                </Link>
+              )}
               <Menu
                 label={`More actions for ${a.title}`}
                 items={[

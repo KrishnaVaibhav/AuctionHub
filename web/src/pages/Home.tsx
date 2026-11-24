@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRightIcon, CalendarBlankIcon, ChatCircleIcon, GavelIcon, LightningIcon, MagnifyingGlassIcon, TimerIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../lib/supabase";
@@ -14,6 +14,55 @@ import { TIER_STYLE, tierRank, useHostTiers, type Tier } from "../lib/hostTiers"
 import { EventBanner, MysteryDrop, RemindButton, TopGuessers, useActiveEvent, useMyReminders } from "../components/HomeExtras";
 
 const tr = t;
+
+// The story chapters only load for signed-out visitors (they bring GSAP).
+const Landing = lazy(() => import("../components/landing/Landing"));
+
+/** Cover photos of public auctions, live ones first, for the hero and the story. */
+function useShowcase(): string[] {
+  const [covers, setCovers] = useState<string[]>([]);
+  useEffect(() => {
+    void supabase
+      .from("auctions")
+      .select("cover_url, status")
+      .eq("visibility", "public")
+      .not("cover_url", "is", null)
+      .in("status", ["live", "paused", "scheduled", "ended"])
+      .order("starts_at", { ascending: false, nullsFirst: false })
+      .limit(12)
+      .then(({ data }) => {
+        const rank = (st: string) => (st === "live" ? 0 : st === "scheduled" ? 1 : 2);
+        const rows = ((data as { cover_url: string; status: string }[] | null) ?? []).sort((a, b) => rank(a.status) - rank(b.status));
+        setCovers([...new Set(rows.map((r) => r.cover_url))]);
+      });
+  }, []);
+  return covers;
+}
+
+/** Hero backdrop: a slow-drifting mosaic of real covers under a dark radial wash; warm aurora when there are none. */
+function HeroBackdrop({ covers }: { covers: string[] }) {
+  const tiles = covers.slice(0, 6);
+  return (
+    <div className="absolute inset-0 -z-10" aria-hidden="true">
+      {tiles.length ? (
+        <div className="hero-drift grid h-full w-full grid-cols-3 gap-1 opacity-60">
+          {tiles.map((src, i) => (
+            <div key={src + i} className="bg-cover bg-center grayscale-[30%] contrast-125" style={{ backgroundImage: `url("${src}")` }} />
+          ))}
+        </div>
+      ) : (
+        <div className="aurora h-full w-full" />
+      )}
+      <div
+        className={`absolute inset-0 ${
+          tiles.length
+            ? "bg-[radial-gradient(ellipse_70%_65%_at_50%_45%,rgb(12_10_9/0.55),rgb(12_10_9/0.94))]"
+            : "bg-[radial-gradient(ellipse_70%_65%_at_50%_45%,rgb(12_10_9/0.15),rgb(12_10_9/0.7))]"
+        }`}
+      />
+    </div>
+  );
+}
 
 type Row = Auction & { lots: { count: number }[] };
 type Tab = "live" | "upcoming" | "ended";
@@ -38,6 +87,7 @@ export function Home() {
   const activeEvent = useActiveEvent();
   const { session } = useAuth();
   const [reminders, setReminders] = useMyReminders(Boolean(session));
+  const covers = useShowcase();
 
   // Tab counts (cheap HEAD requests).
   useEffect(() => {
@@ -96,42 +146,45 @@ export function Home() {
 
   return (
     <div className="space-y-10">
-      {/* Hero: follows the page theme; the warm aurora gives the glass board something to refract. */}
-      <section className="aurora rounded-[32px] border border-white/70 bg-white/70 px-6 py-10 sm:px-10 sm:py-14 lg:py-16">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
-          <div className="max-w-2xl">
-            <span className="glass enter chip px-3 py-1 text-stone-700" style={{ ["--i" as string]: 0 }}>
-              {counts.live > 0 && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" aria-hidden="true" />}
-              {counts.live > 0 ? t("{n} live now", { n: counts.live }) : counts.upcoming > 0 ? t("{n} starting soon", { n: counts.upcoming }) : t("Real-time auctions")}
-            </span>
-            <h1
-              className="hero-title enter mt-5 font-display text-4xl leading-[1.04] font-extrabold tracking-tight text-stone-900 sm:text-5xl lg:text-6xl"
-              style={{ ["--i" as string]: 1 }}
-            >
-              {t("Bid live. Chat with the room.")} <span className="text-brand-600">{t("Win the lot.")}</span>
-            </h1>
-            <p className="enter mt-5 max-w-xl text-base leading-relaxed text-stone-600 sm:text-lg" style={{ ["--i" as string]: 2 }}>
-              {t("Real-time auctions with auto-bidding, anti-sniping and live streams. Join one, or host your own in minutes.")}
-            </p>
-            <div className="enter mt-8 flex flex-wrap gap-3" style={{ ["--i" as string]: 3 }}>
-              <button className="btn-accent px-6 py-3 text-base" onClick={browse}>
-                {t("Browse auctions")}
-                <ArrowRightIcon size={18} weight="bold" aria-hidden="true" />
-              </button>
-              <Link to="/host" className="btn-ghost px-6 py-3 text-base">
-                {t("Host an auction")}
-              </Link>
-            </div>
-          </div>
-          <div className="enter" style={{ ["--i" as string]: 4 }}>
-            <HeroBoard />
+      {/* Hero: cinematic, centred, over a wash of real auction photos. Dark in both themes. */}
+      <section className={`relative isolate overflow-hidden rounded-[40px] bg-ink text-snow ${session ? "" : "lg:rounded-[48px]"}`}>
+        <HeroBackdrop covers={covers} />
+        <div
+          className={`relative mx-auto flex max-w-6xl flex-col items-center justify-center px-6 text-center ${
+            session ? "min-h-[min(48svh,30rem)] py-16 sm:py-20" : "min-h-[min(80svh,54rem)] py-24 sm:py-32"
+          }`}
+        >
+          <h1 className="hero-title enter font-display text-[clamp(2.5rem,5.2vw,5.5rem)] leading-[1.03] font-extrabold tracking-tight text-balance" style={{ ["--i" as string]: 0 }}>
+            {t("Bid live. Chat with the room.")}{" "}
+            {covers[0] && (
+              <span
+                aria-hidden="true"
+                className="mx-1 inline-block h-[0.78em] w-[1.9em] rounded-full bg-cover bg-center align-[-0.06em] ring-2 ring-snow/20"
+                style={{ backgroundImage: `url("${covers[0]}")` }}
+              />
+            )}{" "}
+            <span className="text-brand-400">{t("Win the lot.")}</span>
+          </h1>
+          <p className="enter mt-6 max-w-2xl text-base leading-relaxed text-snow/75 sm:text-lg" style={{ ["--i" as string]: 1 }}>
+            {t("Real-time auctions with auto-bidding, anti-sniping and live streams. Join one, or host your own in minutes.")}
+          </p>
+          <div className="enter mt-10 flex flex-wrap justify-center gap-3" style={{ ["--i" as string]: 2 }}>
+            <button className="btn-accent px-7 py-3.5 text-base" onClick={browse}>
+              {t("Browse auctions")}
+              <ArrowRightIcon size={18} weight="bold" aria-hidden="true" />
+            </button>
+            <Link to="/host" className="btn px-7 py-3.5 text-base bg-snow/10 text-snow ring-1 ring-snow/25 hover:bg-snow/20">
+              {t("Host an auction")}
+            </Link>
           </div>
         </div>
       </section>
 
       {activeEvent && <EventBanner ev={activeEvent} active={eventTag === activeEvent.tag} onToggle={() => setEventTag((t) => (t ? null : activeEvent.tag))} />}
 
-      <div className="grid gap-5 md:grid-cols-2">
+      {/* Auto-fit: cards share the row evenly, whichever of them have something to show. */}
+      <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))]">
+        <HeroBoard />
         <MysteryDrop />
         <TopGuessers />
       </div>
@@ -202,6 +255,12 @@ export function Home() {
             {t("Load more")}
           </button>
         </div>
+      )}
+
+      {!session && (
+        <Suspense fallback={null}>
+          <Landing covers={covers} />
+        </Suspense>
       )}
     </div>
   );
@@ -364,7 +423,7 @@ function HeroBoard() {
 
   const title = t(lots.length ? "On the block now" : upcoming.length ? "Starting soon" : "How it works");
   return (
-    <div className="glass rounded-[28px] p-2 lg:rotate-[1.5deg] lg:transition lg:duration-700 lg:hover:rotate-0">
+    <div className="glass h-full rounded-[28px] p-2">
       <div className="flex items-center justify-between px-3 pt-2 pb-1">
         <p className="text-sm font-semibold text-stone-700">{title}</p>
         {lots.length > 0 && <span className="chip bg-red-600 text-snow">{t("Live")}</span>}
