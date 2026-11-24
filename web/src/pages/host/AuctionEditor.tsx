@@ -180,7 +180,7 @@ function AuctionEditorInner() {
             n={3}
             done={auction.status === "scheduled"}
             label={auction.status === "scheduled" ? "Scheduled" : "Go live"}
-            hint={noLots ? `Needs at least one ${oneLot}.` : "Go live now, or set a start time and schedule."}
+            hint={noLots ? `Needs at least one ${oneLot}.` : "Start bidding now, or set a start time and schedule."}
             onClick={role.canRun && !noLots ? goLive : () => go("lots")}
           />
         </ol>
