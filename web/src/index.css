@@ -6,7 +6,7 @@
 @theme {
   /* Body and controls use the system face; the self-hosted display face is for headlines and prices only. */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif;
-  --font-display: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
   /* Big screens: 3xl = 1920px monitors, 4xl = 2560px (1440p/4K at 150%). */
   --breakpoint-3xl: 120rem;
   --breakpoint-4xl: 160rem;
@@ -72,6 +72,10 @@
   @keyframes flash {
     0% { background-color: rgb(251 191 36 / 0.45); }
     100% { background-color: transparent; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
@@ -477,6 +481,28 @@
   }
   .dark .aurora::before {
     opacity: 0.6;
+  }
+
+  /* Hero mosaic drifts slowly so the photos feel alive. */
+  .hero-drift {
+    animation: drift 40s ease-in-out infinite alternate;
+    transform-origin: center;
+    scale: 1.15;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-drift {
+      animation: none;
+    }
+  }
+
+  /* Endless strip: two identical copies side by side, moved left by one copy. */
+  .marquee {
+    animation: marquee 48s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee {
+      animation: none;
+    }
   }
 
   /* Staggered entrance: set --i on each child. */

@@ -13,7 +13,7 @@ export function Login() {
   // Invite links: remember who sent you; claimed once you are signed in.
   const ref = params.get("ref");
   if (ref && /^[a-zA-Z0-9_]{3,24}$/.test(ref)) localStorage.setItem("ref", ref);
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>(params.get("mode") === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
