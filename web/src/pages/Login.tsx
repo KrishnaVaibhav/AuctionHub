@@ -3,10 +3,12 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { supabase, errorMessage } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
+import { usePageTitle } from "../lib/usePageTitle";
 
 type Mode = "signin" | "signup" | "magic";
 
 export function Login() {
+  usePageTitle(t("Sign in"));
   const { session } = useAuth();
   const [params] = useSearchParams();
   const next = params.get("next") || "/";

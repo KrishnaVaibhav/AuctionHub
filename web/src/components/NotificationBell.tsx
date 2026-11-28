@@ -2,7 +2,7 @@ import { BellIcon, BroadcastIcon, ChatCircleIcon, CurrencyInrIcon, HourglassIcon
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../lib/auth";
-import { useNotifications } from "../lib/notifications";
+import type { Notifications } from "../lib/notifications";
 import { ago } from "../lib/admin";
 
 const icons: Record<string, { Glyph: Icon; tint: string }> = {
@@ -16,10 +16,11 @@ const icons: Record<string, { Glyph: Icon; tint: string }> = {
   system: { Glyph: InfoIcon, tint: "bg-stone-100 text-stone-600" },
 };
 
-export function NotificationBell() {
+/** `notes` comes from the layout, so the phone and desktop bells share one live feed. */
+export function NotificationBell({ notes }: { notes: Notifications }) {
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
-  const { items, unread, markAllRead, markRead } = useNotifications(userId);
+  const { items, unread, markAllRead, markRead } = notes;
   const [open, setOpen] = useState(false);
   const [perm, setPerm] = useState(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   const ref = useRef<HTMLDivElement>(null);
@@ -28,8 +29,13 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const escape = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", escape);
+    };
   }, [open]);
 
   if (!userId) return null;

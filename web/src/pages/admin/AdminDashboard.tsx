@@ -13,10 +13,14 @@ import { SafetyTab } from "./SafetyTab";
 import type { AuctionStatus } from "../../lib/types";
 import { confirmDialog } from "../../lib/confirm";
 import { Segmented } from "../../components/Glass";
+import { usePageTitle } from "../../lib/usePageTitle";
+import { t } from "../../lib/i18n";
+import { ModalPanel } from "../../components/ModalPanel";
 
 type Tab = "overview" | "users" | "auctions" | "activity" | "safety" | "support" | "audit" | "events";
 
 export function AdminDashboard() {
+  usePageTitle(t("Admin"));
   const { isAdmin, checked } = useIsAdmin();
   const [tab, setTab] = useState<Tab>("overview");
 
@@ -419,7 +423,7 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
 
   return createPortal(
     <div className="scrim flex justify-end" onClick={onClose}>
-      <div className="glass-thick h-full w-full max-w-2xl animate-rise overflow-y-auto p-5 sm:rounded-l-[32px] sm:p-6" onClick={(e) => e.stopPropagation()}>
+      <ModalPanel onClose={onClose} label="User details" className="glass-thick h-full w-full max-w-2xl animate-rise overflow-y-auto p-5 sm:rounded-l-[32px] sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <ProviderPhoto url={(data?.provider_avatar as string) ?? null} name={(data?.provider_name as string) ?? null} size={64} />
@@ -558,7 +562,7 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
             </p>
           ))}
         </Section>
-      </div>
+      </ModalPanel>
     </div>,
     document.body,
   );

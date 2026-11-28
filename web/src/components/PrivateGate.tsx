@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { supabase, errorMessage } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
+import { t } from "../lib/i18n";
 
 interface Preview {
   id: string;
@@ -22,10 +23,17 @@ export function PrivateGate({ auctionId, onJoined }: { auctionId: string; onJoin
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const autoTried = useRef(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    void supabase.rpc("auction_preview", { p_auction_id: auctionId }).then(({ data }) => setPreview(((data as Preview[] | null) ?? [])[0] ?? null));
-  }, [auctionId, session?.user.id]);
+    setLoadError(null);
+    void supabase.rpc("auction_preview", { p_auction_id: auctionId }).then(({ data, error }) => {
+      // No answer is not "not found": a network error gets a retry instead.
+      if (error) setLoadError(errorMessage(error));
+      else setPreview(((data as Preview[] | null) ?? [])[0] ?? null);
+    });
+  }, [auctionId, session?.user.id, attempt]);
 
   async function join(value: string) {
     setBusy(true);
@@ -45,6 +53,17 @@ export function PrivateGate({ auctionId, onJoined }: { auctionId: string; onJoin
     }
   }, [session, preview]);
 
+  if (preview === undefined && loadError) {
+    return (
+      <div className="card mx-auto max-w-md space-y-3 p-8 text-center">
+        <p className="font-display text-xl font-bold">{t("Couldn't load this auction")}</p>
+        <p className="text-sm text-stone-500">{loadError}</p>
+        <button className="btn-primary" onClick={() => setAttempt((n) => n + 1)}>
+          {t("Try again")}
+        </button>
+      </div>
+    );
+  }
   if (preview === undefined) return <div className="h-40 animate-pulse rounded-2xl bg-stone-100" />;
   if (preview === null) {
     return (

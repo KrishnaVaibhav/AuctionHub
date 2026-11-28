@@ -1,0 +1,4 @@
+# The CSP allows index.html's inline theme script by its hash, and the hash
+# changes with line endings: keep these files LF on every checkout.
+web/index.html text eol=lf
+web/public/_headers text eol=lf

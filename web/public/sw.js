@@ -1,8 +1,11 @@
 // AuctionHub service worker: installable app, offline shell, notification clicks.
 // Live data (Supabase) is never cached; only the app's own static files.
-const VERSION = "v1";
+// v2: the build-file cache now has a size limit; this clears v1's unlimited one.
+const VERSION = "v2";
 const SHELL = `shell-${VERSION}`;
 const ASSETS = `assets-${VERSION}`;
+// Enough for a few builds of every page's code; the oldest go first.
+const MAX_ASSETS = 160;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL).then((c) => c.addAll(["/", "/favicon.svg", "/icon-192.png"])).then(() => self.skipWaiting()));
@@ -17,6 +20,23 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/** Drop the oldest entries beyond `max` (a cache lists its keys in the order they were added). */
+async function trim(name, max) {
+  const cache = await caches.open(name);
+  const keys = await cache.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - max)).map((k) => cache.delete(k)));
+}
+
+/** Store a copy of `res`. The copy is taken now: once the page starts reading the body it can't be cloned. */
+function keep(name, key, res, max) {
+  const copy = res.clone();
+  return caches
+    .open(name)
+    .then((c) => c.put(key, copy))
+    .then(() => (max ? trim(name, max) : undefined))
+    .catch(() => {});
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -28,7 +48,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          if (res.ok && url.pathname === "/") caches.open(SHELL).then((c) => c.put("/", res.clone()));
+          if (res.ok && url.pathname === "/") event.waitUntil(keep(SHELL, "/", res));
           return res;
         })
         .catch(() => caches.match("/", { cacheName: SHELL })),
@@ -43,7 +63,10 @@ self.addEventListener("fetch", (event) => {
         (hit) =>
           hit ||
           fetch(req).then((res) => {
-            if (res.ok) caches.open(ASSETS).then((c) => c.put(req, res.clone()));
+            // Cloudflare answers a build file that no longer exists with the
+            // app's HTML (status 200). Never keep that in place of the code.
+            const html = (res.headers.get("content-type") || "").includes("text/html");
+            if (res.ok && !html) event.waitUntil(keep(ASSETS, req, res, MAX_ASSETS));
             return res;
           }),
       ),

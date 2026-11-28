@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRightIcon, CalendarBlankIcon, ChatCircleIcon, GavelIcon, LightningIcon, MagnifyingGlassIcon, TimerIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../lib/supabase";
@@ -103,7 +103,10 @@ export function Home() {
     });
   }, []);
 
+  // Only the latest search, tab or filter may fill the list: a slower, older answer is dropped.
+  const loadSeq = useRef(0);
   async function load(reset: boolean) {
+    const seq = ++loadSeq.current;
     setLoading(true);
     const from = reset ? 0 : rows.length;
     let q = supabase
@@ -118,7 +121,8 @@ export function Home() {
     else if (cat) q = q.eq("category", cat);
     if (eventTag) q = q.contains("tags", [eventTag]);
     const { data, error } = await q;
-    if (error) setError(errorMessage(error));
+    if (seq !== loadSeq.current) return;
+    setError(error ? errorMessage(error) : null);
     const page = (data as Row[] | null) ?? [];
     setRows((prev) => (reset ? page : [...prev, ...page]));
     setHasMore(page.length === PAGE);

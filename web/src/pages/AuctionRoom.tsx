@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon, WifiSlashIcon } from "@phosphor-icons/react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useAuth } from "../lib/auth";
 import { auctionRole, useAuctionRoom } from "../lib/useAuctionRoom";
@@ -38,6 +38,8 @@ import { GuessLeaderboard, GuessPanel } from "../components/live/Predictions";
 import { BingoCard } from "../components/live/BingoCard";
 import { WatchParty } from "../components/live/WatchParty";
 import { HostRoomControls } from "../components/live/HostRoomControls";
+import { usePageTitle } from "../lib/usePageTitle";
+import { useOnline } from "../lib/useOnline";
 
 type Tab = "lot" | "lots" | "bids" | "results" | "games" | "party" | "replay" | "chat";
 
@@ -51,7 +53,9 @@ function AuctionRoomInner() {
   const { id } = useParams();
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
-  const { auction, lots, media, moderatorIds, staff, loading, error, reload } = useAuctionRoom(id);
+  const { auction, lots, media, moderatorIds, staff, loading, error, connected, reload } = useAuctionRoom(id);
+  const online = useOnline();
+  usePageTitle(auction?.title);
   const [params, setParams] = useSearchParams();
   // ?lot= opens that lot (links from notifications and My bids), and follows the selection.
   const [selectedId, setSelectedId] = useState<string | null>(params.get("lot"));
@@ -72,7 +76,8 @@ function AuctionRoomInner() {
         next.set("lot", selectedId);
         return next;
       },
-      { replace: true },
+      // Picking a lot only records it in the address: stay where you are on the page.
+      { replace: true, preventScrollReset: true },
     );
   }, [selectedId, params, setParams]);
 
@@ -111,8 +116,9 @@ function AuctionRoomInner() {
   }, []);
 
   if (loading) return <RoomSkeleton />;
+  // A failed load (no network, a server hiccup) is not "private" or "not found": say so and offer a retry.
+  if (!auction && error) return <LoadFailed message={error} onRetry={reload} />;
   if (!auction) return id ? <PrivateGate auctionId={id} onJoined={reload} /> : null;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
 
   const role = auctionRole(auction, staff, userId);
   // "Host" in the room means anyone allowed to run it: the owner or a co-host with Run.
@@ -183,6 +189,14 @@ function AuctionRoomInner() {
         {isHost && <HostBar auction={auction} onAction={hostAction} canEdit={role.canEdit} cohost={role.cohost} lots={lots} selected={selected} />}
       </div>
       {hostError && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{hostError}</p>}
+
+      {/* Offline is announced by the layout; this covers a dropped live connection. */}
+      {!finished && online && !connected && (
+        <p role="status" className="flex items-center gap-2 rounded-2xl bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-900">
+          <WifiSlashIcon size={18} weight="bold" className="shrink-0" aria-hidden="true" />
+          {t("Reconnecting… Prices may be a few seconds behind.")}
+        </p>
+      )}
 
       <SoldMoment auction={auction} lots={lots} events={events} userId={userId} />
       {auction.mode !== "league" && selected && (auction.status === "live" || auction.status === "paused") && (
@@ -469,6 +483,26 @@ function LotGrid({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function LoadFailed({ message, onRetry }: { message: string; onRetry: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="card mx-auto max-w-md space-y-3 p-8 text-center">
+      <p className="font-display text-xl font-bold">{t("Couldn't load this auction")}</p>
+      <p className="text-sm text-stone-500">{message}</p>
+      <button
+        className="btn-primary"
+        disabled={busy}
+        onClick={() => {
+          setBusy(true);
+          void onRetry().finally(() => setBusy(false));
+        }}
+      >
+        {t(busy ? "Please wait..." : "Try again")}
+      </button>
     </div>
   );
 }

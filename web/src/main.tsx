@@ -19,6 +19,21 @@ import { initI18n, useLanguage } from "./lib/i18n";
 initMonitoring();
 registerServiceWorker();
 
+// A deploy replaced the code this tab was opened with, and a page it hasn't
+// loaded yet is gone: load the new version instead of showing an error.
+// At most once a minute, so a real outage can't cause a reload loop.
+window.addEventListener("vite:preloadError", (event) => {
+  try {
+    const last = Number(sessionStorage.getItem("reloaded-for-update") ?? 0);
+    if (Date.now() - last < 60_000) return;
+    sessionStorage.setItem("reloaded-for-update", String(Date.now()));
+  } catch {
+    return; // storage blocked: can't guard against loops, so don't reload
+  }
+  event.preventDefault();
+  window.location.reload();
+});
+
 // Route-level code splitting: each page downloads only when visited.
 const Login = lazy(() => import("./pages/Login").then((m) => ({ default: m.Login })));
 const Account = lazy(() => import("./pages/Account").then((m) => ({ default: m.Account })));

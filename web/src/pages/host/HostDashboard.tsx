@@ -12,6 +12,8 @@ import { confirmDialog } from "../../lib/confirm";
 import { Menu } from "../../components/Menu";
 import { CategoryIcon } from "../../components/CategoryIcon";
 import { TEMPLATES } from "../../lib/templates";
+import { usePageTitle } from "../../lib/usePageTitle";
+import { t } from "../../lib/i18n";
 
 type Row = Auction & { lots: { count: number }[]; sold?: { count: number }[] };
 type Filter = "all" | "live" | "next" | "draft" | "done";
@@ -38,6 +40,7 @@ const lotCount = (a: Row) => a.lots?.[0]?.count ?? 0;
 const soldCount = (a: Row) => a.sold?.[0]?.count;
 
 export function HostDashboard() {
+  usePageTitle(t("Host"));
   const { session } = useAuth();
   const navigate = useNavigate();
   const [rows, setRows] = useState<Row[] | null>(null);

@@ -7,6 +7,7 @@ interface Env {
 }
 
 import { embedPage } from "./embed";
+import { secure } from "./security";
 
 const EMBED = /^\/embed\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 const UUID = /^\/a\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
@@ -36,7 +37,7 @@ async function auctionPage(request: Request, env: Env, id: string): Promise<Resp
   } catch {
     // Preview is best-effort; the app still loads.
   }
-  if (!preview) return shell;
+  if (!preview) return secure(shell);
 
   const title = `${preview.title} · AuctionHub`;
   const what =
@@ -72,7 +73,7 @@ async function auctionPage(request: Request, env: Env, id: string): Promise<Resp
     .transform(shell);
   const headers = new Headers(rewritten.headers);
   headers.set("cache-control", "public, max-age=0, must-revalidate");
-  return new Response(rewritten.body, { status: 200, headers });
+  return secure(new Response(rewritten.body, { status: 200, headers }));
 }
 
 function robots(origin: string): Response {
@@ -270,7 +271,7 @@ export default {
     if (match && request.method === "GET") {
       return auctionPage(request, env, match[1].toLowerCase());
     }
-    return env.ASSETS.fetch(request);
+    return secure(await env.ASSETS.fetch(request));
   },
 
   async scheduled(controller, env) {

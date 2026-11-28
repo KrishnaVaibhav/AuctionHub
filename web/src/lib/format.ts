@@ -1,4 +1,5 @@
 import type { AuctionSettings, AuctionStatus, LotStatus } from "./types";
+import { getLanguage, t } from "./i18n";
 
 export function money(amount: number | null | undefined, settings?: AuctionSettings): string {
   if (amount == null) return "-";
@@ -14,9 +15,11 @@ export function money(amount: number | null | undefined, settings?: AuctionSetti
   }
 }
 
+/** Date and time in the app's language ("28 नव॰ 2026, 3:00 pm" in Hindi); English keeps the browser's format. */
 export function dateTime(iso: string | null | undefined): string {
-  if (!iso) return "Not set";
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  if (!iso) return t("Not set");
+  const lang = getLanguage();
+  return new Date(iso).toLocaleString(lang === "en" ? undefined : `${lang}-IN`, { dateStyle: "medium", timeStyle: "short" });
 }
 
 /** "2d 4h", "1h 5m", "4:09" style remaining time. */
