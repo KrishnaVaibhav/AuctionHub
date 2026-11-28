@@ -63,7 +63,10 @@ self.addEventListener("fetch", (event) => {
         (hit) =>
           hit ||
           fetch(req).then((res) => {
-            if (res.ok) event.waitUntil(keep(ASSETS, req, res, MAX_ASSETS));
+            // Cloudflare answers a build file that no longer exists with the
+            // app's HTML (status 200). Never keep that in place of the code.
+            const html = (res.headers.get("content-type") || "").includes("text/html");
+            if (res.ok && !html) event.waitUntil(keep(ASSETS, req, res, MAX_ASSETS));
             return res;
           }),
       ),

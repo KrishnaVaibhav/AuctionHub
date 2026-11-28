@@ -271,12 +271,6 @@ export default {
     if (match && request.method === "GET") {
       return auctionPage(request, env, match[1].toLowerCase());
     }
-    // A build file that doesn't exist (an old tab asking for a chunk the last
-    // deploy replaced) is a 404, not the app's HTML: the app then reloads
-    // itself onto the new version instead of failing on HTML served as code.
-    if (url.pathname.startsWith("/assets/")) {
-      return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
-    }
     return secure(await env.ASSETS.fetch(request));
   },
 
