@@ -1,4 +1,4 @@
-import type { Lot } from "./types";
+import type { Auction, Lot } from "./types";
 
 export type SaleType = "english" | "dutch" | "sealed" | "offer";
 
@@ -36,4 +36,14 @@ export function nextDropIn(lot: Pick<Lot, "start_price" | "opens_at" | "sale_set
   const opened = lot.opens_at ? new Date(lot.opens_at).getTime() : nowMs;
   const period = s.interval_s * 1000;
   return period - ((nowMs - opened) % period);
+}
+
+/**
+ * Sale type for lots added in bulk (CSV import, bulk photos): the auction's
+ * default when it needs no extra settings. Dutch lots need a price-drop plan
+ * per lot, so those start as standard lots.
+ */
+export function bulkSaleType(auction: Pick<Auction, "mode" | "settings">): { sale_type?: "offer" | "sealed" } {
+  const t = auction.mode === "league" ? undefined : auction.settings.default_sale_type;
+  return t === "offer" || t === "sealed" ? { sale_type: t } : {};
 }

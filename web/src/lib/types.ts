@@ -38,6 +38,8 @@ export interface AuctionSettings {
   chat?: { enabled?: boolean; slow_mode_s?: number; allow_links?: boolean };
   /** false: bidders can only bid the next minimum (no typed amounts, jumps or auto-bid). Default true. */
   custom_bids?: boolean;
+  /** Sale type new lots start with in the editor (each lot can still change it). Default "english". */
+  default_sale_type?: "english" | "dutch" | "sealed" | "offer";
 }
 
 export interface Profile {

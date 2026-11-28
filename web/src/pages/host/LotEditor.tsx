@@ -215,7 +215,7 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
     buyNow: "",
     reserve: "",
     fields: "",
-    saleType: "english",
+    saleType: auction.mode === "league" ? "english" : (auction.settings.default_sale_type ?? "english"),
     dutchStep: "",
     dutchFloor: "",
     dutchInterval: "60",
@@ -351,9 +351,9 @@ interface EditorProps {
   onChange: () => Promise<void>;
 }
 
-export function LotEditor({ auction, lot, index, total, siblings, media, editable, onChange }: EditorProps) {
-  const [open, setOpen] = useState(false);
-  const [v, setV] = useState<LotFields>({
+/** A lot's saved values, as the edit form holds them (the reserve loads separately). */
+function fieldsOf(lot: Lot): LotFields {
+  return {
     title: lot.title,
     description: lot.description,
     startPrice: String(lot.start_price),
@@ -364,7 +364,12 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
     dutchStep: lot.sale_type === "dutch" ? String(dutchSettings(lot).step) : "",
     dutchFloor: lot.sale_type === "dutch" ? String(dutchSettings(lot).floor) : "",
     dutchInterval: lot.sale_type === "dutch" ? String(dutchSettings(lot).interval_s) : "60",
-  });
+  };
+}
+
+export function LotEditor({ auction, lot, index, total, siblings, media, editable, onChange }: EditorProps) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState<LotFields>(() => fieldsOf(lot));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -449,80 +454,110 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
       if (error) throw error;
     });
 
+  const cover = media.find((m) => m.kind === "image");
+  const photoWord = media.length === 1 ? "1 photo" : `${media.length} photos`;
+
   return (
-    <div className="card p-4">
+    <div className={`card p-3 sm:p-4 ${open ? "ring-2 ring-brand-300" : ""}`}>
+      {/* One calm line per lot; photos and fields open on demand. */}
       <div className="flex flex-wrap items-center gap-3">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-stone-900/[0.05] font-mono text-xs font-semibold text-stone-600 tabular-nums">{index + 1}</span>
+        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-stone-900/[0.05] font-mono text-xs font-semibold text-stone-600 tabular-nums dark:bg-snow/[0.06]">{index + 1}</span>
+        <button type="button" onClick={() => setOpen((o) => !o)} className="h-14 w-14 flex-none overflow-hidden rounded-2xl bg-stone-100 dark:bg-snow/[0.06]" aria-label={open ? `Close ${lot.title}` : `Open ${lot.title}`}>
+          {cover ? (
+            <img src={publicUrl("lot-media", cover.path)} alt="" className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <span className="flex h-full items-center justify-center text-[10px] font-semibold text-stone-500">No photo</span>
+          )}
+        </button>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">{lot.title}</p>
+          <p className="truncate font-semibold">{lot.title}</p>
           <p className="text-sm text-stone-500">
             {lot.sale_type !== "english" && <span className="chip mr-1.5 bg-brand-100 text-brand-700">{SALE_TYPES.find((t) => t.value === lot.sale_type)?.label}</span>}
             Start {money(lot.start_price, auction.settings)}
             {lot.buy_now_price != null && <> · Buy now {money(lot.buy_now_price, auction.settings)}</>}
             {lot.current_bid != null && <> · Current {money(lot.current_bid, auction.settings)}</>}
+            {" · "}
+            <span className={media.length ? "" : "font-medium text-amber-700"}>{media.length ? photoWord : "no photo"}</span>
           </p>
         </div>
         <LotBadge status={lot.status} />
-        {editable && (
-          <div className="flex gap-1">
-            <button className="btn-ghost px-2" disabled={busy || index === 0} onClick={() => void move(-1)} aria-label="Move up">
-              &uarr;
-            </button>
-            <button className="btn-ghost px-2" disabled={busy || index === total - 1} onClick={() => void move(1)} aria-label="Move down">
-              &darr;
-            </button>
-            <button className="btn-ghost" onClick={() => setOpen((o) => !o)}>
-              {open ? "Close" : "Edit"}
-            </button>
-            <button className="btn-ghost text-red-600" disabled={busy} onClick={() => void removeLot()}>
+        <div className="flex gap-1">
+          {editable && (
+            <>
+              <button className="btn-ghost h-10 w-10 p-0" disabled={busy || index === 0} onClick={() => void move(-1)} aria-label={`Move ${lot.title} up`}>
+                &uarr;
+              </button>
+              <button className="btn-ghost h-10 w-10 p-0" disabled={busy || index === total - 1} onClick={() => void move(1)} aria-label={`Move ${lot.title} down`}>
+                &darr;
+              </button>
+            </>
+          )}
+          <button className="btn-ghost" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+            {open ? "Done" : editable ? "Edit" : "Photos"}
+          </button>
+          {editable && (
+            <button className="btn-ghost text-red-600" disabled={busy} onClick={() => void removeLot()} aria-label={`Delete ${lot.title}`}>
               Delete
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {media.map((m) => (
-          <div key={m.id} className="group relative h-20 w-20 overflow-hidden rounded-2xl bg-stone-100">
-            {m.kind === "video" ? (
-              <div className="flex h-full items-center justify-center bg-stone-800 text-xs text-white">Video</div>
-            ) : (
-              <img src={publicUrl("lot-media", m.path)} alt="" className="h-full w-full object-cover" />
-            )}
-            <button
-              type="button"
-              className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-sm text-snow transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100"
-              onClick={() => void removeMedia(m)}
-              disabled={busy}
-              aria-label="Remove this photo"
-            >
-              &times;
-            </button>
+      {open && (
+        <div className="mt-4 space-y-4 border-t border-stone-900/[0.06] pt-4 dark:border-snow/[0.06]">
+          <div>
+            <p className="label">Photos and video</p>
+            <div className="flex flex-wrap items-center gap-2">
+              {media.map((m) => (
+                <div key={m.id} className="group relative h-20 w-20 overflow-hidden rounded-2xl bg-stone-100">
+                  {m.kind === "video" ? (
+                    <div className="flex h-full items-center justify-center bg-stone-800 text-xs text-white">Video</div>
+                  ) : (
+                    <img src={publicUrl("lot-media", m.path)} alt="" className="h-full w-full object-cover" />
+                  )}
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-sm text-snow transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100"
+                    onClick={() => void removeMedia(m)}
+                    disabled={busy}
+                    aria-label="Remove this photo"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+              <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-stone-300 text-xs font-medium text-stone-500 transition hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700">
+                {busy ? "..." : "+ Add"}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/mp4,video/webm"
+                  className="hidden"
+                  disabled={busy}
+                  onChange={(e) => {
+                    if (e.target.files?.length) void upload(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {media.length > 0 && <p className="mt-1 text-xs text-stone-500">The first photo is the cover bidders see.</p>}
           </div>
-        ))}
-        <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-stone-300 text-xs font-medium text-stone-500 transition hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700">
-          {busy ? "..." : "+ Media"}
-          <input
-            type="file"
-            multiple
-            accept="image/*,video/mp4,video/webm"
-            className="hidden"
-            disabled={busy}
-            onChange={(e) => {
-              if (e.target.files?.length) void upload(e.target.files);
-              e.target.value = "";
-            }}
-          />
-        </label>
-      </div>
 
-      {open && editable && (
-        <form onSubmit={save} onInvalidCapture={openInvalid} className="mt-4 space-y-3 border-t border-stone-900/[0.06] pt-4">
-          <LotFieldInputs v={v} set={setV} disabled={busy} league={auction.mode === "league"} collapse />
-          <button className="btn-primary" disabled={busy}>
-            Save lot
-          </button>
-        </form>
+          {editable && (
+            <form onSubmit={save} onInvalidCapture={openInvalid} className="space-y-3">
+              <LotFieldInputs v={v} set={setV} disabled={busy} league={auction.mode === "league"} collapse />
+              <div className="flex flex-wrap gap-2">
+                <button className="btn-primary" disabled={busy}>
+                  Save lot
+                </button>
+                <button type="button" className="btn-ghost" disabled={busy} onClick={() => (setV(fieldsOf(lot)), setOpen(false))}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       )}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>

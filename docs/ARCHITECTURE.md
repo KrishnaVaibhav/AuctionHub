@@ -51,6 +51,7 @@ directly.
 Each lot picks one. The type locks once the lot opens, and league auctions always use `english`.
 
 - `english` (default): ascending bids with proxy auto-bids and anti-snipe. `place_bid` and `buy_now` are thin wrappers that reject other types, then call the original engine (`_place_bid_english`, `_buy_now_core`).
+- New lots start with `settings.default_sale_type` (set by the "Sell by offers" and "Sealed bids" formats, or in Details & rules). CSV import and bulk photos use it too for offer and sealed; Dutch needs per-lot settings, so bulk adds fall back to standard.
 - `dutch`: `sale_settings = {step, floor, interval_s}`. The price drops by `step` every `interval_s` seconds from `start_price` down to `floor`, and freezes while the auction is paused. `dutch_accept()` buys at the server's current price.
 - `sealed`: `place_sealed_bid()` stores raise-only bids in `sealed_bids`. Only the bidder can read their own, not the host. The public sees only the bidder count. At close, every sealed bid is copied into `bids` and the highest wins (earliest on a tie). The reserve still applies.
 - `offer`: `make_offer()` adds a row to `lot_offers` (one pending per bidder; `start_price` is the minimum offer). The host calls `respond_offer()` to accept, which sells the lot and declines the rest, or to decline. Buy now still works. Pending offers expire at close.

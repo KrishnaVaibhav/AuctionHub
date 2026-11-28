@@ -6,8 +6,9 @@ test("host creates an auction in the UI, goes live, and sees a rival bid in real
   const rival = await createUser("rival", "E2E Rival");
   await uiLogin(page, host, "/host");
 
+  await page.getByRole("link", { name: "New auction" }).click();
   await page.getByLabel("New auction title").fill(`E2E auction ${Date.now()}`);
-  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("button", { name: "Create auction" }).click();
   await expect(page).toHaveURL(/\/host\/a\//);
 
   const newLot = page.locator("form", { hasText: "Add a lot" });
