@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { SlidersHorizontalIcon, XIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../../lib/supabase";
+import { serverNow } from "../../lib/clock";
 import { FEATURES, funOn, type FeatureKey } from "../../lib/fun";
 import type { Auction, Lot } from "../../lib/types";
 import { Toggle } from "../Glass";
@@ -27,12 +28,12 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
     done(error, value.trim() ? "Announcement posted" : "Announcement cleared");
   }
   async function extend(lot: Lot, seconds: number) {
-    const base = Math.max(Date.now(), lot.ends_at ? new Date(lot.ends_at).getTime() : Date.now());
+    const base = Math.max(serverNow(), lot.ends_at ? new Date(lot.ends_at).getTime() : serverNow());
     const { error } = await supabase.rpc("set_lot_end", { p_lot_id: lot.id, p_ends_at: new Date(base + seconds * 1000).toISOString() });
     done(error, `Added ${seconds >= 60 ? `${seconds / 60} min` : `${seconds}s`}`);
   }
   async function endIn(lot: Lot, seconds: number) {
-    const { error } = await supabase.rpc("set_lot_end", { p_lot_id: lot.id, p_ends_at: new Date(Date.now() + seconds * 1000).toISOString() });
+    const { error } = await supabase.rpc("set_lot_end", { p_lot_id: lot.id, p_ends_at: new Date(serverNow() + seconds * 1000).toISOString() });
     done(error, `Closes in ${seconds}s`);
   }
   async function spotlight(lotId: string | null) {

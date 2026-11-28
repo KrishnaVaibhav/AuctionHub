@@ -26,12 +26,14 @@ directly.
 
 - **Auction lifecycle:** `draft → scheduled → live ⇄ paused → ended`, or `cancelled`.
   The `auction-jobs` pg_cron job runs every 15s. It starts due auctions, closes due lots and ends finished auctions.
+  So "Sold" shows at once, the room also calls `close_due_lots(auction_id)` the moment a lot's clock reaches zero (`useCloseDue`). Anyone may call it; it only closes lots whose time is really up, in the same lock order as the job.
 - **Lot lifecycle:** `pending → open → sold | unsold | withdrawn`.
 - **`place_bid(lot, amount, max?)`:**
   - Locks the lot row (`FOR UPDATE`), so concurrent bids are serialized.
   - The minimum bid is the start price, or the current bid plus the increment from `settings.increments`.
   - **Proxy bids:** each bidder has a private ceiling. The leader's proxy defends up to its ceiling. On a tie, the earlier ceiling wins.
   - **Anti-sniping:** a bid inside `settings.anti_snipe_seconds` pushes `ends_at` to `now() + window`.
+  - **First bid:** the start price, or one increment when a lot starts at 0 (`min_next_bid`, mirrored by `minNextBid` in the web app).
   - Rate limit: 5 manual bids per 10 seconds per lot.
   - Hosts cannot bid. Banned users cannot bid.
 - **Reserve price:** stored in `lot_reserves`, which only the host can read. The public only sees `lots.reserve_met`.

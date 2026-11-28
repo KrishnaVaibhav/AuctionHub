@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useAuth } from "../lib/auth";
@@ -7,9 +7,11 @@ import { BidReplay } from "../components/BidReplay";
 import { supabase, errorMessage } from "../lib/supabase";
 import { dateTime, money } from "../lib/format";
 import { minNextBid } from "../lib/bidding";
+import { useCloseDue } from "../lib/useCloseDue";
+import { useQuickBid, type QuickBidState } from "../lib/useQuickBid";
 import { useProfileNames } from "../lib/profiles";
 import { publicUrl } from "../lib/media";
-import type { Auction, BidResult, Lot, LotMedia } from "../lib/types";
+import type { Auction, Lot, LotMedia } from "../lib/types";
 import { AuctionBadge, LotBadge } from "../components/StatusBadge";
 import { BidPanel } from "../components/BidPanel";
 import { DesktopChat, FloatingChat } from "../components/FloatingChat";
@@ -50,23 +52,47 @@ function AuctionRoomInner() {
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
   const { auction, lots, media, moderatorIds, staff, loading, error, reload } = useAuctionRoom(id);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  // ?lot= opens that lot (links from notifications and My bids), and follows the selection.
+  const [selectedId, setSelectedId] = useState<string | null>(params.get("lot"));
   const [tab, setTab] = useState<Tab>((["lot", "lots", "bids", "results", "games", "party", "replay", "chat"] as Tab[]).find((t) => t === params.get("tab") && t !== "chat") ?? "lot");
   const [hostError, setHostError] = useState<string | null>(null);
   const { isAdmin } = useIsAdmin();
-  const [barBusy, setBarBusy] = useState(false);
-  const [barMsg, setBarMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const events = useLivePulse(lots);
   const live = auction?.status === "live";
+  const quick = useQuickBid(auction);
+  // Close a lot the moment its clock runs out, rather than at the next scheduler run.
+  useCloseDue(auction, lots);
 
-  // The host's spotlight opens that lot on every screen.
-  const spotlight = auction?.spotlight_lot_id ?? null;
   useEffect(() => {
-    if (spotlight) {
-      setSelectedId(spotlight);
-      setTab((t) => (t === "lots" || t === "bids" ? "lot" : t));
+    if (!selectedId || params.get("lot") === selectedId) return;
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        next.set("lot", selectedId);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [selectedId, params, setParams]);
+
+  // The host's spotlight opens that lot on every screen. A link to one lot
+  // (an outbid alert, My bids) wins over the spotlight that was already on
+  // when the page opened; any spotlight the host sets after that applies.
+  const spotlight = auction?.spotlight_lot_id ?? null;
+  const deepLinked = useRef(Boolean(params.get("lot")));
+  const loaded = Boolean(auction);
+  useEffect(() => {
+    if (loaded && !spotlight) deepLinked.current = false;
+  }, [loaded, spotlight]);
+  useEffect(() => {
+    if (!spotlight) return;
+    if (deepLinked.current) {
+      deepLinked.current = false;
+      return;
     }
+    setSelectedId(spotlight);
+    setTab((t) => (t === "lots" || t === "bids" ? "lot" : t));
   }, [spotlight]);
 
   // Watching a live room earns a little XP (capped per day on the server).
@@ -105,21 +131,10 @@ function AuctionRoomInner() {
     if (error) setHostError(errorMessage(error));
   }
 
-  /** One-tap minimum bid from the mobile bar. */
-  async function quickBid(lot: Lot) {
-    const amount = minNextBid(lot, auction!.settings);
-    setBarBusy(true);
-    setBarMsg(null);
-    const { data, error } = await supabase.rpc("place_bid", { p_lot_id: lot.id, p_amount: amount, p_max_amount: null });
-    setBarBusy(false);
-    if (error) return setBarMsg({ ok: false, text: errorMessage(error) });
-    const res = data as BidResult;
-    setBarMsg(
-      res.status === "leading"
-        ? { ok: true, text: t("You're winning at {amount}", { amount: money(res.current_bid, auction!.settings) }) }
-        : { ok: false, text: t("Outbid by an auto-bid. Current price {amount}", { amount: money(res.current_bid, auction!.settings) }) },
-    );
-  }
+  // When the last open lot closes: the header counts down to it. Lots move on their
+  // own (anti-snipe, the host adding time), so this follows the lots, not the auction.
+  const lastClose = lots.reduce<string | null>((latest, l) => (l.status === "open" && l.ends_at && (!latest || l.ends_at > latest) ? l.ends_at : latest), null);
+  const barMsg = selected && quick.msg?.lotId === selected.id ? quick.msg : null;
 
   const tabs: { key: Tab; label: string; mobileOnly?: boolean }[] = [
     { key: "lot", label: t("Current lot") },
@@ -152,9 +167,9 @@ function AuctionRoomInner() {
             {auction.mode === "league" && <span className="chip bg-violet-100 text-violet-800">Team league</span>}
             {auction.visibility !== "public" && <span className="chip bg-stone-900 text-white">{visibilityLabel[auction.visibility]}</span>}
             {auction.status === "scheduled" && <span className="text-sm text-stone-500">Starts {dateTime(auction.starts_at)}</span>}
-            {auction.status === "live" && auction.mode !== "league" && auction.ends_at && (
+            {auction.status === "live" && auction.mode !== "league" && lastClose && (
               <span className="text-sm text-stone-500">
-                Last lot closes in <Countdown endsAt={auction.ends_at} className="font-semibold text-stone-800" />
+                {t("Last lot closes in")} <Countdown endsAt={lastClose} className="font-semibold text-stone-800" />
               </span>
             )}
           </div>
@@ -171,7 +186,7 @@ function AuctionRoomInner() {
 
       <SoldMoment auction={auction} lots={lots} events={events} userId={userId} />
       {auction.mode !== "league" && selected && (auction.status === "live" || auction.status === "paused") && (
-        <LiveStage auction={auction} lot={selected} userId={userId} events={events} isTeam={isTeam} />
+        <LiveStage auction={auction} lot={selected} lots={lots} userId={userId} events={events} isTeam={isTeam} isHost={isHost} onSelect={setSelectedId} />
       )}
       {live && funOn(auction.settings, "reactions") && (
         <div className="flex flex-wrap items-center gap-3">
@@ -238,11 +253,8 @@ function AuctionRoomInner() {
                     {selected.status === "open" && <PriceHint className="mt-4" category={auction.category} title={selected.title} settings={auction.settings} />}
                     {isHost && selected.status === "open" && (
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <button className="btn-primary" onClick={() => void hostAction("close_lot_now", { p_lot_id: selected.id }, { title: `Close "${selected.title}" now?`, body: "The lot sells to the current leader at the current bid.", confirmLabel: "Close lot" })}>
-                          Sold! Close lot now
-                        </button>
                         <button className="btn-ghost" onClick={() => void hostAction("withdraw_lot", { p_lot_id: selected.id }, { title: `Withdraw "${selected.title}"?`, body: "Bidding stops and the lot is marked withdrawn.", confirmLabel: "Withdraw lot", danger: true })}>
-                          Withdraw
+                          Withdraw this lot
                         </button>
                       </div>
                     )}
@@ -256,7 +268,7 @@ function AuctionRoomInner() {
                 <div className="card py-16 text-center text-sm text-stone-500">No lots in this auction yet.</div>
               ))}
 
-            {tab === "lots" && <LotGrid auction={auction} lots={lots} media={media} userId={userId} selectedId={selected?.id} onOpen={openLot} />}
+            {tab === "lots" && <LotGrid auction={auction} lots={lots} media={media} userId={userId} isTeam={isTeam} quick={quick} selectedId={selected?.id} onOpen={openLot} />}
             {tab === "bids" && <BidLog auction={auction} lots={lots} userId={userId} />}
             {tab === "replay" && <BidReplay auction={auction} lots={lots} media={media} />}
             {tab === "games" && (
@@ -315,8 +327,8 @@ function AuctionRoomInner() {
               ) : (
                 !isTeam &&
                 (userId && selected.sale_type === "english" ? (
-                  <button className="btn-accent min-h-11 px-5" disabled={barBusy} onClick={() => void quickBid(selected)}>
-                    {barBusy ? t("Bidding...") : t("Bid {amount}", { amount: money(minNextBid(selected, auction.settings), auction.settings) })}
+                  <button className="btn-accent min-h-11 px-5" disabled={quick.busyId === selected.id} onClick={() => void quick.bid(selected)}>
+                    {quick.busyId === selected.id ? t("Bidding...") : t("Bid {amount}", { amount: money(minNextBid(selected, auction.settings), auction.settings) })}
                   </button>
                 ) : userId ? null : (
                   <Link to={`/login?next=/a/${auction.id}`} className="btn-accent min-h-11 px-5">
@@ -391,6 +403,8 @@ function LotGrid({
   lots,
   media,
   userId,
+  isTeam,
+  quick,
   selectedId,
   onOpen,
 }: {
@@ -398,6 +412,8 @@ function LotGrid({
   lots: Lot[];
   media: Map<string, LotMedia[]>;
   userId: string | null;
+  isTeam: boolean;
+  quick: QuickBidState;
   selectedId?: string;
   onOpen: (id: string) => void;
 }) {
@@ -407,21 +423,22 @@ function LotGrid({
     <div className="grid animate-rise gap-3 sm:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5">
       {lots.map((l) => {
         const cover = media.get(l.id)?.find((m) => m.kind === "image");
-        const leader = userId && l.current_winner_id === userId ? "You" : l.current_winner_id ? names.get(l.current_winner_id) : null;
+        const mine = userId != null && l.current_winner_id === userId;
+        const leader = mine ? t("You") : l.current_winner_id ? names.get(l.current_winner_id) : null;
+        const biddable = auction.status === "live" && l.status === "open" && l.sale_type === "english" && userId != null && !isTeam;
+        const note = quick.msg?.lotId === l.id ? quick.msg : null;
         return (
-          <button
-            key={l.id}
-            onClick={() => onOpen(l.id)}
-            className={`card group flex gap-3 p-3 text-left card-hover ${selectedId === l.id ? "ring-2 ring-brand-500" : ""}`}
-          >
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-stone-100">
+          // The whole card opens the lot (a stretched button); the bid button sits above it.
+          <div key={l.id} className={`card group relative flex gap-3 p-3 card-hover ${selectedId === l.id ? "ring-2 ring-brand-500" : ""}`}>
+            <button type="button" onClick={() => onOpen(l.id)} className="absolute inset-0 rounded-[inherit]" aria-label={t("Open lot #{n}: {title}", { n: l.position + 1, title: l.title })} />
+            <div className="pointer-events-none h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-stone-100">
               {cover ? (
                 <img src={publicUrl("lot-media", cover.path)} alt="" className="h-full w-full object-cover transition duration-700 ease-[var(--ease-spring)] group-hover:scale-110" loading="lazy" />
               ) : (
                 <div className="flex h-full items-center justify-center font-mono text-xs text-stone-500">#{l.position + 1}</div>
               )}
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="pointer-events-none min-w-0 flex-1">
               <p className="line-clamp-1 text-sm font-semibold">
                 <span className="mr-1 text-stone-500">#{l.position + 1}</span>
                 {l.title}
@@ -432,8 +449,24 @@ function LotGrid({
                 {l.status === "open" && auction.status === "live" && <Countdown endsAt={l.ends_at} />}
                 {leader && <span className="truncate">{t(l.status === "sold" ? "Won by {name}" : "Leader: {name}", { name: leader })}</span>}
               </div>
+              {biddable && (
+                <div className="pointer-events-auto relative mt-2 flex flex-wrap items-center gap-2">
+                  {mine ? (
+                    <span className="chip bg-emerald-100 text-emerald-800">{t("You're winning")}</span>
+                  ) : (
+                    <button type="button" className="btn-accent px-3 py-1.5 text-xs" disabled={quick.busyId === l.id} onClick={() => void quick.bid(l)}>
+                      {quick.busyId === l.id ? t("Bidding...") : t("Bid {amount}", { amount: money(minNextBid(l, auction.settings), auction.settings) })}
+                    </button>
+                  )}
+                </div>
+              )}
+              {note && (
+                <p role="status" className={`mt-1 text-xs font-medium ${note.ok ? "text-emerald-700" : "text-red-600"}`}>
+                  {note.text}
+                </p>
+              )}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

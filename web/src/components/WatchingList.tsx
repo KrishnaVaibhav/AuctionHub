@@ -48,7 +48,7 @@ export function WatchingList({ userId }: { userId: string }) {
     <div className="grid gap-3 md:grid-cols-2">
       {visible.map(({ lots: l }) => (
         <div key={l!.id} className="card flex animate-rise items-center gap-3 p-4">
-          <Link to={`/a/${l!.auction_id}`} className="min-w-0 flex-1">
+          <Link to={`/a/${l!.auction_id}?lot=${l!.id}`} className="min-w-0 flex-1">
             <p className="truncate text-xs text-stone-500">{l!.auctions?.title}</p>
             <p className="truncate font-semibold">{l!.title}</p>
             <div className="mt-1 flex items-center gap-2 text-sm">

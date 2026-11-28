@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../lib/supabase";
-import { bidIncrement, minNextBid, round2 } from "../lib/bidding";
-import { money } from "../lib/format";
+import { bidIncrement, looksLikeTypo, minNextBid, round2 } from "../lib/bidding";
+import { dateTime, money } from "../lib/format";
 import { useProfileNames } from "../lib/profiles";
 import type { Auction, Bid, BidResult, Lot } from "../lib/types";
 import { Countdown } from "./Countdown";
@@ -31,6 +31,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
 
   const canBid = auction.status === "live" && lot.status === "open" && !isHost;
   const leading = userId != null && lot.current_winner_id === userId;
+  const step = bidIncrement(Number(lot.current_bid ?? lot.start_price), settings);
 
   // Keep the suggested amount at least the minimum as the price moves.
   useEffect(() => {
@@ -98,6 +99,16 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
       setFeedback({ ok: false, text: t("Auto-bid maximum must be at least your bid") });
       return;
     }
+    // An extra zero is easy to type and a bid can't be taken back: check big jumps first.
+    if (!leading && override == null && looksLikeTypo(value, minBid, step)) {
+      const ok = await confirmDialog({
+        title: t("Bid {amount}?", { amount: money(value, settings) }),
+        body: t("That's {more} above the minimum bid of {min}. Bids can't be taken back.", { more: money(round2(value - minBid), settings), min: money(minBid, settings) }),
+        confirmLabel: t("Yes, bid {amount}", { amount: money(value, settings) }),
+        cancelLabel: t("Change it"),
+      });
+      if (!ok) return;
+    }
     setBusy(true);
     setFeedback(null);
     const { data, error } = await supabase.rpc("place_bid", {
@@ -107,7 +118,9 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
     });
     setBusy(false);
     if (error) {
-      setFeedback({ ok: false, text: errorMessage(error) });
+      const text = errorMessage(error);
+      // Someone bid first: the price on screen updates on its own.
+      setFeedback({ ok: false, text: text.startsWith("Minimum bid is") ? t("Someone bid first, so your bid wasn't placed. Check the new price and bid again.") : text });
       return;
     }
     const res = data as BidResult;
@@ -131,8 +144,8 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
     setFeedback(error ? { ok: false, text: errorMessage(error) } : { ok: true, text: t("You bought this lot!") });
   }
 
-  const step = bidIncrement(Number(lot.current_bid ?? lot.start_price), settings);
   const quick = [minBid, round2(minBid + step), round2(minBid + step * 4)];
+  const maxValue = maxAmount ? Number(maxAmount) : null;
 
   if (lot.sale_type && lot.sale_type !== "english") return <SaleTypePanel auction={auction} lot={lot} userId={userId} isHost={isHost} />;
 
@@ -147,7 +160,7 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
-            {t(lot.current_bid == null ? "Starting price" : "Current bid")}
+            {t(lot.current_bid == null ? "Starting price" : lot.status === "sold" ? "Sold for" : lot.status === "open" ? "Current bid" : "Final bid")}
           </p>
           <p key={String(lot.current_bid)} className="-mx-1 inline-block origin-left animate-bump rounded-lg px-1 font-display text-4xl font-extrabold tabular-nums">
             {money(lot.current_bid ?? lot.start_price, settings)}
@@ -173,6 +186,16 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
         <p className="rounded-2xl bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-800">
           {t("You're winning")}
           {myMax ? ` · ${t("auto-bid up to {amount}", { amount: money(myMax, settings) })}` : ""}
+        </p>
+      )}
+
+      {/* Why there's no bid button right now. */}
+      {lot.status === "open" && auction.status === "paused" && (
+        <p className="rounded-2xl bg-amber-50 px-3.5 py-2.5 text-sm font-medium text-amber-800">{t("The host paused bidding. The clock picks up where it stopped.")}</p>
+      )}
+      {(lot.status === "pending" || lot.status === "open") && (auction.status === "scheduled" || auction.status === "draft") && (
+        <p className="rounded-2xl bg-stone-900/[0.04] px-3.5 py-2.5 text-sm font-medium text-stone-700 dark:bg-snow/[0.05]">
+          {auction.starts_at ? t("Bidding opens {date}", { date: dateTime(auction.starts_at) }) : t("Bidding hasn't started yet")}
         </p>
       )}
 
@@ -233,11 +256,21 @@ export function BidPanel({ auction, lot, userId, isHost }: Props) {
                 value={maxAmount}
                 onChange={(e) => setMaxAmount(e.target.value)}
                 required={leading}
+                aria-describedby="max-help"
               />
             </div>
           </div>
+          <p id="max-help" className="-mt-1 text-xs leading-snug text-stone-500">
+            {t("Auto-bid bids for you, one step at a time and only when someone outbids you, up to your maximum. Nobody else sees it.")}
+          </p>
           <button className="btn-accent w-full py-3 text-base" disabled={busy}>
-            {busy ? t("Placing...") : leading ? t("Update auto-bid") : t("Bid {amount}", { amount: money(Number(amount) || minBid, settings) })}
+            {busy
+              ? t("Placing...")
+              : leading
+                ? t("Update auto-bid")
+                : maxValue && maxValue > (Number(amount) || minBid)
+                  ? t("Bid {amount}, auto-bid up to {max}", { amount: money(Number(amount) || minBid, settings), max: money(maxValue, settings) })
+                  : t("Bid {amount}", { amount: money(Number(amount) || minBid, settings) })}
           </button>
           {lot.buy_now_price && lot.bid_count === 0 && (
             <button type="button" className="btn-primary w-full" disabled={busy} onClick={() => void buyNow()}>
