@@ -13,7 +13,9 @@ runs:
       uses: actions/cache@v6
       with:
         path: ~/.supabase-cli
-        key: supabase-cli-${{ inputs.version }}-${{ runner.os }}-${{ runner.arch }}
+        # A new version, or any change to how it's installed (this file), misses
+        # the cache: the fresh install below is then cached for the next runs.
+        key: supabase-cli-${{ inputs.version }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.github/actions/supabase-cli/action.yml') }}
     - if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       env:

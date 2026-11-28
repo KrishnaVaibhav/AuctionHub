@@ -35,6 +35,11 @@ jobs:
   database:
     runs-on: ubuntu-latest
     steps:
+      # Supabase listens on 54321-54329, inside Linux's range for outgoing
+      # connection ports. Reserve them before anything downloads, so no
+      # connection can take one first ("address already in use").
+      - name: Reserve Supabase ports
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       - uses: actions/checkout@v7
       - uses: ./.github/actions/supabase-cli
       # pgTAP and the linter only talk to Postgres (auth and storage stay: their
@@ -51,6 +56,12 @@ jobs:
       run:
         working-directory: web
     steps:
+      # Supabase listens on 54321-54329, inside Linux's range for outgoing
+      # connection ports. Reserve them before anything downloads, so no
+      # connection can take one first ("address already in use").
+      - name: Reserve Supabase ports
+        working-directory: .
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       - uses: actions/checkout@v7
       - uses: ./.github/actions/supabase-cli
       # The stack takes the longest to come up: start it in the background and
@@ -58,17 +69,23 @@ jobs:
       - name: Start Supabase (background)
         working-directory: .
         run: |
-          (supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor \
-            > "$RUNNER_TEMP/supabase-start.log" 2>&1; echo $? > "$RUNNER_TEMP/supabase-start.exit") &
+          # set +e: the step shell stops at the first error, which would skip writing the exit code.
+          (
+            set +e
+            supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor > "$RUNNER_TEMP/supabase-start.log" 2>&1
+            echo $? > "$RUNNER_TEMP/supabase-start.exit"
+          ) &
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci --prefer-offline --no-audit --no-fund
-      - name: Playwright version
+      - name: Playwright version and runner image
         id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "image=${ImageOS:-$(. /etc/os-release && echo "$ID$VERSION_ID")}" >> "$GITHUB_OUTPUT"
       # Browsers are cached per Playwright version; the system libraries they
       # need are installed either way (apt is fast, and they live outside the cache).
       - name: Cache Playwright browsers
@@ -76,7 +93,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium
+          # A Playwright upgrade or a new runner image misses the cache: the
+          # fresh install is then cached for the next runs.
+          key: playwright-${{ steps.playwright.outputs.image }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium
       - if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
       - if: steps.playwright-cache.outputs.cache-hit == 'true'
@@ -84,7 +103,7 @@ jobs:
       - name: Wait for Supabase
         working-directory: .
         run: |
-          for _ in $(seq 1 300); do
+          for _ in $(seq 1 240); do
             [ -f "$RUNNER_TEMP/supabase-start.exit" ] && break
             sleep 1
           done
