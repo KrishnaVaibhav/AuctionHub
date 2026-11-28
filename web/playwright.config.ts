@@ -6,8 +6,10 @@ export default defineConfig({
   testDir: "./e2e",
   timeout: 60_000,
   expect: { timeout: 10_000 },
+  // Spec files run side by side on CI (tests inside a file stay in order). Each
+  // test makes its own users and auctions, so they don't step on each other.
   fullyParallel: false,
-  workers: 1,
+  workers: process.env.CI ? 2 : 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: {
