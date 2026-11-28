@@ -1,7 +1,7 @@
 # Headers for the files Cloudflare serves itself (every page of the app, its scripts and images).
 # Pages the Worker builds (/a/:id) get the same set from worker/security.ts; security.test.ts keeps both equal.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-LVvIf311o7/AgbuTOJd59FHpMyw38NRoENs/DL9F4h4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:54321; media-src 'self' blob: https: http://127.0.0.1:54321; font-src 'self' data:; connect-src 'self' https: wss: http://127.0.0.1:54321 ws://127.0.0.1:54321; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.twitch.tv; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Ymlm40uQ2BBdmsH8KyVwXuTijGNFx7yGJXFtRlQW/5A='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:54321; media-src 'self' blob: https: http://127.0.0.1:54321; font-src 'self' data:; connect-src 'self' https: wss: http://127.0.0.1:54321 ws://127.0.0.1:54321; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.twitch.tv; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

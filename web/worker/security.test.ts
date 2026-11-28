@@ -8,10 +8,14 @@ async function sha256(text: string): Promise<string> {
   return btoa(String.fromCharCode(...digest));
 }
 
+// What Cloudflare builds from git: LF line endings (.gitattributes), whatever this checkout uses.
+const lf = (text: string) => text.replace(/\r\n/g, "\n");
+
 /** The header lines of the `/*` rule in public/_headers, as { name: value }. */
 function staticRule(): Record<string, string> {
-  const start = headersFile.indexOf("\n/*\n") + 4;
-  const rule = headersFile.slice(start).split("\n\n")[0];
+  const file = lf(headersFile);
+  const start = file.indexOf("\n/*\n") + 4;
+  const rule = file.slice(start).split("\n\n")[0];
   const entries = rule
     .split("\n")
     .map((line: string) => line.trim())
@@ -22,7 +26,7 @@ function staticRule(): Record<string, string> {
 
 describe("security headers", () => {
   it("allow index.html's inline theme script by its exact hash", async () => {
-    const scripts = [...indexHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+    const scripts = [...lf(indexHtml).matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
     expect(scripts).toHaveLength(1);
     // If this fails, the theme script changed: put the new hash in worker/security.ts and public/_headers.
     expect(CSP).toContain(`'sha256-${await sha256(scripts[0])}'`);

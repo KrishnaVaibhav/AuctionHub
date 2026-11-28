@@ -7,7 +7,7 @@
 
 // The inline theme script in index.html (sets light/dark before first paint).
 // Editing that script changes its hash: security.test.ts names the new one.
-const THEME_SCRIPT = "'sha256-LVvIf311o7/AgbuTOJd59FHpMyw38NRoENs/DL9F4h4='";
+const THEME_SCRIPT = "'sha256-Ymlm40uQ2BBdmsH8KyVwXuTijGNFx7yGJXFtRlQW/5A='";
 
 // Local Supabase, for `npm run preview` against `supabase start`.
 const LOCAL_API = "http://127.0.0.1:54321";
