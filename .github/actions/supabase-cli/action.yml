@@ -1,0 +1,39 @@
+name: Supabase CLI
+description: Installs a pinned Supabase CLI release, checksum-verified and cached between runs.
+inputs:
+  version:
+    description: CLI version (no leading v)
+    default: "3.0.0"
+runs:
+  using: composite
+  steps:
+    # The official setup action installs Node and Bun on every run first;
+    # the release binary alone is all the jobs need, and it caches well.
+    - id: cache
+      uses: actions/cache@v6
+      with:
+        path: ~/.supabase-cli
+        # A new version, or any change to how it's installed (this file), misses
+        # the cache: the fresh install below is then cached for the next runs.
+        key: supabase-cli-${{ inputs.version }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.github/actions/supabase-cli/action.yml') }}
+    - if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        arch=amd64
+        [ "$RUNNER_ARCH" = "ARM64" ] && arch=arm64
+        file="supabase_${VERSION}_linux_${arch}.tar.gz"
+        base="https://github.com/supabase/cli/releases/download/v${VERSION}"
+        tmp="$(mktemp -d)"
+        curl -fsSL --retry 3 -o "$tmp/$file" "$base/$file"
+        curl -fsSL --retry 3 -o "$tmp/checksums.txt" "$base/checksums.txt"
+        (cd "$tmp" && grep " ${file}\$" checksums.txt | sha256sum -c -)
+        mkdir -p ~/.supabase-cli
+        tar -xzf "$tmp/$file" -C ~/.supabase-cli
+        rm -rf "$tmp"
+    - shell: bash
+      run: |
+        echo "$HOME/.supabase-cli" >> "$GITHUB_PATH"
+        "$HOME/.supabase-cli/supabase" --version

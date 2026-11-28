@@ -8,6 +8,7 @@ updates:
       all:
         patterns: ["*"]
   - package-ecosystem: github-actions
-    directory: /
+    # Workflows, plus the local composite action they share.
+    directories: ["/", "/.github/actions/supabase-cli"]
     schedule:
       interval: weekly

@@ -22,7 +22,8 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - run: npm ci
+      # The npm cache is restored above, so install from it without asking the registry.
+      - run: npm ci --prefer-offline --no-audit --no-fund
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
@@ -34,11 +35,17 @@ jobs:
   database:
     runs-on: ubuntu-latest
     steps:
+      # Supabase listens on 54321-54329, inside Linux's range for outgoing
+      # connection ports. Reserve them before anything downloads, so no
+      # connection can take one first ("address already in use").
+      - name: Reserve Supabase ports
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       - uses: actions/checkout@v7
-      - uses: supabase/setup-cli@v3
-        with:
-          version: 3.0.0
-      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor
+      - uses: ./.github/actions/supabase-cli
+      # pgTAP and the linter only talk to Postgres (auth and storage stay: their
+      # schemas are used by the migrations). The API gateway, REST and realtime
+      # servers aren't needed here, so they aren't pulled or started.
+      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor,realtime,postgrest,kong
       - run: supabase test db
       - run: supabase db lint --level error
 
@@ -49,25 +56,68 @@ jobs:
       run:
         working-directory: web
     steps:
+      # Supabase listens on 54321-54329, inside Linux's range for outgoing
+      # connection ports. Reserve them before anything downloads, so no
+      # connection can take one first ("address already in use").
+      - name: Reserve Supabase ports
+        working-directory: .
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/supabase-cli
+      # The stack takes the longest to come up: start it in the background and
+      # install Node packages and the browser meanwhile.
+      - name: Start Supabase (background)
+        working-directory: .
+        run: |
+          # set +e: the step shell stops at the first error, which would skip writing the exit code.
+          (
+            set +e
+            supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor > "$RUNNER_TEMP/supabase-start.log" 2>&1
+            echo $? > "$RUNNER_TEMP/supabase-start.exit"
+          ) &
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - uses: supabase/setup-cli@v3
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Playwright version and runner image
+        id: playwright
+        run: |
+          echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "image=${ImageOS:-$(. /etc/os-release && echo "$ID$VERSION_ID")}" >> "$GITHUB_OUTPUT"
+      # Browsers are cached per Playwright version; the system libraries they
+      # need are installed either way (apt is fast, and they live outside the cache).
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
         with:
-          version: 3.0.0
-      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor
+          path: ~/.cache/ms-playwright
+          # A Playwright upgrade or a new runner image misses the cache: the
+          # fresh install is then cached for the next runs.
+          key: playwright-${{ steps.playwright.outputs.image }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Wait for Supabase
         working-directory: .
+        run: |
+          for _ in $(seq 1 240); do
+            [ -f "$RUNNER_TEMP/supabase-start.exit" ] && break
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/supabase-start.log"
+          if [ "$(cat "$RUNNER_TEMP/supabase-start.exit" 2>/dev/null)" != "0" ]; then
+            echo "::error::supabase start failed or timed out"
+            exit 1
+          fi
       - name: Local Supabase env
         working-directory: .
         run: |
           eval "$(supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"
           echo "VITE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
           echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
       - run: npx playwright test
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -89,9 +139,7 @@ jobs:
       PROJECT_REF: yuqccqmzxmpxfedmkgwp
     steps:
       - uses: actions/checkout@v7
-      - uses: supabase/setup-cli@v3
-        with:
-          version: 3.0.0
+      - uses: ./.github/actions/supabase-cli
       - run: supabase link --project-ref "$PROJECT_REF"
       - name: Pending migrations
         run: supabase db push --remote --dry-run
