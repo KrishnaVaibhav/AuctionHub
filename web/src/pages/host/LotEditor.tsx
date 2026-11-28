@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type Ref } from "react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { deleteMedia, publicUrl, uploadMedia } from "../../lib/media";
 import { money } from "../../lib/format";
@@ -42,9 +42,26 @@ interface LotFields {
   dutchInterval: string;
 }
 
-function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: LotFields) => void; disabled?: boolean; league?: boolean }) {
+function LotFieldInputs({
+  v,
+  set,
+  disabled,
+  league,
+  collapse,
+  titleRef,
+}: {
+  v: LotFields;
+  set: (v: LotFields) => void;
+  disabled?: boolean;
+  league?: boolean;
+  /** Put sale type, reserve, buy now and details under "More options". */
+  collapse?: boolean;
+  titleRef?: Ref<HTMLInputElement>;
+}) {
   const help = SALE_TYPES.find((t) => t.value === v.saleType)?.help;
-  return (
+  const used = v.saleType !== "english" || v.reserve.trim() !== "" || v.buyNow.trim() !== "" || v.fields.trim() !== "";
+
+  const extras = (
     <div className="grid gap-3 sm:grid-cols-3">
       {!league && (
         <div className="sm:col-span-3">
@@ -66,39 +83,20 @@ function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: L
           <div>
             <label className="label">Drop by</label>
             <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchStep} onChange={(e) => set({ ...v, dutchStep: e.target.value })} />
-        <p className="mt-1 block text-xs leading-snug text-stone-500">How much the price falls at each step.</p>
+            <p className="mt-1 block text-xs leading-snug text-stone-500">How much the price falls at each step.</p>
           </div>
           <div>
             <label className="label">Every (seconds)</label>
             <input className="input" type="number" min={5} max={3600} step={1} required disabled={disabled} value={v.dutchInterval} onChange={(e) => set({ ...v, dutchInterval: e.target.value })} />
-        <p className="mt-1 block text-xs leading-snug text-stone-500">Time between price drops.</p>
+            <p className="mt-1 block text-xs leading-snug text-stone-500">Time between price drops.</p>
           </div>
           <div>
             <label className="label">Floor price</label>
             <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchFloor} onChange={(e) => set({ ...v, dutchFloor: e.target.value })} />
-        <p className="mt-1 block text-xs leading-snug text-stone-500">The price never drops below this.</p>
+            <p className="mt-1 block text-xs leading-snug text-stone-500">The price never drops below this.</p>
           </div>
         </>
       )}
-      <div className="sm:col-span-3">
-        <label className="label">Title</label>
-        <input className="input" required maxLength={120} disabled={disabled} value={v.title} onChange={(e) => set({ ...v, title: e.target.value })} />
-        <p className="mt-1 block text-xs leading-snug text-stone-500">Short name bidders see on the lot card.</p>
-      </div>
-      <div>
-        <label className="label">{v.saleType === "offer" ? "Minimum offer" : v.saleType === "dutch" ? "Opening price" : "Start price"}</label>
-        <input
-          className="input"
-          type="number"
-          min={0}
-          step="0.01"
-          required
-          disabled={disabled}
-          value={v.startPrice}
-          onChange={(e) => set({ ...v, startPrice: e.target.value })}
-        />
-        <p className="mt-1 block text-xs leading-snug text-stone-500">Where bidding begins. For a league, the player's base price.</p>
-      </div>
       <div>
         <label className="label">Reserve (secret, optional)</label>
         <input className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.reserve} onChange={(e) => set({ ...v, reserve: e.target.value })} />
@@ -108,17 +106,6 @@ function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: L
         <label className="label">Buy now (optional)</label>
         <input className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.buyNow} onChange={(e) => set({ ...v, buyNow: e.target.value })} />
         <p className="mt-1 block text-xs leading-snug text-stone-500">Anyone can pay this to win the lot at once and end it.</p>
-      </div>
-      <div className="sm:col-span-2">
-        <label className="label">Description</label>
-        <textarea
-          className="input min-h-20"
-          maxLength={5000}
-          disabled={disabled}
-          value={v.description}
-          onChange={(e) => set({ ...v, description: e.target.value })}
-        />
-        <p className="mt-1 block text-xs leading-snug text-stone-500">Condition, size, history: anything that helps people bid.</p>
       </div>
       <div>
         <label className="label">Details (one "key: value" per line)</label>
@@ -133,7 +120,57 @@ function LotFieldInputs({ v, set, disabled, league }: { v: LotFields; set: (v: L
       </div>
     </div>
   );
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="sm:col-span-2">
+          <label className="label">Title</label>
+          <input ref={titleRef} className="input" required maxLength={120} disabled={disabled} value={v.title} onChange={(e) => set({ ...v, title: e.target.value })} />
+          <p className="mt-1 block text-xs leading-snug text-stone-500">Short name bidders see on the lot card.</p>
+        </div>
+        <div>
+          <label className="label">{v.saleType === "offer" ? "Minimum offer" : v.saleType === "dutch" ? "Opening price" : "Start price"}</label>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            step="0.01"
+            required
+            disabled={disabled}
+            value={v.startPrice}
+            onChange={(e) => set({ ...v, startPrice: e.target.value })}
+          />
+          <p className="mt-1 block text-xs leading-snug text-stone-500">Where bidding begins. For a league, the player's base price.</p>
+        </div>
+        <div className="sm:col-span-3">
+          <label className="label">Description</label>
+          <textarea
+            className="input min-h-20"
+            maxLength={5000}
+            disabled={disabled}
+            value={v.description}
+            onChange={(e) => set({ ...v, description: e.target.value })}
+          />
+          <p className="mt-1 block text-xs leading-snug text-stone-500">Condition, size, history: anything that helps people bid.</p>
+        </div>
+      </div>
+      {collapse ? (
+        <details className="rounded-2xl bg-stone-900/[0.03] px-4 py-3 dark:bg-snow/[0.04]" open={used}>
+          <summary className="cursor-pointer text-sm font-semibold text-stone-700">
+            More options <span className="font-normal text-stone-500">: {league ? "reserve, buy now, details" : "sale type, reserve, buy now, details"}</span>
+          </summary>
+          <div className="mt-3">{extras}</div>
+        </details>
+      ) : (
+        extras
+      )}
+    </div>
+  );
 }
+
+/** A field that fails validation inside a closed "More options" can't be shown: open it first. */
+const openInvalid = (e: FormEvent) => (e.target as HTMLElement).closest("details")?.setAttribute("open", "");
 
 function validate(v: LotFields): string | null {
   const start = Number(v.startPrice);
@@ -184,8 +221,19 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
     dutchInterval: "60",
   };
   const [v, setV] = useState<LotFields>(empty);
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [added, setAdded] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  // Thumbnails of the photos picked so far.
+  const [previews, setPreviews] = useState<string[]>([]);
+  useEffect(() => {
+    const urls = files.map((f) => (f.type.startsWith("image/") ? URL.createObjectURL(f) : ""));
+    setPreviews(urls);
+    return () => urls.forEach((u) => u && URL.revokeObjectURL(u));
+  }, [files]);
 
   async function create(e: FormEvent) {
     e.preventDefault();
@@ -193,6 +241,8 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
     if (invalid) return setError(invalid);
     setBusy(true);
     setError(null);
+    setAdded(null);
+    let lotId: string;
     try {
       const { data, error } = await supabase
         .from("lots")
@@ -209,24 +259,82 @@ export function NewLotForm({ auction, nextPosition, onCreated }: { auction: Auct
         .select("id")
         .single();
       if (error) throw error;
-      await saveReserve(data.id, num(v.reserve));
-      setV(empty);
-      await onCreated();
+      lotId = data.id;
+      await saveReserve(lotId, num(v.reserve));
     } catch (err) {
       setError(errorMessage(err));
-    } finally {
       setBusy(false);
+      return;
     }
+    // The lot exists now: clear the form even if a photo fails, so it isn't added twice.
+    const title = v.title.trim();
+    const picked = files;
+    setV(empty);
+    setFiles([]);
+    try {
+      let pos = 0;
+      for (const file of picked) {
+        const up = await uploadMedia("lot-media", `${auction.id}/${lotId}`, file);
+        const { error } = await supabase.from("lot_media").insert({ lot_id: lotId, path: up.path, kind: up.kind, position: pos++ });
+        if (error) throw error;
+      }
+      setAdded(`Added "${title}". Add the next one, or go live when you're ready.`);
+    } catch (err) {
+      setError(`"${title}" was added, but a photo didn't upload (${errorMessage(err)}). Add it from the lot below.`);
+    }
+    await onCreated();
+    setBusy(false);
+    // After React re-enables the fields: back to the title for the next lot.
+    setTimeout(() => titleRef.current?.focus(), 0);
   }
 
   return (
-    <form onSubmit={create} className="card space-y-4 border-dashed p-5">
+    <form onSubmit={create} onInvalidCapture={openInvalid} className="card space-y-4 border-dashed p-5">
       <h3 className="section-title text-base">Add a lot</h3>
-      <LotFieldInputs v={v} set={setV} league={auction.mode === "league"} />
+      <LotFieldInputs v={v} set={setV} league={auction.mode === "league"} collapse titleRef={titleRef} disabled={busy} />
+      <div>
+        <p className="label">Photos and video</p>
+        <div className="flex flex-wrap items-center gap-2">
+          {files.map((f, i) => (
+            <div key={`${f.name}-${i}`} className="relative h-16 w-16 overflow-hidden rounded-xl bg-stone-100">
+              {previews[i] ? (
+                <img src={previews[i]} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center bg-stone-800 text-[10px] text-white">Video</div>
+              )}
+              <button
+                type="button"
+                className="absolute top-0.5 right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs text-snow"
+                onClick={() => setFiles((list) => list.filter((_, j) => j !== i))}
+                aria-label={`Remove ${f.name}`}
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+          <label className="flex h-16 min-w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-stone-300 px-3 text-xs font-medium text-stone-500 transition hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700">
+            + {files.length ? "More" : "Add photos"}
+            <input
+              type="file"
+              multiple
+              accept="image/*,video/mp4,video/webm"
+              className="hidden"
+              disabled={busy}
+              onChange={(e) => {
+                const list = Array.from(e.target.files ?? []);
+                if (list.length) setFiles((prev) => [...prev, ...list]);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-stone-500">Optional. They upload when you add the lot; you can add more later.</p>
+      </div>
       {auction.mode !== "league" && <PriceHint category={auction.category} title={v.title} settings={auction.settings} />}
       {error && <p className="text-sm text-red-600">{error}</p>}
+      {added && <p role="status" className="text-sm font-medium text-emerald-700">{added}</p>}
       <button className="btn-primary" disabled={busy}>
-        Add lot
+        {busy ? "Adding..." : files.length ? `Add lot with ${files.length} ${files.length === 1 ? "file" : "files"}` : "Add lot"}
       </button>
     </form>
   );
@@ -382,11 +490,13 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
               <img src={publicUrl("lot-media", m.path)} alt="" className="h-full w-full object-cover" />
             )}
             <button
-              className="absolute top-1 right-1 hidden rounded bg-black/70 px-1.5 text-xs text-snow group-hover:block"
+              type="button"
+              className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-sm text-snow transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100"
               onClick={() => void removeMedia(m)}
               disabled={busy}
+              aria-label="Remove this photo"
             >
-              x
+              &times;
             </button>
           </div>
         ))}
@@ -407,8 +517,8 @@ export function LotEditor({ auction, lot, index, total, siblings, media, editabl
       </div>
 
       {open && editable && (
-        <form onSubmit={save} className="mt-4 space-y-3 border-t border-stone-900/[0.06] pt-4">
-          <LotFieldInputs v={v} set={setV} disabled={busy} league={auction.mode === "league"} />
+        <form onSubmit={save} onInvalidCapture={openInvalid} className="mt-4 space-y-3 border-t border-stone-900/[0.06] pt-4">
+          <LotFieldInputs v={v} set={setV} disabled={busy} league={auction.mode === "league"} collapse />
           <button className="btn-primary" disabled={busy}>
             Save lot
           </button>

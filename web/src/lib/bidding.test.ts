@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bidIncrement, minNextBid } from "./bidding";
+import { bidIncrement, looksLikeTypo, minNextBid } from "./bidding";
 import { embedUrl } from "../components/StreamEmbed";
 import { parseIncrements, remaining } from "./format";
 
@@ -24,6 +24,22 @@ describe("minNextBid", () => {
   });
   it("adds one increment to the current bid", () => {
     expect(minNextBid({ current_bid: 1000, start_price: 250 })).toBe(1050);
+  });
+  it("asks for one increment when the lot starts at 0", () => {
+    expect(minNextBid({ current_bid: null, start_price: 0 })).toBe(10);
+    expect(minNextBid({ current_bid: null, start_price: 0 }, { increments: [[0, 25]] })).toBe(25);
+  });
+});
+
+describe("looksLikeTypo", () => {
+  it("flags an extra zero", () => {
+    expect(looksLikeTypo(10500, 1050, 50)).toBe(true);
+  });
+  it("lets normal jumps through", () => {
+    expect(looksLikeTypo(1250, 1050, 50)).toBe(false);
+    expect(looksLikeTypo(2100, 1050, 50)).toBe(true);
+    // Five steps above a tiny minimum is still a normal raise.
+    expect(looksLikeTypo(40, 10, 10)).toBe(false);
   });
 });
 

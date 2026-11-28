@@ -47,12 +47,26 @@ export function MyActivity() {
   const { session } = useAuth();
   const [deal, setDeal] = useState<MyLot | null>(null);
 
+  // Winning and outbid change while you look: refresh every 20 seconds while
+  // the page is in view, and as soon as you come back to it.
   useEffect(() => {
-    void supabase.rpc("my_lots").then(({ data, error }) => {
-      if (error) setError(errorMessage(error));
-      setRows((data as MyLot[] | null) ?? []);
-      setLoading(false);
-    });
+    let alive = true;
+    const load = () =>
+      void supabase.rpc("my_lots").then(({ data, error }) => {
+        if (!alive) return;
+        setError(error ? errorMessage(error) : null);
+        if (!error) setRows((data as MyLot[] | null) ?? []);
+        setLoading(false);
+      });
+    load();
+    const timer = setInterval(() => document.visibilityState === "visible" && load(), 20_000);
+    const back = () => document.visibilityState === "visible" && load();
+    document.addEventListener("visibilitychange", back);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", back);
+    };
   }, []);
 
   const active = rows.filter((r) => r.status === "open" || r.status === "pending");
@@ -104,7 +118,7 @@ export function MyActivity() {
           const cur = { currency: r.currency };
           return (
             <div key={r.lot_id} className="card animate-rise p-4 card-hover">
-              <Link to={`/a/${r.auction_id}`} className="block">
+              <Link to={`/a/${r.auction_id}?lot=${r.lot_id}`} className="block">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-xs text-stone-500">{r.auction_title}</p>
@@ -136,6 +150,9 @@ export function MyActivity() {
                   </p>
                 </div>
               </div>
+              {r.status === "open" && r.auction_status === "live" && !r.is_leader && (
+                <p className="mt-3 text-sm font-semibold text-red-600">{t("Bid again")} &rarr;</p>
+              )}
               </Link>
               {r.status === "sold" && r.is_leader && (
                 <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">

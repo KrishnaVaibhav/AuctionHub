@@ -328,6 +328,26 @@ function AuctionForm({
       .join(", "),
   );
   const [busy, setBusy] = useState(false);
+  // "More rules" sections start open when something in them was changed, so a host sees what they set.
+  const [moreRules] = useState(
+    () =>
+      (s.anti_snipe_seconds ?? 30) !== 30 ||
+      (s.lot_stagger_seconds ?? 0) > 0 ||
+      (s.chat?.slow_mode_s ?? 2) !== 2 ||
+      Boolean(s.chat?.allow_links) ||
+      (auction.mode !== "league" && Boolean(s.compact)) ||
+      (auction.mode !== "league" && Boolean(s.increments?.length) && formatIncrements(s.increments!) !== formatIncrements(DEFAULT_INCREMENTS)),
+  );
+  const [moreLeague] = useState(
+    () =>
+      lg.min_base !== LEAGUE_DEFAULTS.min_base ||
+      Boolean(lg.host_can_play) ||
+      (s.league?.retain_max ?? 4) !== 4 ||
+      (s.league?.rtm_cards ?? 0) > 0 ||
+      s.league?.trades === false ||
+      Boolean(s.league?.trade_deadline) ||
+      Object.keys(s.league?.category_max ?? {}).length > 0,
+  );
 
   function chooseMode(next: "standard" | "league") {
     setMode(next);
@@ -418,7 +438,11 @@ function AuctionForm({
   }
 
   return (
-    <form onSubmit={save} className="card grid gap-6 p-5 lg:grid-cols-[1fr_18rem]">
+    <form
+      onSubmit={save}
+      onInvalidCapture={(e) => (e.target as HTMLElement).closest("details")?.setAttribute("open", "")}
+      className="card grid gap-6 p-5 lg:grid-cols-[1fr_18rem]"
+    >
       <div className="space-y-4">
         <div>
           <label className="label" htmlFor="t">
@@ -549,6 +573,11 @@ function AuctionForm({
               <input type="number" min={0} className="input" value={breakSeconds} onChange={(e) => setBreakSeconds(e.target.value)} />
             <Hint>Pause before the next player comes up.</Hint>
             </div>
+            <details className="sm:col-span-3" open={moreLeague}>
+              <summary className="cursor-pointer text-sm font-semibold text-stone-700">
+                More league rules <span className="font-normal text-stone-500">: purse rules, retentions, right to match, category limits, trades</span>
+              </summary>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
               <label className="label">Keep back per empty min slot</label>
               <input type="number" min={0} className="input" value={minBase} onChange={(e) => setMinBase(e.target.value)} />
@@ -593,6 +622,8 @@ function AuctionForm({
               <input id="tdl" type="datetime-local" className="input" value={tradeDeadline} onChange={(e) => setTradeDeadline(e.target.value)} />
             <Hint>After this, trades between teams are blocked.</Hint>
             </div>
+              </div>
+            </details>
             <p className="text-xs text-stone-500 sm:col-span-3">
               Add players below as lots (their start price is the base price). Schedule the league so teams can join, then go live. Purses
               are virtual points, not real money.
@@ -614,32 +645,11 @@ function AuctionForm({
             <Hint>Every price in this auction uses it.</Hint>
           </div>
           <div>
-            <label className="label" htmlFor="as">
-              Anti-snipe (sec)
-            </label>
-            <input id="as" type="number" min={0} max={600} className="input" value={antiSnipe} onChange={(e) => setAntiSnipe(e.target.value)} />
-            <Hint>A bid this close to the end adds this much time, so nobody wins by a last-second snipe. 0 turns it off.</Hint>
-          </div>
-          <div>
             <label className="label" htmlFor="du">
               Lot duration (min)
             </label>
             <input id="du" type="number" min={1} max={10080} className="input" value={duration} onChange={(e) => setDuration(e.target.value)} />
             <Hint>How long each lot stays open once it starts.</Hint>
-          </div>
-          <div>
-            <label className="label" htmlFor="st">
-              Stagger lots (sec)
-            </label>
-            <input id="st" type="number" min={0} className="input" value={stagger} onChange={(e) => setStagger(e.target.value)} />
-            <Hint>Closes each next lot this much later, so lots end one by one.</Hint>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="inc">
-              Increments (from : step)
-            </label>
-            <input id="inc" className="input font-mono" value={increments} onChange={(e) => setIncrements(e.target.value)} />
-            <Hint>Smallest raise at each price. "0:10, 1000:50" means steps of 10 below 1,000, then 50.</Hint>
           </div>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             <span>
@@ -650,17 +660,50 @@ function AuctionForm({
           </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             <span>
-              Short amounts (e.g. 1.5Cr)
-              <Hint>Shows big prices short, like 1.5Cr or 20L, instead of every digit.</Hint>
-            </span>
-            <Toggle checked={compact} onChange={(v) => setCompact(v)} />
-          </label>
-          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
-            <span>
               Chat enabled
               <Hint>Live chat next to the bidding. Turn off to keep the room quiet.</Hint>
             </span>
             <Toggle checked={chatEnabled} onChange={(v) => setChatEnabled(v)} />
+          </label>
+          <details className="sm:col-span-3" open={moreRules}>
+            <summary className="cursor-pointer text-sm font-semibold text-stone-700">
+              More rules <span className="font-normal text-stone-500">: anti-snipe, staggered closing, increments, short amounts, chat limits</span>
+            </summary>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="label" htmlFor="as">
+              Anti-snipe (sec)
+            </label>
+            <input id="as" type="number" min={0} max={600} className="input" value={antiSnipe} onChange={(e) => setAntiSnipe(e.target.value)} />
+            <Hint>A bid this close to the end adds this much time, so nobody wins by a last-second snipe. 0 turns it off.</Hint>
+          </div>
+          <div>
+            <label className="label" htmlFor="st">
+              Stagger lots (sec)
+            </label>
+            <input id="st" type="number" min={0} className="input" value={stagger} onChange={(e) => setStagger(e.target.value)} />
+            <Hint>Closes each next lot this much later, so lots end one by one.</Hint>
+          </div>
+          <div>
+            <label className="label" htmlFor="sm">
+              Chat slow mode (sec)
+            </label>
+            <input id="sm" type="number" min={0} max={300} className="input" value={slowMode} onChange={(e) => setSlowMode(e.target.value)} />
+            <Hint>Wait between messages from the same person. 0 turns it off.</Hint>
+          </div>
+          <div className="sm:col-span-3">
+            <label className="label" htmlFor="inc">
+              Increments (from : step)
+            </label>
+            <input id="inc" className="input font-mono" value={increments} onChange={(e) => setIncrements(e.target.value)} />
+            <Hint>Smallest raise at each price. "0:10, 1000:50" means steps of 10 below 1,000, then 50.</Hint>
+          </div>
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
+            <span>
+              Short amounts (e.g. 1.5Cr)
+              <Hint>Shows big prices short, like 1.5Cr or 20L, instead of every digit.</Hint>
+            </span>
+            <Toggle checked={compact} onChange={(v) => setCompact(v)} />
           </label>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
             <span>
@@ -669,13 +712,8 @@ function AuctionForm({
             </span>
             <Toggle checked={allowLinks} onChange={(v) => setAllowLinks(v)} />
           </label>
-          <div>
-            <label className="label" htmlFor="sm">
-              Chat slow mode (sec)
-            </label>
-            <input id="sm" type="number" min={0} max={300} className="input" value={slowMode} onChange={(e) => setSlowMode(e.target.value)} />
-            <Hint>Wait between messages from the same person. 0 turns it off.</Hint>
-          </div>
+            </div>
+          </details>
         </fieldset>
         <p className="text-xs text-stone-500">
           Lots close at the "Lots close at" time, or after the lot duration if it's empty. Stagger closes each next lot later. A bid in
