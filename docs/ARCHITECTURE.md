@@ -76,7 +76,7 @@ People join a private auction through `join_private_auction(id, code)`. The invi
   - watched lot closing within 5 minutes (cron every minute)
 
   Each notification is created once, read ones are removed after 30 days and all after 90. The bell receives them live, and shows system pop-ups while the app is open and permission is granted.
-- **PWA:** `public/manifest.webmanifest` and `public/sw.js`. Pages are fetched from the network first with an offline fallback. Hashed assets are cached first. Supabase traffic is never cached.
+- **PWA:** `public/manifest.webmanifest` and `public/sw.js`. Pages are fetched from the network first with an offline fallback. Hashed assets are cached first, at most 160 files (the oldest go first). Supabase traffic is never cached. After a deploy, a tab still running the old build reloads itself once when it asks for a code chunk that no longer exists (`vite:preloadError` in `main.tsx`); the Worker answers such requests with a 404, not the app's HTML.
 - **Discovery:** `auctions.category` and `tags`, `follows`, and the `/u/:username` page backed by `public_profile()`. `ratings` are written only through `rate_trade()`: the buyer rates the seller and the host rates the buyer, once per sale and editable.
 - **Host tools:**
   - CSV import is parsed in the browser (`lib/csv.ts`), then rows are inserted in batches.
@@ -191,7 +191,20 @@ Each next lot closes `lot_stagger_seconds` later.
 ## Realtime
 
 Clients subscribe to Postgres Changes on `auctions`, `lots` and `chat_messages`, filtered by auction.
-Bid history is refetched whenever a lot's `bid_count` changes. Countdowns use the server clock (`server_time()` RPC).
+Bid history is refetched whenever a lot's `bid_count` changes.
+
+- **Connection state:** `useAuctionRoom` reports `connected`. While the channel is down the room says "Reconnecting…", and every (re)subscribe reloads the room so no update is missed. A refresh that fails keeps what is on screen. With no network at all, the layout shows an offline notice.
+- **Clock:** countdowns use the server clock (`server_time()` RPC). It is measured again at most once a minute (and when the tab becomes visible), keeping the measurement with the quickest round trip. Every countdown on a page runs on one shared timer and re-renders once a second (`useSecondsLeft`).
+
+## Security headers
+
+Every page gets a Content Security Policy and related headers (`X-Frame-Options: DENY`, `nosniff`, a strict referrer policy, `Permissions-Policy`).
+
+- They are defined once in `web/worker/security.ts`. The Worker adds them to the pages it builds (`/a/:id`), and `web/public/_headers` carries the same set for everything Cloudflare serves directly. `security.test.ts` fails if the two differ.
+- Scripts may only come from the site itself, plus the inline theme script in `index.html`, allowed by its hash. Editing that script changes the hash; the test prints the new one.
+- Nobody may frame the app (`frame-ancestors 'none'`), so a Bid button can't be clickjacked. `/embed/:id` keeps its own policy, which allows framing.
+- The image compressor's web worker loads its library from the site (`?url` import in `lib/media.ts`), not from a CDN.
+- YouTube streams use the privacy-enhanced player (`youtube-nocookie.com`).
 
 ## Media
 

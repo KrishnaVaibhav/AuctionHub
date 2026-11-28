@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { usePageTitle } from "../lib/usePageTitle";
+import { t } from "../lib/i18n";
 
 const UPDATED = "3 November 2026";
 
@@ -14,6 +16,7 @@ function Doc({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function Privacy() {
+  usePageTitle(t("Privacy"));
   return (
     <Doc title="Privacy Policy">
       <p>
@@ -109,6 +112,7 @@ export function Privacy() {
 }
 
 export function Terms() {
+  usePageTitle(t("Terms"));
   return (
     <Doc title="Terms of Service">
       <p>By using AuctionHub you agree to these terms.</p>

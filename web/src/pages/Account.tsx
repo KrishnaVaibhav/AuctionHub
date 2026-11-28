@@ -8,8 +8,11 @@ import { LanguagePicker } from "../components/LanguagePicker";
 import { Link } from "react-router";
 import { AccountProgress } from "./AccountProgress";
 import { Toggle } from "../components/Glass";
+import { usePageTitle } from "../lib/usePageTitle";
+import { t } from "../lib/i18n";
 
 export function Account() {
+  usePageTitle(t("Account"));
   const { session, profile, refreshProfile, signOut } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");

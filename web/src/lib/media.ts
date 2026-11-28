@@ -1,5 +1,7 @@
-import imageCompression from "browser-image-compression";
 import { supabase } from "./supabase";
+// The compressor's own build, served from this site: its web worker loads the
+// library from here instead of a public CDN (works offline and under our CSP).
+import compressorScript from "browser-image-compression/dist/browser-image-compression.js?url";
 
 export const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // before compression
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
@@ -33,11 +35,15 @@ export async function uploadMedia(
   let contentType = file.type;
 
   if (isImage && file.type !== "image/gif" && file.type !== "image/svg+xml") {
+    // Loaded on the first upload only: most visitors never upload anything.
+    const { default: imageCompression } = await import("browser-image-compression");
     body = await imageCompression(file, {
       maxWidthOrHeight: opts.maxSide ?? 1600,
       maxSizeMB: opts.maxMB ?? 0.4,
       fileType: "image/webp",
       useWebWorker: true,
+      // The worker runs from a blob: URL, so it needs an absolute address.
+      libURL: new URL(compressorScript, window.location.href).href,
     });
     ext = "webp";
     contentType = "image/webp";

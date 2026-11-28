@@ -69,3 +69,5 @@ export function useNotifications(userId: string | null) {
 
   return { items, unread: items.filter((n) => !n.read_at).length, markAllRead, markRead };
 }
+
+export type Notifications = ReturnType<typeof useNotifications>;

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { RobotIcon, XIcon } from "@phosphor-icons/react";
 import { money } from "../../lib/format";
 import type { Auction, Lot } from "../../lib/types";
+import { ModalPanel } from "../ModalPanel";
 
 interface Bot {
   name: string;
@@ -94,7 +95,7 @@ function Draft({ auction, lots, onClose }: { auction: Auction; lots: Lot[]; onCl
 
   return (
     <div className="scrim flex items-center justify-center p-3" onClick={onClose}>
-      <div className="glass-thick max-h-[92dvh] w-full max-w-2xl animate-rise space-y-4 overflow-y-auto rounded-[32px] p-5 sm:p-6" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Practice draft">
+      <ModalPanel onClose={onClose} label="Practice draft" className="glass-thick max-h-[92dvh] w-full max-w-2xl animate-rise space-y-4 overflow-y-auto rounded-[32px] p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="section-title">Practice draft</h2>
@@ -149,7 +150,7 @@ function Draft({ auction, lots, onClose }: { auction: Auction; lots: Lot[]; onCl
             ))}
           </ul>
         )}
-      </div>
+      </ModalPanel>
     </div>
   );
 }

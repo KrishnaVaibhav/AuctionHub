@@ -15,6 +15,7 @@ import { DealChat } from "../components/DealChat";
 import { WatchingList } from "../components/WatchingList";
 import { RateTrade } from "../components/RateTrade";
 import { useAuth } from "../lib/auth";
+import { usePageTitle } from "../lib/usePageTitle";
 
 interface MyLot {
   lot_id: string;
@@ -39,6 +40,7 @@ interface MyLot {
 type Tab = "active" | "won" | "lost" | "watching";
 
 export function MyActivity() {
+  usePageTitle(t("My bids"));
   const [rows, setRows] = useState<MyLot[]>([]);
   const [tab, setTab] = useState<Tab>("active");
   const [loading, setLoading] = useState(true);

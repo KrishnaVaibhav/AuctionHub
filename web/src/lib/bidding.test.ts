@@ -72,6 +72,20 @@ describe("embedUrl", () => {
     expect(embedUrl("https://youtu.be/abc123XYZ")).toContain("/embed/abc123XYZ");
     expect(embedUrl("https://www.youtube.com/live/abc123XYZ")).toContain("/embed/abc123XYZ");
   });
+  it("uses YouTube's privacy-enhanced player", () => {
+    expect(embedUrl("https://youtu.be/abc123XYZ")).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/abc123XYZ\?/);
+  });
+  it("refuses malformed video ids and channels", () => {
+    expect(embedUrl("https://youtu.be/abc/../../x")).toBeNull();
+    expect(embedUrl("https://www.youtube.com/watch?v=a%26b")).toBeNull();
+    expect(embedUrl("https://twitch.tv/some&parent=evil.com")).toBeNull();
+  });
+  it("builds Twitch player links with every parameter encoded", () => {
+    const src = new URL(embedUrl("https://www.twitch.tv/some_channel", "auctionhub.test")!);
+    expect(src.origin).toBe("https://player.twitch.tv");
+    expect(src.searchParams.get("channel")).toBe("some_channel");
+    expect(src.searchParams.get("parent")).toBe("auctionhub.test");
+  });
   it("returns null for unknown hosts", () => {
     expect(embedUrl("https://example.com/video")).toBeNull();
     expect(embedUrl("not a url")).toBeNull();

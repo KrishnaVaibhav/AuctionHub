@@ -376,5 +376,17 @@ const d: Dict = {
   "The host paused bidding. The clock picks up where it stopped.": "होस्ट ने बोली रोक दी है। घड़ी वहीं से चलेगी जहाँ रुकी थी।",
   "Withdrawn by the host": "होस्ट ने वापस ले लिया",
   "Yes, bid {amount}": "हाँ, {amount} की बोली",
+  "Reconnecting… Prices may be a few seconds behind.": "फिर से जुड़ रहे हैं… कीमतें कुछ सेकंड पीछे हो सकती हैं।",
+  "You're offline. Live prices and chat resume when you're back.": "आप ऑफ़लाइन हैं। वापस आने पर लाइव कीमतें और चैट फिर शुरू होंगी।",
+  "Couldn't load this auction": "यह नीलामी लोड नहीं हो सकी",
+  "Try again": "फिर से कोशिश करें",
+  "Skip to content": "सीधे सामग्री पर जाएँ",
+  "Not set": "तय नहीं",
+  "Something went wrong": "कुछ गड़बड़ हो गई",
+  "Can't reach AuctionHub. Check your connection and try again.": "AuctionHub तक नहीं पहुँच पा रहे। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+  "Watch the live stream": "लाइव स्ट्रीम देखें",
+  "New auction": "नई नीलामी",
+  "Edit {title}": "{title} संपादित करें",
+  "Page not found": "पेज नहीं मिला",
 };
 export default d;

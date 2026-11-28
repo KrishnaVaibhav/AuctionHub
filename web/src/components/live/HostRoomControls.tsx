@@ -6,6 +6,7 @@ import { serverNow } from "../../lib/clock";
 import { FEATURES, funOn, type FeatureKey } from "../../lib/fun";
 import type { Auction, Lot } from "../../lib/types";
 import { Toggle } from "../Glass";
+import { ModalPanel } from "../ModalPanel";
 
 /** Everything the host can change mid-auction, in one sheet. */
 export function HostRoomControls({ auction, lots, selected }: { auction: Auction; lots: Lot[]; selected?: Lot }) {
@@ -57,11 +58,10 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
       {open &&
         createPortal(
           <div className="scrim flex justify-end" onClick={() => setOpen(false)}>
-            <div
-              role="dialog"
-              aria-label="Room controls"
+            <ModalPanel
+              onClose={() => setOpen(false)}
+              label="Room controls"
               className="glass-thick h-full w-full max-w-md animate-rise space-y-6 overflow-y-auto p-5 sm:rounded-l-[32px] sm:p-6"
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
                 <h2 className="section-title">Room controls</h2>
@@ -159,7 +159,7 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
                   ))}
                 </div>
               </section>
-            </div>
+            </ModalPanel>
           </div>,
           document.body,
         )}

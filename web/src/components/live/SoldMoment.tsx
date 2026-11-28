@@ -51,6 +51,14 @@ export function SoldMoment({ auction, lots, events, userId, teamName }: { auctio
     };
   }, [shown, mine]);
 
+  // Escape dismisses it early, like a tap outside.
+  useEffect(() => {
+    if (!shown) return;
+    const escape = (e: KeyboardEvent) => e.key === "Escape" && setShown(null);
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [shown]);
+
   if (!shown || !lot) return null;
   const who = mine ? t("You") : ((winnerId && (teamName?.(winnerId) ?? names.get(winnerId))) ?? t("the winner"));
 

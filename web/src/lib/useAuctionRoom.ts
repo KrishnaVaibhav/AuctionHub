@@ -10,6 +10,8 @@ export interface AuctionRoomData {
   staff: StaffRow[];
   loading: boolean;
   error: string | null;
+  /** False while the live connection is down: prices and lots may be behind until it's back. */
+  connected: boolean;
   reload: () => Promise<void>;
 }
 
@@ -34,6 +36,7 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [connected, setConnected] = useState(true);
 
   // Ignore answers for an auction we already navigated away from.
   const current = useRef(auctionId);
@@ -57,10 +60,13 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
     ]);
     if (current.current !== auctionId) return;
     if (a.error || l.error) {
+      // Keep whatever is on screen: a refresh that fails on a flaky network
+      // must not blank a live room. The room shows the error only if it has nothing.
       setError(errorMessage(a.error ?? l.error));
-    } else {
-      setError(null);
+      setLoading(false);
+      return;
     }
+    setError(null);
     setAuction((a.data as Auction | null) ?? null);
     const lotRows = (l.data as Lot[] | null) ?? [];
     setLots(lotRows);
@@ -114,13 +120,19 @@ export function useAuctionRoom(auctionId: string | undefined): AuctionRoomData {
         });
       })
       .subscribe((status) => {
-        // Re-sync after reconnects so no update is missed.
-        if (status === "SUBSCRIBED") void reload();
+        if (status === "SUBSCRIBED") {
+          setConnected(true);
+          // Re-sync after reconnects so no update is missed.
+          void reload();
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          // The client keeps retrying on its own; SUBSCRIBED above clears this.
+          setConnected(false);
+        }
       });
     return () => {
       void supabase.removeChannel(channel);
     };
   }, [auctionId, reload]);
 
-  return { auction, lots, media, moderatorIds: staff.map((s) => s.user_id), staff, loading, error, reload };
+  return { auction, lots, media, moderatorIds: staff.map((s) => s.user_id), staff, loading, error, connected, reload };
 }

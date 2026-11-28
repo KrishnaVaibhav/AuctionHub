@@ -1,27 +1,54 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { supabase } from "./supabase";
 
 // Offset between server and local clock, so countdowns follow the server.
 let offsetMs = 0;
-let synced: Promise<void> | null = null;
+// The measurement with the quickest round trip pins the offset best (its error is at most half the trip).
+let bestRtt = Number.POSITIVE_INFINITY;
+let bestAt = 0;
+let lastAt = 0;
+let inflight: Promise<void> | null = null;
 
+const MIN_GAP_MS = 60_000;
+const STALE_MS = 3_600_000;
+
+/**
+ * Measures the server clock. The first call measures; later calls measure
+ * again at most once a minute and keep the new offset only if its round trip
+ * was quicker (or the kept one is an hour old). So an offset taken while the
+ * page was still downloading, on a slow first request, gets corrected.
+ */
 export function syncServerClock(): Promise<void> {
-  synced ??= (async () => {
+  if (inflight) return inflight;
+  if (lastAt && Date.now() - lastAt < MIN_GAP_MS) return Promise.resolve();
+  inflight = (async () => {
     try {
-      const t0 = Date.now();
+      const sentAt = Date.now();
+      const t0 = performance.now();
       const { data, error } = await supabase.rpc("server_time");
-      const t1 = Date.now();
+      const rtt = performance.now() - t0;
       if (!error && typeof data === "string") {
-        offsetMs = new Date(data).getTime() - (t0 + t1) / 2;
-        return;
+        lastAt = Date.now();
+        if (rtt <= bestRtt || lastAt - bestAt > STALE_MS) {
+          offsetMs = new Date(data).getTime() - (sentAt + rtt / 2);
+          bestRtt = rtt;
+          bestAt = lastAt;
+        }
       }
     } catch {
-      /* offline: fall through */
+      /* offline: keep the current offset and try again on the next call */
+    } finally {
+      inflight = null;
     }
-    // Failed: keep the local clock for now and try again on the next call.
-    synced = null;
   })();
-  return synced;
+  return inflight;
+}
+
+// After the phone sleeps or the tab sat in the background, check the clock again.
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") void syncServerClock();
+  });
 }
 
 export function serverNow(): number {
@@ -37,4 +64,34 @@ export function useServerNow(intervalMs = 250): number {
     return () => clearInterval(id);
   }, [intervalMs]);
   return now;
+}
+
+// One shared 4 Hz beat drives every countdown on the page, instead of a timer each.
+const beat = new Set<() => void>();
+let beatTimer = 0;
+function onBeat(listener: () => void): () => void {
+  beat.add(listener);
+  if (!beatTimer) beatTimer = window.setInterval(() => beat.forEach((fn) => fn()), 250);
+  return () => {
+    beat.delete(listener);
+    if (!beat.size) {
+      clearInterval(beatTimer);
+      beatTimer = 0;
+    }
+  };
+}
+
+/**
+ * Seconds left until `endsAt` on the server clock, rounded up: 1 during the
+ * last second, 0 or less once it has passed, null without an end. The
+ * component re-renders only when this number changes (once a second), not
+ * on every beat.
+ */
+export function useSecondsLeft(endsAt: string | null | undefined): number | null {
+  const end = endsAt ? new Date(endsAt).getTime() : null;
+  const read = useCallback(() => (end == null ? null : Math.ceil((end - serverNow()) / 1000)), [end]);
+  useEffect(() => {
+    void syncServerClock();
+  }, []);
+  return useSyncExternalStore(onBeat, read, read);
 }

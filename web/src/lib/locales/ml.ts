@@ -376,5 +376,17 @@ const d: Dict = {
   "The host paused bidding. The clock picks up where it stopped.": "ഹോസ്റ്റ് ലേലം നിർത്തി. ക്ലോക്ക് നിന്നിടത്തുനിന്ന് തുടരും.",
   "Withdrawn by the host": "ഹോസ്റ്റ് പിൻവലിച്ചു",
   "Yes, bid {amount}": "അതെ, {amount} ലേലം",
+  "Reconnecting… Prices may be a few seconds behind.": "വീണ്ടും കണക്റ്റ് ചെയ്യുന്നു… വിലകൾ കുറച്ച് സെക്കൻഡ് പിന്നിലായിരിക്കാം.",
+  "You're offline. Live prices and chat resume when you're back.": "നിങ്ങൾ ഓഫ്‌ലൈനിലാണ്. തിരികെ എത്തുമ്പോൾ ലൈവ് വിലകളും ചാറ്റും തുടരും.",
+  "Couldn't load this auction": "ഈ ലേലം ലോഡ് ചെയ്യാനായില്ല",
+  "Try again": "വീണ്ടും ശ്രമിക്കുക",
+  "Skip to content": "നേരെ ഉള്ളടക്കത്തിലേക്ക് പോകുക",
+  "Not set": "സജ്ജമാക്കിയിട്ടില്ല",
+  "Something went wrong": "എന്തോ കുഴപ്പം സംഭവിച്ചു",
+  "Can't reach AuctionHub. Check your connection and try again.": "AuctionHub-ൽ എത്താനാകുന്നില്ല. കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "Watch the live stream": "ലൈവ് സ്ട്രീം കാണുക",
+  "New auction": "പുതിയ ലേലം",
+  "Edit {title}": "{title} എഡിറ്റ് ചെയ്യുക",
+  "Page not found": "പേജ് കണ്ടെത്തിയില്ല",
 };
 export default d;

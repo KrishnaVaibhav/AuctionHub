@@ -14,6 +14,8 @@ import { TrophyShelf } from "../components/TrophyShelf";
 import { BadgeGrid } from "../components/Progress";
 import { useBadges, useEventTitles } from "../lib/progress";
 import { TIER_STYLE, useHostTiers } from "../lib/hostTiers";
+import { usePageTitle } from "../lib/usePageTitle";
+import { t } from "../lib/i18n";
 
 interface PublicProfile {
   id: string;
@@ -57,6 +59,7 @@ function StarRow({ avg, count, label }: { avg: number | null; count: number; lab
 export function HostProfile() {
   const { username } = useParams();
   const [profile, setProfile] = useState<PublicProfile | null | undefined>(undefined);
+  usePageTitle(profile === null ? t("Page not found") : profile?.display_name);
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
 

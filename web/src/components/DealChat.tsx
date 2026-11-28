@@ -2,6 +2,7 @@ import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { supabase, errorMessage, channelName } from "../lib/supabase";
+import { ModalPanel } from "./ModalPanel";
 
 interface DealMessage {
   id: number;
@@ -66,10 +67,7 @@ export function DealChat({
 
   return createPortal(
     <div className="scrim flex items-end justify-center p-0 sm:items-center sm:p-4" onClick={onClose}>
-      <div
-        className="sheet flex h-[85dvh] w-full max-w-lg animate-rise flex-col sm:h-[36rem]"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <ModalPanel onClose={onClose} label={`Deal chat: ${lotTitle}`} className="sheet flex h-[85dvh] w-full max-w-lg animate-rise flex-col sm:h-[36rem]">
         <div className="grabber" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3 border-b border-stone-900/[0.06] p-4">
           <div className="min-w-0">
@@ -111,7 +109,7 @@ export function DealChat({
             </button>
           </div>
         </form>
-      </div>
+      </ModalPanel>
     </div>,
     document.body,
   );

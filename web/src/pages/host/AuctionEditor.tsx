@@ -24,6 +24,8 @@ import { CATEGORIES, parseTags } from "../../lib/categories";
 import { confirmDialog, type ConfirmOptions } from "../../lib/confirm";
 import { Toggle } from "../../components/Glass";
 import { Menu } from "../../components/Menu";
+import { usePageTitle } from "../../lib/usePageTitle";
+import { t } from "../../lib/i18n";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "PTS"];
 
@@ -44,6 +46,7 @@ function AuctionEditorInner() {
   const navigate = useNavigate();
   const room = useAuctionRoom(id);
   const { auction, lots, media, staff, reload } = room;
+  usePageTitle(auction ? t("Edit {title}", { title: auction.title }) : null);
   const role = auctionRole(auction, staff, session?.user.id ?? null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -117,7 +120,7 @@ function AuctionEditorInner() {
         n.delete("welcome");
         return n;
       },
-      { replace: true },
+      { replace: true, preventScrollReset: true },
     );
   const withoutPhotos = lots.filter((l) => !(media.get(l.id)?.length)).length;
   const go = (key: EditorTab) =>
@@ -127,7 +130,8 @@ function AuctionEditorInner() {
         n.set("tab", key);
         return n;
       },
-      { replace: true },
+      // Switching tabs keeps your place on the page.
+      { replace: true, preventScrollReset: true },
     );
   const goLive = () => void rpc("start_auction", { title: "Go live now?", body: "Lots open for bidding immediately.", confirmLabel: "Go live" });
 

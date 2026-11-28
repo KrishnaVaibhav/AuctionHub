@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
+import { usePageTitle } from "../lib/usePageTitle";
+import { t } from "../lib/i18n";
 
 const CATEGORIES = [
   ["question", "Question"],
@@ -12,6 +14,7 @@ const CATEGORIES = [
 ] as const;
 
 export function Support() {
+  usePageTitle(t("Support"));
   const { session } = useAuth();
   const [category, setCategory] = useState<string>("question");
   const [message, setMessage] = useState("");

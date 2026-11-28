@@ -18,6 +18,8 @@ import { CATEGORIES } from "../../lib/categories";
 import { fromLocalInput } from "../../lib/format";
 import { DURATIONS, TEMPLATES, durationLabel, settingsFor, templateByKey, type TemplateKey } from "../../lib/templates";
 import type { Auction } from "../../lib/types";
+import { usePageTitle } from "../../lib/usePageTitle";
+import { t } from "../../lib/i18n";
 
 const ICONS: Record<TemplateKey, Icon> = {
   timed: TimerIcon,
@@ -41,6 +43,7 @@ const VISIBILITY: { key: Auction["visibility"]; title: string; desc: string }[] 
  * Formats only preset the rules; everything stays editable in the editor.
  */
 export function NewAuction() {
+  usePageTitle(t("New auction"));
   const { session } = useAuth();
   const navigate = useNavigate();
   const userId = session!.user.id;

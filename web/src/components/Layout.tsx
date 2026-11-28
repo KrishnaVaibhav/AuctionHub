@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { DotsThreeCircleIcon, GavelIcon, HandCoinsIcon, SignInIcon, StorefrontIcon, UserCircleIcon, XIcon } from "@phosphor-icons/react";
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from "react-router";
+import { DotsThreeCircleIcon, GavelIcon, HandCoinsIcon, SignInIcon, StorefrontIcon, UserCircleIcon, WifiSlashIcon, XIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { useAuth } from "../lib/auth";
 import { supabase, supabaseConfigured } from "../lib/supabase";
@@ -8,6 +8,8 @@ import { Avatar } from "./Avatar";
 import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
 import { useIsAdmin } from "../lib/admin";
 import { NotificationBell } from "./NotificationBell";
+import { useNotifications } from "../lib/notifications";
+import { useOnline } from "../lib/useOnline";
 import { LanguagePicker } from "./LanguagePicker";
 import { t } from "../lib/i18n";
 
@@ -16,6 +18,9 @@ export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAdmin } = useIsAdmin();
   const location = useLocation();
+  // One live notification feed for both bells (phone and desktop headers).
+  const notes = useNotifications(session?.user.id ?? null);
+  const online = useOnline();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
@@ -60,6 +65,14 @@ export function Layout() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* New pages open at the top; Back returns to where you were. */}
+      <ScrollRestoration />
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-snow focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        {t("Skip to content")}
+      </a>
       {/* Floating glass navigation: content scrolls underneath it. */}
       <header className="sticky top-0 z-30 px-3 sm:px-6" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
         <div className="glass mx-auto flex h-14 max-w-page items-center gap-2 rounded-full pr-2 pl-3 sm:pl-4">
@@ -79,7 +92,7 @@ export function Layout() {
           </nav>
 
           <div className="ml-auto hidden items-center gap-1 md:flex">
-            <NotificationBell />
+            <NotificationBell notes={notes} />
             <LanguagePicker />
             <ThemeToggle />
             {session ? (
@@ -100,7 +113,7 @@ export function Layout() {
           </div>
 
           <div className="ml-auto flex items-center md:hidden">
-            <NotificationBell />
+            <NotificationBell notes={notes} />
             <ThemeToggle />
             <button className="btn-icon" onClick={() => setMenuOpen((o) => !o)} aria-label={t("Menu")} aria-expanded={menuOpen}>
               {menuOpen ? <XIcon size={22} weight="bold" aria-hidden="true" /> : <DotsThreeCircleIcon size={24} aria-hidden="true" />}
@@ -142,7 +155,14 @@ export function Layout() {
         </div>
       )}
 
-      <main className={`mx-auto w-full max-w-page flex-1 px-4 py-6 sm:px-6 sm:py-8 2xl:px-8 2xl:py-10`}>
+      {!online && (
+        <p role="status" className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-snow">
+          <WifiSlashIcon size={16} weight="bold" aria-hidden="true" />
+          {t("You're offline. Live prices and chat resume when you're back.")}
+        </p>
+      )}
+
+      <main id="main" tabIndex={-1} className={`mx-auto w-full max-w-page flex-1 px-4 py-6 outline-none sm:px-6 sm:py-8 2xl:px-8 2xl:py-10`}>
         <Outlet />
       </main>
 

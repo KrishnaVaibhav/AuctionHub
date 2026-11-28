@@ -5,6 +5,7 @@ import { LinkSimpleIcon, TrophyIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../lib/supabase";
 import { TeamChip } from "../components/league/TeamChip";
 import { shareCard } from "../lib/shareCard";
+import { usePageTitle } from "../lib/usePageTitle";
 
 interface SeasonRow {
   auction_id: string;
@@ -27,6 +28,12 @@ interface TableData {
   players: { title: string; points: number; team: string | null }[];
 }
 
+/** The series name: the latest season's title without its "· Season N" suffix. */
+function seriesName(data: TableData): string {
+  const latest = data.seasons[data.seasons.length - 1];
+  return (latest?.title ?? "League").replace(/\s*·\s*Season \d+$/, "");
+}
+
 const medal = ["bg-brand-400 text-ink", "bg-stone-300 text-ink", "bg-orange-300 text-ink"];
 
 /** Public league table across every season of a series. */
@@ -35,6 +42,7 @@ export function SeasonTable() {
   const [data, setData] = useState<TableData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  usePageTitle(data ? seriesName(data) : null);
 
   useEffect(() => {
     if (!id) return;
@@ -48,7 +56,7 @@ export function SeasonTable() {
   if (!data) return <div className="h-72 animate-pulse rounded-[32px] bg-stone-900/[0.05]" />;
 
   const latest = data.seasons[data.seasons.length - 1];
-  const series = (latest?.title ?? "League").replace(/\s*·\s*Season \d+$/, "");
+  const series = seriesName(data);
 
   return (
     <div className="space-y-6">
