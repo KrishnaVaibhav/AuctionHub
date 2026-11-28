@@ -40,7 +40,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").tri
  */
 export function parseStatsSheet(text: string, players: { id: string; title: string }[]) {
   // Spreadsheet pastes are tab-separated.
-  const csv = text.includes("	") && !text.includes(",") ? text.replace(/	/g, ",") : text;
+  const csv = text.includes("\t") && !text.includes(",") ? text.replace(/\t/g, ",") : text;
   const table = parseCsv(csv.trim()).filter((r) => r.some((c) => c.trim() !== ""));
   if (table.length < 2) return { rows: [] as StatRow[], unmatched: [] as string[], columns: [] as string[] };
   const header = table[0].map((h) => norm(h));

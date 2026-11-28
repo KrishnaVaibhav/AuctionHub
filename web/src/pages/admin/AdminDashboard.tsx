@@ -1,7 +1,6 @@
 import { EventsTab } from "./EventsTab";
 import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { ago, bytes, useIsAdmin } from "../../lib/admin";
@@ -278,7 +277,7 @@ function ProviderPhoto({ url, name, size }: { url: string | null; name: string |
     );
   }
   return (
-    <a href={url} target="_blank" rel="noreferrer" title={name ?? "Sign-in photo"}>
+    <a href={url} target="_blank" rel="noreferrer" title={name ?? "Sign-in photo"} aria-label={name ?? "Sign-in photo"}>
       <img
         src={url}
         alt=""
@@ -421,9 +420,8 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
 
   const list = (k: string) => (Array.isArray(data?.[k]) ? (data?.[k] as Json[]) : []);
 
-  return createPortal(
-    <div className="scrim flex justify-end" onClick={onClose}>
-      <ModalPanel onClose={onClose} label="User details" className="glass-thick h-full w-full max-w-2xl animate-rise overflow-y-auto p-5 sm:rounded-l-[32px] sm:p-6">
+  return (
+      <ModalPanel onClose={onClose} label="User details" scrimClassName="flex justify-end" className="glass-thick h-full w-full max-w-2xl animate-rise overflow-y-auto p-5 sm:rounded-l-[32px] sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <ProviderPhoto url={(data?.provider_avatar as string) ?? null} name={(data?.provider_name as string) ?? null} size={64} />
@@ -563,8 +561,6 @@ function UserDetail({ userId, onClose, onChanged }: { userId: string; onClose: (
           ))}
         </Section>
       </ModalPanel>
-    </div>,
-    document.body,
   );
 }
 
@@ -650,7 +646,9 @@ function Auctions() {
               <th className="px-4 py-2.5 text-right">Bids</th>
               <th className="px-4 py-2.5 text-right">Sold</th>
               <th className="px-4 py-2.5">Access</th>
-              <th className="px-4 py-2.5" />
+              <th className="px-4 py-2.5">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-900/[0.06]">

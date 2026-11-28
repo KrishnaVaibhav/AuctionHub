@@ -18,6 +18,12 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
   const names = useProfileNames(members.map((m) => m.user_id));
   const isPrivate = auction.visibility === "private";
 
+
+  async function loadMembers() {
+    const { data } = await supabase.from("auction_members").select("user_id, joined_at").eq("auction_id", auction.id).order("joined_at");
+    setMembers(data ?? []);
+  }
+
   useEffect(() => {
     if (!isPrivate) return;
     void supabase.rpc("get_invite_code", { p_auction_id: auction.id }).then(({ data, error }) => {
@@ -26,11 +32,6 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
     });
     void loadMembers();
   }, [isPrivate, auction.id]);
-
-  async function loadMembers() {
-    const { data } = await supabase.from("auction_members").select("user_id, joined_at").eq("auction_id", auction.id).order("joined_at");
-    setMembers(data ?? []);
-  }
 
   async function choose(v: Auction["visibility"]) {
     if (v === auction.visibility) return;

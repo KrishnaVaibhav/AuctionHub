@@ -38,10 +38,6 @@ export function WatchParty({ auction, userId }: { auction: Auction; userId: stri
     if (userId) void load();
   }, [auction.id, userId]);
 
-  // Auto-join from a shared link.
-  useEffect(() => {
-    if (userId && code && new URLSearchParams(window.location.search).get("party") === code) void join();
-  }, [userId]);
 
   async function create(e: FormEvent) {
     e.preventDefault();
@@ -61,6 +57,11 @@ export function WatchParty({ auction, userId }: { auction: Auction; userId: stri
     await load();
     setActive(data as string);
   }
+
+  // Auto-join from a shared link.
+  useEffect(() => {
+    if (userId && code && new URLSearchParams(window.location.search).get("party") === code) void join();
+  }, [userId]);
 
   if (!funOn(auction.settings, "parties")) return <p className="card p-5 text-sm text-stone-500">{t("The host has turned watch parties off.")}</p>;
   if (!userId) return <p className="card p-5 text-sm text-stone-500">{t("Sign in to start a watch party.")}</p>;

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { RobotIcon, XIcon } from "@phosphor-icons/react";
 import { money } from "../../lib/format";
 import type { Auction, Lot } from "../../lib/types";
@@ -30,7 +29,7 @@ export function MockDraft({ auction, lots }: { auction: Auction; lots: Lot[] }) 
         <RobotIcon size={16} weight="bold" aria-hidden="true" />
         Practice draft
       </button>
-      {open && createPortal(<Draft auction={auction} lots={lots} onClose={() => setOpen(false)} />, document.body)}
+      {open && <Draft auction={auction} lots={lots} onClose={() => setOpen(false)} />}
     </>
   );
 }
@@ -94,8 +93,7 @@ function Draft({ auction, lots, onClose }: { auction: Auction; lots: Lot[]; onCl
   }
 
   return (
-    <div className="scrim flex items-center justify-center p-3" onClick={onClose}>
-      <ModalPanel onClose={onClose} label="Practice draft" className="glass-thick max-h-[92dvh] w-full max-w-2xl animate-rise space-y-4 overflow-y-auto rounded-[32px] p-5 sm:p-6">
+      <ModalPanel onClose={onClose} label="Practice draft" scrimClassName="flex items-center justify-center p-3" className="glass-thick max-h-[92dvh] w-full max-w-2xl animate-rise space-y-4 overflow-y-auto rounded-[32px] p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="section-title">Practice draft</h2>
@@ -151,6 +149,5 @@ function Draft({ auction, lots, onClose }: { auction: Auction; lots: Lot[]; onCl
           </ul>
         )}
       </ModalPanel>
-    </div>
   );
 }

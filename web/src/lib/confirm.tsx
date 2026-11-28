@@ -18,6 +18,8 @@ function ConfirmDialog({ opts, onDone }: { opts: ConfirmOptions; onDone: (ok: bo
     ref.current?.showModal();
   }, []);
   return (
+    // A native modal dialog: Escape cancels it on its own; this handles taps on its backdrop.
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <dialog
       ref={ref}
       aria-labelledby="confirm-title"

@@ -58,6 +58,8 @@ export function RateTrade({ lotId, userId, label }: { lotId: string; userId: str
   );
 
   return (
+    // Sits inside a clickable row: rating clicks must not also open the row.
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div className="space-y-2 text-xs" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-stone-500">{saved && !open ? `Your rating of the ${label}:` : `Rate the ${label}:`}</span>

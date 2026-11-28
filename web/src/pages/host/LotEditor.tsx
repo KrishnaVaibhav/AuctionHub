@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type Ref } from "react";
+import { useEffect, useRef, useState, type FormEvent, type Ref, useId } from "react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { deleteMedia, publicUrl, uploadMedia } from "../../lib/media";
 import { money } from "../../lib/format";
@@ -58,6 +58,7 @@ function LotFieldInputs({
   collapse?: boolean;
   titleRef?: Ref<HTMLInputElement>;
 }) {
+  const fid = useId();
   const help = SALE_TYPES.find((t) => t.value === v.saleType)?.help;
   const used = v.saleType !== "english" || v.reserve.trim() !== "" || v.buyNow.trim() !== "" || v.fields.trim() !== "";
 
@@ -81,35 +82,35 @@ function LotFieldInputs({
       {v.saleType === "dutch" && (
         <>
           <div>
-            <label className="label">Drop by</label>
-            <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchStep} onChange={(e) => set({ ...v, dutchStep: e.target.value })} />
+            <label htmlFor={`${fid}-0`} className="label">Drop by</label>
+            <input id={`${fid}-0`} className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchStep} onChange={(e) => set({ ...v, dutchStep: e.target.value })} />
             <p className="mt-1 block text-xs leading-snug text-stone-500">How much the price falls at each step.</p>
           </div>
           <div>
-            <label className="label">Every (seconds)</label>
-            <input className="input" type="number" min={5} max={3600} step={1} required disabled={disabled} value={v.dutchInterval} onChange={(e) => set({ ...v, dutchInterval: e.target.value })} />
+            <label htmlFor={`${fid}-1`} className="label">Every (seconds)</label>
+            <input id={`${fid}-1`} className="input" type="number" min={5} max={3600} step={1} required disabled={disabled} value={v.dutchInterval} onChange={(e) => set({ ...v, dutchInterval: e.target.value })} />
             <p className="mt-1 block text-xs leading-snug text-stone-500">Time between price drops.</p>
           </div>
           <div>
-            <label className="label">Floor price</label>
-            <input className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchFloor} onChange={(e) => set({ ...v, dutchFloor: e.target.value })} />
+            <label htmlFor={`${fid}-2`} className="label">Floor price</label>
+            <input id={`${fid}-2`} className="input" type="number" min={0.01} step="0.01" required disabled={disabled} value={v.dutchFloor} onChange={(e) => set({ ...v, dutchFloor: e.target.value })} />
             <p className="mt-1 block text-xs leading-snug text-stone-500">The price never drops below this.</p>
           </div>
         </>
       )}
       <div>
-        <label className="label">Reserve (secret, optional)</label>
-        <input className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.reserve} onChange={(e) => set({ ...v, reserve: e.target.value })} />
+        <label htmlFor={`${fid}-3`} className="label">Reserve (secret, optional)</label>
+        <input id={`${fid}-3`} className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.reserve} onChange={(e) => set({ ...v, reserve: e.target.value })} />
         <p className="mt-1 block text-xs leading-snug text-stone-500">Lowest price you will accept. Hidden from bidders; below it the lot does not sell.</p>
       </div>
       <div>
-        <label className="label">Buy now (optional)</label>
-        <input className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.buyNow} onChange={(e) => set({ ...v, buyNow: e.target.value })} />
+        <label htmlFor={`${fid}-4`} className="label">Buy now (optional)</label>
+        <input id={`${fid}-4`} className="input" type="number" min={0} step="0.01" disabled={disabled} value={v.buyNow} onChange={(e) => set({ ...v, buyNow: e.target.value })} />
         <p className="mt-1 block text-xs leading-snug text-stone-500">Anyone can pay this to win the lot at once and end it.</p>
       </div>
       <div>
-        <label className="label">Details (one "key: value" per line)</label>
-        <textarea
+        <label htmlFor={`${fid}-5`} className="label">Details (one "key: value" per line)</label>
+        <textarea id={`${fid}-5`}
           className="input min-h-20 font-mono text-xs"
           placeholder={"Condition: Used\nYear: 1972"}
           disabled={disabled}
@@ -125,8 +126,8 @@ function LotFieldInputs({
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="sm:col-span-2">
-          <label className="label">Title</label>
-          <input ref={titleRef} className="input" required maxLength={120} disabled={disabled} value={v.title} onChange={(e) => set({ ...v, title: e.target.value })} />
+          <label htmlFor={`${fid}-6`} className="label">Title</label>
+          <input id={`${fid}-6`} ref={titleRef} className="input" required maxLength={120} disabled={disabled} value={v.title} onChange={(e) => set({ ...v, title: e.target.value })} />
           <p className="mt-1 block text-xs leading-snug text-stone-500">Short name bidders see on the lot card.</p>
         </div>
         <div>
@@ -144,8 +145,8 @@ function LotFieldInputs({
           <p className="mt-1 block text-xs leading-snug text-stone-500">Where bidding begins. For a league, the player's base price.</p>
         </div>
         <div className="sm:col-span-3">
-          <label className="label">Description</label>
-          <textarea
+          <label htmlFor={`${fid}-7`} className="label">Description</label>
+          <textarea id={`${fid}-7`}
             className="input min-h-20"
             maxLength={5000}
             disabled={disabled}

@@ -63,8 +63,11 @@ export function SoldMoment({ auction, lots, events, userId, teamName }: { auctio
   const who = mine ? t("You") : ((winnerId && (teamName?.(winnerId) ?? names.get(winnerId))) ?? t("the winner"));
 
   return createPortal(
+    // A passing celebration, not a task: a tap anywhere outside the card or Escape dismisses it.
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div className="scrim z-[60] flex items-center justify-center p-4" onClick={() => setShown(null)} role="dialog" aria-live="assertive" aria-label={t("Sold")}>
       <Confetti pieces={mine ? 90 : 50} />
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only keeps taps on the card from dismissing it */}
       <div className="glass-thick relative w-full max-w-md animate-rise rounded-[36px] p-8 text-center" onClick={(e) => e.stopPropagation()}>
         <GavelIcon size={64} weight="fill" className="mx-auto origin-bottom-right animate-[gavel_0.6s_var(--ease-spring)_both] text-brand-500" aria-hidden="true" />
         <p className="mt-3 font-display text-5xl font-extrabold tracking-tight text-brand-600">{t("Sold!")}</p>

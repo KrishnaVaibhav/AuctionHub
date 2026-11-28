@@ -51,9 +51,16 @@ export function FixturesPanel({ auction, teams, matches, scores, isHost }: { auc
     if (!r || !f.team_b) continue;
     const a = record.get(f.team_a) ?? { w: 0, l: 0, d: 0 };
     const b = record.get(f.team_b) ?? { w: 0, l: 0, d: 0 };
-    if (r.a > r.b) (a.w++, b.l++);
-    else if (r.b > r.a) (b.w++, a.l++);
-    else (a.d++, b.d++);
+    if (r.a > r.b) {
+      a.w++;
+      b.l++;
+    } else if (r.b > r.a) {
+      b.w++;
+      a.l++;
+    } else {
+      a.d++;
+      b.d++;
+    }
     record.set(f.team_a, a);
     record.set(f.team_b, b);
   }

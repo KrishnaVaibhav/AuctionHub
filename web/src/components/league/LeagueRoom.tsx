@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, useId } from "react";
 import { Link } from "react-router";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { bidIncrement, minNextBid, round2 } from "../../lib/bidding";
@@ -134,6 +134,7 @@ function JoinOrMyTeam({
   isHost: boolean;
   league: typeof LEAGUE_DEFAULTS;
 }) {
+  const fid = useId();
   const [name, setName] = useState("");
   const [short, setShort] = useState("");
   const free = freeColors(league.max_teams, teams.map((t) => t.color));
@@ -233,12 +234,12 @@ function JoinOrMyTeam({
       {canJoin && !full ? (
         <form onSubmit={join} className="grid gap-3 sm:grid-cols-[1fr_7rem_auto]">
           <div>
-            <label className="label">Team name</label>
-            <input className="input" required minLength={2} maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mumbai Mavericks" />
+            <label htmlFor={`${fid}-0`} className="label">Team name</label>
+            <input id={`${fid}-0`} className="input" required minLength={2} maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mumbai Mavericks" />
           </div>
           <div>
-            <label className="label">Short</label>
-            <input
+            <label htmlFor={`${fid}-1`} className="label">Short</label>
+            <input id={`${fid}-1`}
               className="input uppercase"
               maxLength={4}
               pattern="[A-Za-z0-9]{2,4}"

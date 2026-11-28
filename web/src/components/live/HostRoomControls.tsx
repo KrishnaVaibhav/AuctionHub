@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { SlidersHorizontalIcon, XIcon } from "@phosphor-icons/react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { serverNow } from "../../lib/clock";
@@ -55,12 +54,11 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
         <SlidersHorizontalIcon size={16} weight="bold" aria-hidden="true" />
         Room
       </button>
-      {open &&
-        createPortal(
-          <div className="scrim flex justify-end" onClick={() => setOpen(false)}>
+      {open && (
             <ModalPanel
               onClose={() => setOpen(false)}
               label="Room controls"
+              scrimClassName="flex justify-end"
               className="glass-thick h-full w-full max-w-md animate-rise space-y-6 overflow-y-auto p-5 sm:rounded-l-[32px] sm:p-6"
             >
               <div className="flex items-center justify-between">
@@ -160,9 +158,7 @@ export function HostRoomControls({ auction, lots, selected }: { auction: Auction
                 </div>
               </section>
             </ModalPanel>
-          </div>,
-          document.body,
-        )}
+      )}
     </>
   );
 }

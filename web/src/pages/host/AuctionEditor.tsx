@@ -1,5 +1,5 @@
 import { CalendarBlankIcon, CaretLeftIcon, ChatsCircleIcon, CheckIcon, GavelIcon, ImageIcon, InfoIcon, SparkleIcon, TrophyIcon, type Icon as PhIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, useId } from "react";
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { supabase, errorMessage } from "../../lib/supabase";
@@ -445,6 +445,7 @@ function AuctionForm({
   /** Throws the edits away (the editor remounts the form from the saved auction). */
   onDiscard: () => void;
 }) {
+  const fid = useId();
   const s = auction.settings;
   const [title, setTitle] = useState(auction.title);
   const [description, setDescription] = useState(auction.description);
@@ -787,36 +788,36 @@ function AuctionForm({
         <Section icon={TrophyIcon} title="League rules" desc="Purses, squads and the clock for each player." tone="bg-violet-50/80 dark:bg-violet-500/[0.06]">
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="label">Purse per team</label>
-              <input type="number" min={1} className="input" value={purse} onChange={(e) => setPurse(e.target.value)} />
+              <label htmlFor={`${fid}-0`} className="label">Purse per team</label>
+              <input id={`${fid}-0`} type="number" min={1} className="input" value={purse} onChange={(e) => setPurse(e.target.value)} />
               <Hint>Virtual points each team gets to spend on players: {money$(Number(purse) || 0)}.</Hint>
             </div>
             <div>
-              <label className="label">Max teams</label>
-              <input type="number" min={2} max={50} className="input" value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)} />
+              <label htmlFor={`${fid}-1`} className="label">Max teams</label>
+              <input id={`${fid}-1`} type="number" min={2} max={50} className="input" value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)} />
               <Hint>Joining stops once this many teams are in.</Hint>
             </div>
             <div>
-              <label className="label">Squad min / max</label>
+              <label htmlFor={`${fid}-2`} className="label">Squad min / max</label>
               <div className="flex gap-2">
-                <input type="number" min={0} className="input" aria-label="Squad minimum" value={squadMin} onChange={(e) => setSquadMin(e.target.value)} />
+                <input id={`${fid}-2`} type="number" min={0} className="input" aria-label="Squad minimum" value={squadMin} onChange={(e) => setSquadMin(e.target.value)} />
                 <input type="number" min={1} className="input" aria-label="Squad maximum" value={squadMax} onChange={(e) => setSquadMax(e.target.value)} />
               </div>
               <Hint>Fewest and most players a team can buy. A full squad stops bidding.</Hint>
             </div>
             <div>
-              <label className="label">Timer per player (sec)</label>
-              <input type="number" min={5} className="input" value={lotSeconds} onChange={(e) => setLotSeconds(e.target.value)} />
+              <label htmlFor={`${fid}-3`} className="label">Timer per player (sec)</label>
+              <input id={`${fid}-3`} type="number" min={5} className="input" value={lotSeconds} onChange={(e) => setLotSeconds(e.target.value)} />
               <Hint>How long a player stays on the block if nobody bids.</Hint>
             </div>
             <div>
-              <label className="label">Timer after a bid (sec)</label>
-              <input type="number" min={3} className="input" value={bidSeconds} onChange={(e) => setBidSeconds(e.target.value)} />
+              <label htmlFor={`${fid}-4`} className="label">Timer after a bid (sec)</label>
+              <input id={`${fid}-4`} type="number" min={3} className="input" value={bidSeconds} onChange={(e) => setBidSeconds(e.target.value)} />
               <Hint>Each bid resets the clock to this, so others can answer.</Hint>
             </div>
             <div>
-              <label className="label">Break between players (sec)</label>
-              <input type="number" min={0} className="input" value={breakSeconds} onChange={(e) => setBreakSeconds(e.target.value)} />
+              <label htmlFor={`${fid}-5`} className="label">Break between players (sec)</label>
+              <input id={`${fid}-5`} type="number" min={0} className="input" value={breakSeconds} onChange={(e) => setBreakSeconds(e.target.value)} />
               <Hint>Pause before the next player comes up.</Hint>
             </div>
           </div>
@@ -826,8 +827,8 @@ function AuctionForm({
             </summary>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
               <div>
-                <label className="label">Keep back per empty min slot</label>
-                <input type="number" min={0} className="input" value={minBase} onChange={(e) => setMinBase(e.target.value)} />
+                <label htmlFor={`${fid}-6`} className="label">Keep back per empty min slot</label>
+                <input id={`${fid}-6`} type="number" min={0} className="input" value={minBase} onChange={(e) => setMinBase(e.target.value)} />
                 <Hint>Purse a team must keep for each squad slot it still has to fill, so it can reach the minimum.</Hint>
               </div>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium sm:col-span-2">
@@ -838,23 +839,23 @@ function AuctionForm({
                 <Toggle checked={hostCanPlay} onChange={(v) => setHostCanPlay(v)} />
               </label>
               <div>
-                <label className="label">Retentions per team</label>
-                <input type="number" min={0} className="input" value={retainMax} onChange={(e) => setRetainMax(e.target.value)} />
+                <label htmlFor={`${fid}-7`} className="label">Retentions per team</label>
+                <input id={`${fid}-7`} type="number" min={0} className="input" value={retainMax} onChange={(e) => setRetainMax(e.target.value)} />
                 <Hint>Players a team can keep from last season before the auction.</Hint>
               </div>
               <div>
-                <label className="label">Right-to-match cards per team</label>
-                <input type="number" min={0} className="input" value={rtmCards} onChange={(e) => setRtmCards(e.target.value)} />
+                <label htmlFor={`${fid}-8`} className="label">Right-to-match cards per team</label>
+                <input id={`${fid}-8`} type="number" min={0} className="input" value={rtmCards} onChange={(e) => setRtmCards(e.target.value)} />
                 <Hint>Lets a team match the winning bid for its former player and take that player back.</Hint>
               </div>
               <div>
-                <label className="label">Time to match (sec)</label>
-                <input type="number" min={5} max={120} className="input" value={rtmSeconds} onChange={(e) => setRtmSeconds(e.target.value)} />
+                <label htmlFor={`${fid}-9`} className="label">Time to match (sec)</label>
+                <input id={`${fid}-9`} type="number" min={5} max={120} className="input" value={rtmSeconds} onChange={(e) => setRtmSeconds(e.target.value)} />
                 <Hint>How long a team has to use its right-to-match card.</Hint>
               </div>
               <div className="sm:col-span-2">
-                <label className="label">Category limits per team</label>
-                <input className="input" placeholder="Overseas: 8, Wicket-keeper: 2" value={categoryMax} onChange={(e) => setCategoryMax(e.target.value)} />
+                <label htmlFor={`${fid}-10`} className="label">Category limits per team</label>
+                <input id={`${fid}-10`} className="input" placeholder="Overseas: 8, Wicket-keeper: 2" value={categoryMax} onChange={(e) => setCategoryMax(e.target.value)} />
                 <Hint>Give players a "Category: Overseas" line in their details.</Hint>
               </div>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
+    "lint": "npx --yes oxlint@1.93.0 --config .oxlintrc.json src worker",
     "test": "vitest run src worker",
     "preview": "vite build && wrangler dev",
     "cf-typegen": "wrangler types",
