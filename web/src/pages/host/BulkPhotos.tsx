@@ -4,6 +4,7 @@ import { supabase, errorMessage } from "../../lib/supabase";
 import { uploadMedia } from "../../lib/media";
 import { planPhotos, runLimited, titleFromGroup, type PhotoPlan, type Target } from "../../lib/bulkPhotos";
 import type { Auction, Lot, LotMedia } from "../../lib/types";
+import { bulkSaleType } from "../../lib/saleTypes";
 
 const MAX_FILES = 300;
 
@@ -75,6 +76,7 @@ export function BulkPhotos({
           position: lots.length + i,
           title: titleFromGroup(g).slice(0, 120),
           start_price: price,
+          ...bulkSaleType(auction),
         }));
         const { error } = await supabase.from("lots").insert(rows);
         if (error) throw error;

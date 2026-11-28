@@ -76,11 +76,7 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
         ))}
       </div>
 
-      {auction.visibility === "unlisted" && (
-        <p className="rounded-2xl bg-stone-900/[0.04] px-3.5 py-2.5 text-sm">
-          Share this link: <span className="font-mono text-xs break-all">{`${window.location.origin}/a/${auction.id}`}</span>
-        </p>
-      )}
+      {!isPrivate && <ShareLink link={`${window.location.origin}/a/${auction.id}`} text={`Join "${auction.title}" on AuctionHub`} />}
 
       {isPrivate && code && (
         <div className="space-y-3 rounded-2xl bg-stone-900/[0.04] p-4">
@@ -100,6 +96,14 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
               >
                 {copied ? "Copied!" : "Copy invite link"}
               </button>
+              <a
+                className="btn border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                href={`https://wa.me/?text=${encodeURIComponent(`You're invited to "${auction.title}": ${link}`)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                WhatsApp
+              </a>
               <a
                 className="btn border border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100"
                 href={`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`You're invited to "${auction.title}"`)}`}
@@ -134,5 +138,37 @@ export function VisibilityPanel({ auction, onChanged }: { auction: Auction; onCh
       )}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </section>
+  );
+}
+
+/** The room link, ready to copy or send. */
+function ShareLink({ link, text }: { link: string; text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="space-y-2 rounded-2xl bg-stone-900/[0.04] p-4 dark:bg-snow/[0.05]">
+      <p className="label">Link to the room</p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input className="input font-mono text-xs" readOnly value={link} aria-label="Link to the room" onFocus={(e) => e.currentTarget.select()} />
+        <button
+          type="button"
+          className="btn-primary shrink-0"
+          onClick={() => {
+            void navigator.clipboard?.writeText(link);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          }}
+        >
+          {copied ? "Copied!" : "Copy link"}
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <a className="btn border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" href={`https://wa.me/?text=${encodeURIComponent(`${text}: ${link}`)}`} target="_blank" rel="noreferrer">
+          WhatsApp
+        </a>
+        <a className="btn border border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100" href={`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`} target="_blank" rel="noreferrer">
+          Telegram
+        </a>
+      </div>
+    </div>
   );
 }

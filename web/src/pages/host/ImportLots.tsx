@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase, errorMessage } from "../../lib/supabase";
 import { CSV_TEMPLATE, LEAGUE_CSV_TEMPLATE, parseCsv, toLots, type ImportedLot } from "../../lib/csv";
 import type { Auction } from "../../lib/types";
+import { bulkSaleType } from "../../lib/saleTypes";
 
 function download(name: string, text: string) {
   const a = document.createElement("a");
@@ -42,6 +43,7 @@ export function ImportLots({ auction, nextPosition, onDone }: { auction: Auction
         start_price: l.start_price,
         buy_now_price: l.buy_now_price,
         custom_fields: l.custom_fields,
+        ...bulkSaleType(auction),
       }));
       for (let i = 0; i < rows.length; i += 100) {
         const { error } = await supabase.from("lots").insert(rows.slice(i, i + 100));
